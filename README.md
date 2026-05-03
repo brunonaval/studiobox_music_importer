@@ -6,6 +6,14 @@ Padrao final esperado:
 
 `Autor - Musica - 00000.mp4`
 
+## Padrao oficial de nomes
+
+Formato esperado: `Autor - Musica - 00000.mp4`.
+
+O codigo deve ter exatamente 5 digitos.
+
+O separador oficial desta ferramenta e ` - `, o que evita ambiguidades com artistas como `A-ha`.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
