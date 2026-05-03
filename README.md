@@ -54,6 +54,14 @@ Itens ambiguos, duplicados ou com informacao extra vao para revisao.
 
 Nesta fase ainda nao ha renomeio real.
 
+## Modos de saida
+
+O app vai suportar renomear na propria pasta, copiar/mover para a biblioteca oficial e usar uma pasta de saida personalizada.
+
+Nesta fase, ele apenas monta um plano em memoria para execucao futura.
+
+Nenhuma operacao real de arquivo e executada ainda.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
