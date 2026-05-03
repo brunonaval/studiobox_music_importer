@@ -62,6 +62,16 @@ Nesta fase, ele apenas monta um plano em memoria para execucao futura.
 
 Nenhuma operacao real de arquivo e executada ainda.
 
+## Manifesto da operacao
+
+O app montara um manifesto auditavel do plano de saida.
+
+O manifesto registra origem, destino, acao, status e avisos.
+
+Nesta fase, o manifesto existe apenas em memoria.
+
+A gravacao em JSON sera adicionada depois.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
