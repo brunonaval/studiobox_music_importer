@@ -1,12 +1,20 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
+import '../../base_library/application/official_library_scan_service.dart';
+import '../../base_library/domain/base_library.dart';
 import '../../folder_selection/application/folder_picker_service.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, FolderPickerService? folderPickerService})
-    : folderPickerService = folderPickerService ?? const FolderPickerService();
+  HomeScreen({
+    super.key,
+    FolderPickerService? folderPickerService,
+    OfficialLibraryScanService? officialLibraryScanService,
+  }) : folderPickerService = folderPickerService ?? const FolderPickerService(),
+       officialLibraryScanService =
+           officialLibraryScanService ?? OfficialLibraryScanService();
 
   final FolderPickerService folderPickerService;
+  final OfficialLibraryScanService officialLibraryScanService;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -16,6 +24,10 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _officialLibraryFolderPath;
   bool _selectingOfficialFolder = false;
   String? _folderSelectionMessage;
+
+  bool _indexingOfficialLibrary = false;
+  BaseLibraryIndexResult? _officialLibraryIndexResult;
+  String? _officialLibraryIndexMessage;
 
   Future<void> _selectOfficialLibraryFolder() async {
     if (_selectingOfficialFolder) {
@@ -43,6 +55,40 @@ class _HomeScreenState extends State<HomeScreen> {
 
       _officialLibraryFolderPath = selectedFolder.path;
       _folderSelectionMessage = 'Biblioteca oficial selecionada.';
+    });
+  }
+
+  Future<void> _indexOfficialLibrary() async {
+    if (_indexingOfficialLibrary) {
+      return;
+    }
+
+    if (_officialLibraryFolderPath == null ||
+        _officialLibraryFolderPath!.trim().isEmpty) {
+      setState(() {
+        _officialLibraryIndexMessage =
+            'Selecione a biblioteca oficial antes de indexar.';
+      });
+      return;
+    }
+
+    setState(() {
+      _indexingOfficialLibrary = true;
+      _officialLibraryIndexMessage = null;
+    });
+
+    final result = await widget.officialLibraryScanService.scanFolder(
+      _officialLibraryFolderPath!,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _indexingOfficialLibrary = false;
+      _officialLibraryIndexResult = result;
+      _officialLibraryIndexMessage = 'Biblioteca oficial indexada.';
     });
   }
 
@@ -168,9 +214,52 @@ class _HomeScreenState extends State<HomeScreen> {
                                   : 'Selecionar biblioteca oficial',
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          OutlinedButton(
+                            onPressed:
+                                (_indexingOfficialLibrary ||
+                                    _officialLibraryFolderPath == null)
+                                ? null
+                                : _indexOfficialLibrary,
+                            child: Text(
+                              _indexingOfficialLibrary
+                                  ? 'Indexando...'
+                                  : 'Indexar biblioteca oficial',
+                            ),
+                          ),
                           if (_folderSelectionMessage != null) ...[
                             const SizedBox(height: 8),
                             Text(_folderSelectionMessage!),
+                          ],
+                          if (_officialLibraryIndexMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(_officialLibraryIndexMessage!),
+                          ],
+                          if (_officialLibraryIndexResult != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Musicas validas: ${_officialLibraryIndexResult!.validCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Arquivos invalidos: ${_officialLibraryIndexResult!.invalidCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Codigos duplicados: ${_officialLibraryIndexResult!.duplicateCodeCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Maior codigo: ${_officialLibraryIndexResult!.maxCodeNumber?.toString().padLeft(5, '0') ?? '-'}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Buracos disponiveis: ${_officialLibraryIndexResult!.availableCodeGaps.length}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Artistas conhecidos: ${_officialLibraryIndexResult!.knownArtists.length}',
+                            ),
                           ],
                         ],
                       ),
@@ -208,10 +297,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          const Text('Round 9 - Dominio organizado'),
+                          const Text(
+                            'Round 11 - Indexacao da biblioteca oficial',
+                          ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Motor logico preparado. Integracao com pastas reais ainda nao implementada.',
+                            'Estado: Selecao e indexacao real da biblioteca oficial habilitadas.',
                           ),
                         ],
                       ),

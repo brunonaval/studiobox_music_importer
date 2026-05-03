@@ -11,7 +11,7 @@ class StudioBoxMusicImporterApp extends StatelessWidget {
       title: 'StudioBox Music Importer',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: const HomeScreen(),
+      home: HomeScreen(),
     );
   }
 }

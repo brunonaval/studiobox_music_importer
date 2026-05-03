@@ -88,9 +88,15 @@ O app agora permite selecionar a pasta da biblioteca oficial.
 
 Nesta fase, o caminho selecionado e exibido na Home.
 
-Ainda nao ha indexacao real nessa pasta.
+## Indexacao real da biblioteca oficial
 
-A leitura dos arquivos .mp4 vira em rodada futura.
+Apos selecionar a pasta oficial, o app pode listar arquivos .mp4 reais da pasta.
+
+O processo usa apenas os nomes dos arquivos para validar o padrao oficial e calcular estatisticas.
+
+A Home exibe contadores de validos, invalidos, duplicados, maior codigo, buracos e artistas conhecidos.
+
+Ainda nao ha cache/banco e nao ha renomeio nesta fase.
 
 O app sera desenvolvido em fases.
 
