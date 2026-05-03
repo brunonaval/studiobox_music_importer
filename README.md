@@ -1,4 +1,4 @@
-# StudioBox Music Importer
+﻿# StudioBox Music Importer
 
 StudioBox Music Importer e um app auxiliar para preparar musicas .mp4 para o Karaoke StudioBox.
 
@@ -39,6 +39,18 @@ O app usa artistas conhecidos da biblioteca base para decidir a ordem mais prova
 Termos como Karaoke, HD e similares podem ser limpos automaticamente.
 
 Casos ambiguos sao marcados com avisos para revisao manual.
+
+Nesta fase ainda nao ha renomeio real.
+
+## Plano de importacao
+
+O app combina a analise dos nomes novos com a alocacao de codigos para montar sugestoes.
+
+Cada item recebe sugestao de nome oficial quando possivel.
+
+Itens confiaveis podem ser aprovados automaticamente.
+
+Itens ambiguos, duplicados ou com informacao extra vao para revisao.
 
 Nesta fase ainda nao ha renomeio real.
 
