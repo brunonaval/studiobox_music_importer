@@ -30,6 +30,18 @@ Em qualquer estrategia, codigos repetidos sao proibidos.
 
 O limite natural dos codigos e 99999 e o codigo 00000 nunca sera usado.
 
+## Analise de musicas novas
+
+Arquivos novos podem chegar como Musica - Autor ou Autor - Musica.
+
+O app usa artistas conhecidos da biblioteca base para decidir a ordem mais provavel.
+
+Termos como Karaoke, HD e similares podem ser limpos automaticamente.
+
+Casos ambiguos sao marcados com avisos para revisao manual.
+
+Nesta fase ainda nao ha renomeio real.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
