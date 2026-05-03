@@ -1,7 +1,50 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+import '../../folder_selection/application/folder_picker_service.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, FolderPickerService? folderPickerService})
+    : folderPickerService = folderPickerService ?? const FolderPickerService();
+
+  final FolderPickerService folderPickerService;
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String? _officialLibraryFolderPath;
+  bool _selectingOfficialFolder = false;
+  String? _folderSelectionMessage;
+
+  Future<void> _selectOfficialLibraryFolder() async {
+    if (_selectingOfficialFolder) {
+      return;
+    }
+
+    setState(() {
+      _selectingOfficialFolder = true;
+    });
+
+    final selectedFolder = await widget.folderPickerService
+        .pickOfficialLibraryFolder();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectingOfficialFolder = false;
+
+      if (selectedFolder == null) {
+        _folderSelectionMessage = 'Selecao cancelada.';
+        return;
+      }
+
+      _officialLibraryFolderPath = selectedFolder.path;
+      _folderSelectionMessage = 'Biblioteca oficial selecionada.';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +140,41 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                     ],
+                  ),
+                  const SizedBox(height: 28),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Biblioteca oficial selecionada:',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _officialLibraryFolderPath ??
+                                'Nenhuma pasta selecionada.',
+                          ),
+                          const SizedBox(height: 12),
+                          FilledButton(
+                            onPressed: _selectingOfficialFolder
+                                ? null
+                                : _selectOfficialLibraryFolder,
+                            child: Text(
+                              _selectingOfficialFolder
+                                  ? 'Selecionando...'
+                                  : 'Selecionar biblioteca oficial',
+                            ),
+                          ),
+                          if (_folderSelectionMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(_folderSelectionMessage!),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 28),
                   Card(

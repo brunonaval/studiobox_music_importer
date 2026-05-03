@@ -82,6 +82,16 @@ A Home mostra apenas um status visual de motor preparado.
 
 Ainda nao ha integracao com pastas reais.
 
+## Selecao da biblioteca oficial
+
+O app agora permite selecionar a pasta da biblioteca oficial.
+
+Nesta fase, o caminho selecionado e exibido na Home.
+
+Ainda nao ha indexacao real nessa pasta.
+
+A leitura dos arquivos .mp4 vira em rodada futura.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
