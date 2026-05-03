@@ -14,6 +14,14 @@ O codigo deve ter exatamente 5 digitos.
 
 O separador oficial desta ferramenta e ` - `, o que evita ambiguidades com artistas como `A-ha`.
 
+## Indexacao da biblioteca base
+
+A biblioteca base e formada por arquivos que ja seguem o padrao oficial.
+
+Nesta fase, o app calcula codigos usados, maior codigo, buracos disponiveis, duplicidades de codigo e artistas conhecidos.
+
+Ainda nao ha selecao real de pasta nesta fase.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
