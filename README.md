@@ -98,6 +98,16 @@ A Home exibe contadores de validos, invalidos, duplicados, maior codigo, buracos
 
 Ainda nao ha cache/banco e nao ha renomeio nesta fase.
 
+## Auditoria da biblioteca oficial
+
+Apos indexar, o app mostra auditoria visual com arquivos invalidos e codigos duplicados.
+
+Arquivos invalidos exibem nome e motivo do problema.
+
+Codigos duplicados mostram as musicas/arquivos associados.
+
+Nesta fase, a auditoria e apenas visual e nenhuma correcao automatica e executada.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.

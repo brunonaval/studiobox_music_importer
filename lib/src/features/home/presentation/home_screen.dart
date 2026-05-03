@@ -21,6 +21,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  static const int _auditListLimit = 50;
+
   String? _officialLibraryFolderPath;
   bool _selectingOfficialFolder = false;
   String? _folderSelectionMessage;
@@ -28,6 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _indexingOfficialLibrary = false;
   BaseLibraryIndexResult? _officialLibraryIndexResult;
   String? _officialLibraryIndexMessage;
+  bool _showInvalidFiles = false;
+  bool _showDuplicateCodes = false;
 
   Future<void> _selectOfficialLibraryFolder() async {
     if (_selectingOfficialFolder) {
@@ -89,11 +93,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _indexingOfficialLibrary = false;
       _officialLibraryIndexResult = result;
       _officialLibraryIndexMessage = 'Biblioteca oficial indexada.';
+      _showInvalidFiles = false;
+      _showDuplicateCodes = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final officialLibraryResult = _officialLibraryIndexResult;
+
     final steps = <({IconData icon, String title, String description})>[
       (
         icon: Icons.library_music,
@@ -235,31 +243,142 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 8),
                             Text(_officialLibraryIndexMessage!),
                           ],
-                          if (_officialLibraryIndexResult != null) ...[
+                          if (officialLibraryResult != null) ...[
                             const SizedBox(height: 12),
                             Text(
-                              'Musicas validas: ${_officialLibraryIndexResult!.validCount}',
+                              'Musicas validas: ${officialLibraryResult.validCount}',
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Arquivos invalidos: ${_officialLibraryIndexResult!.invalidCount}',
+                              'Arquivos invalidos: ${officialLibraryResult.invalidCount}',
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Codigos duplicados: ${_officialLibraryIndexResult!.duplicateCodeCount}',
+                              'Codigos duplicados: ${officialLibraryResult.duplicateCodeCount}',
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Maior codigo: ${_officialLibraryIndexResult!.maxCodeNumber?.toString().padLeft(5, '0') ?? '-'}',
+                              'Maior codigo: ${officialLibraryResult.maxCodeNumber?.toString().padLeft(5, '0') ?? '-'}',
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Buracos disponiveis: ${_officialLibraryIndexResult!.availableCodeGaps.length}',
+                              'Buracos disponiveis: ${officialLibraryResult.availableCodeGaps.length}',
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Artistas conhecidos: ${_officialLibraryIndexResult!.knownArtists.length}',
+                              'Artistas conhecidos: ${officialLibraryResult.knownArtists.length}',
                             ),
+                            if (officialLibraryResult.hasInvalidFiles ||
+                                officialLibraryResult.hasDuplicates) ...[
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Atencao: revise os problemas encontrados na auditoria.',
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            Text(
+                              'Auditoria da biblioteca oficial',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Arquivos invalidos: ${officialLibraryResult.invalidCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Codigos duplicados: ${officialLibraryResult.duplicateCodeCount}',
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showInvalidFiles = !_showInvalidFiles;
+                                    });
+                                  },
+                                  child: Text(
+                                    _showInvalidFiles
+                                        ? 'Ocultar arquivos invalidos'
+                                        : 'Mostrar arquivos invalidos',
+                                  ),
+                                ),
+                                OutlinedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showDuplicateCodes =
+                                          !_showDuplicateCodes;
+                                    });
+                                  },
+                                  child: Text(
+                                    _showDuplicateCodes
+                                        ? 'Ocultar codigos duplicados'
+                                        : 'Mostrar codigos duplicados',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_showInvalidFiles) ...[
+                              const SizedBox(height: 12),
+                              if (officialLibraryResult.invalidFiles.isEmpty)
+                                const Text(
+                                  'Nenhum arquivo invalido encontrado.',
+                                )
+                              else ...[
+                                if (officialLibraryResult.invalidFiles.length >
+                                    _auditListLimit)
+                                  Text(
+                                    'Exibindo os primeiros $_auditListLimit de ${officialLibraryResult.invalidFiles.length} arquivos invalidos.',
+                                  ),
+                                const SizedBox(height: 8),
+                                for (final invalidFile
+                                    in officialLibraryResult.invalidFiles.take(
+                                      _auditListLimit,
+                                    )) ...[
+                                  const Text('Arquivo:'),
+                                  Text(invalidFile.fileName),
+                                  const SizedBox(height: 2),
+                                  const Text('Motivo:'),
+                                  Text(invalidFile.reason),
+                                  const SizedBox(height: 10),
+                                ],
+                              ],
+                            ],
+                            if (_showDuplicateCodes) ...[
+                              const SizedBox(height: 12),
+                              if (officialLibraryResult.duplicateCodes.isEmpty)
+                                const Text(
+                                  'Nenhum codigo duplicado encontrado.',
+                                )
+                              else ...[
+                                if (officialLibraryResult
+                                        .duplicateCodes
+                                        .length >
+                                    _auditListLimit)
+                                  Text(
+                                    'Exibindo os primeiros $_auditListLimit de ${officialLibraryResult.duplicateCodes.length} codigos duplicados.',
+                                  ),
+                                const SizedBox(height: 8),
+                                for (final duplicate
+                                    in officialLibraryResult.duplicateCodes
+                                        .take(_auditListLimit)) ...[
+                                  Text('Codigo duplicado: ${duplicate.code}'),
+                                  const SizedBox(height: 4),
+                                  for (final entry in duplicate.entries) ...[
+                                    Text(
+                                      '- ${entry.song.artist} - ${entry.song.title}',
+                                    ),
+                                    Text(
+                                      '  Arquivo: ${entry.originalFileName}',
+                                    ),
+                                    const SizedBox(height: 4),
+                                  ],
+                                  const SizedBox(height: 8),
+                                ],
+                              ],
+                            ],
                           ],
                         ],
                       ),

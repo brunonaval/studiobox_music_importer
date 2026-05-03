@@ -92,32 +92,12 @@ void main() {
     final fakePicker = _FakeFolderPickerService([
       SelectedFolder(path: 'C:/Biblioteca Oficial'),
     ]);
-    final fakeScanService = _FakeOfficialLibraryScanService(
-      BaseLibraryIndexResult(
-        entries: const [
-          BaseLibraryIndexEntry(
-            song: OfficialSong(
-              artist: 'Legiao Urbana',
-              title: 'Tempo Perdido',
-              code: '00001',
-              fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
-            ),
-            originalFileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
-          ),
-        ],
-        invalidFiles: const [
-          BaseLibraryInvalidFile(
-            fileName: 'Arquivo Invalido.mp4',
-            reason: 'Nome fora do padrao Autor - Musica - 00000.mp4.',
-          ),
-        ],
-        duplicateCodes: const [],
-        usedCodes: const {'00001'},
-        availableCodeGaps: const [],
-        maxCodeNumber: 1,
-        knownArtists: const {'Legiao Urbana'},
-      ),
-    );
+    final fakeResult = BaseLibraryIndexer().indexFileNames([
+      'Artista A - Musica A - 00001.mp4',
+      'Artista B - Musica B - 00001.mp4',
+      'Arquivo Fora Do Padrao.mp4',
+    ]);
+    final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -141,7 +121,31 @@ void main() {
 
     expect(find.text('Biblioteca oficial indexada.'), findsOneWidget);
     expect(find.textContaining('Musicas validas:'), findsOneWidget);
-    expect(find.textContaining('Arquivos invalidos:'), findsOneWidget);
+    expect(find.textContaining('Arquivos invalidos:'), findsWidgets);
     expect(find.textContaining('Maior codigo:'), findsOneWidget);
+    expect(find.text('Auditoria da biblioteca oficial'), findsOneWidget);
+    expect(find.text('Arquivos invalidos: 1'), findsWidgets);
+    expect(find.text('Codigos duplicados: 1'), findsWidgets);
+    expect(
+      find.text('Atencao: revise os problemas encontrados na auditoria.'),
+      findsOneWidget,
+    );
+
+    final invalidToggle = find.text('Mostrar arquivos invalidos');
+    await tester.ensureVisible(invalidToggle);
+    await tester.tap(invalidToggle);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Arquivo Fora Do Padrao.mp4'), findsOneWidget);
+    expect(find.text('Motivo:'), findsWidgets);
+
+    final duplicateToggle = find.text('Mostrar codigos duplicados');
+    await tester.ensureVisible(duplicateToggle);
+    await tester.tap(duplicateToggle);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Codigo duplicado: 00001'), findsOneWidget);
+    expect(find.textContaining('Artista A'), findsWidgets);
+    expect(find.textContaining('Artista B'), findsWidgets);
   });
 }
