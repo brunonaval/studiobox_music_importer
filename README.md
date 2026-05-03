@@ -22,6 +22,14 @@ Nesta fase, o app calcula codigos usados, maior codigo, buracos disponiveis, dup
 
 Ainda nao ha selecao real de pasta nesta fase.
 
+## Estrategias de codigo
+
+O app permitira continuar apos o maior codigo existente ou preencher buracos disponiveis primeiro.
+
+Em qualquer estrategia, codigos repetidos sao proibidos.
+
+O limite natural dos codigos e 99999 e o codigo 00000 nunca sera usado.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
