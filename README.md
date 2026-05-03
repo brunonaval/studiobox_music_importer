@@ -72,6 +72,16 @@ Nesta fase, o manifesto existe apenas em memoria.
 
 A gravacao em JSON sera adicionada depois.
 
+## Organizacao do dominio
+
+Os modulos de dominio agora possuem exports proprios para facilitar imports.
+
+Isso simplifica o uso de parser, indexador, planners e manifesto nas proximas telas.
+
+A Home mostra apenas um status visual de motor preparado.
+
+Ainda nao ha integracao com pastas reais.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.

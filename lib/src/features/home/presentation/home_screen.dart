@@ -32,6 +32,16 @@ class HomeScreen extends StatelessWidget {
       ),
     ];
 
+    final engineItems = <String>[
+      'Parser oficial',
+      'Indexador em memoria',
+      'Estrategia de codigos',
+      'Analise inteligente',
+      'Plano de importacao',
+      'Plano de saida',
+      'Manifesto em memoria',
+    ];
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -96,14 +106,34 @@ class HomeScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
+                            'Motor preparado',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          for (final item in engineItems) ...[
+                            Text('- $item'),
+                            const SizedBox(height: 4),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
                             'Status do projeto:',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          const Text('Round 1 - Shell inicial'),
+                          const Text('Round 9 - Dominio organizado'),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Nenhuma biblioteca indexada ainda.',
+                            'Estado: Motor logico preparado. Integracao com pastas reais ainda nao implementada.',
                           ),
                         ],
                       ),

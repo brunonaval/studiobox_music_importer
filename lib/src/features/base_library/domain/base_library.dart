@@ -1,0 +1,11 @@
+export 'official_song.dart';
+export 'official_song_parse_result.dart';
+export 'official_song_parser.dart';
+export 'base_library_duplicate_code.dart';
+export 'base_library_index_entry.dart';
+export 'base_library_index_result.dart';
+export 'base_library_indexer.dart';
+export 'base_library_invalid_file.dart';
+export 'song_code_allocation_result.dart';
+export 'song_code_allocation_strategy.dart';
+export 'song_code_allocator.dart';

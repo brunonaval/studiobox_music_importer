@@ -17,6 +17,10 @@ void main() {
     expect(find.text('Novas musicas'), findsOneWidget);
     expect(find.text('Revisao segura'), findsOneWidget);
     expect(find.text('Saida'), findsOneWidget);
-    expect(find.text('Round 1 - Shell inicial'), findsOneWidget);
+    expect(find.text('Motor preparado'), findsOneWidget);
+    expect(find.text('- Parser oficial'), findsOneWidget);
+    expect(find.text('- Plano de importacao'), findsOneWidget);
+    expect(find.text('- Manifesto em memoria'), findsOneWidget);
+    expect(find.text('Round 9 - Dominio organizado'), findsOneWidget);
   });
 }
