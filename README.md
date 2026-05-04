@@ -108,6 +108,16 @@ Codigos duplicados mostram as musicas/arquivos associados.
 
 Nesta fase, a auditoria e apenas visual e nenhuma correcao automatica e executada.
 
+## Caminhos da biblioteca oficial
+
+O scan da biblioteca agora preserva fileName, fullPath e relativePath para cada arquivo .mp4 encontrado.
+
+A auditoria passa a priorizar o caminho relativo quando disponivel, mantendo a visualizacao limpa.
+
+Isso prepara os proximos rounds para reparo seguro de invalidos e duplicados.
+
+Nenhuma correcao automatica e executada nesta fase.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.

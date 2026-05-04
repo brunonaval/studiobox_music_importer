@@ -338,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       _auditListLimit,
                                     )) ...[
                                   const Text('Arquivo:'),
-                                  Text(invalidFile.fileName),
+                                  Text(invalidFile.displayPath),
                                   const SizedBox(height: 2),
                                   const Text('Motivo:'),
                                   Text(invalidFile.reason),
@@ -370,9 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Text(
                                       '- ${entry.song.artist} - ${entry.song.title}',
                                     ),
-                                    Text(
-                                      '  Arquivo: ${entry.originalFileName}',
-                                    ),
+                                    Text('  Arquivo: ${entry.displayPath}'),
                                     const SizedBox(height: 4),
                                   ],
                                   const SizedBox(height: 8),

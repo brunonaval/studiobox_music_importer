@@ -11,15 +11,15 @@ class OfficialLibraryScanService {
   Future<BaseLibraryIndexResult> scanFolder(String folderPath) async {
     final trimmedPath = folderPath.trim();
     if (trimmedPath.isEmpty) {
-      return _indexer.indexFileNames(const []);
+      return _indexer.indexScannedFiles(const []);
     }
 
     final directory = Directory(trimmedPath);
     if (!await directory.exists()) {
-      return _indexer.indexFileNames(const []);
+      return _indexer.indexScannedFiles(const []);
     }
 
-    final fileNames = <String>[];
+    final scannedFiles = <BaseLibraryScannedFile>[];
 
     try {
       await for (final entity in directory.list(
@@ -32,14 +32,24 @@ class OfficialLibraryScanService {
 
         final name = _basename(entity.path);
         if (name.toLowerCase().endsWith('.mp4')) {
-          fileNames.add(name);
+          scannedFiles.add(
+            BaseLibraryScannedFile(
+              fileName: name,
+              fullPath: entity.path,
+              relativePath: _relativePath(
+                baseFolderPath: trimmedPath,
+                filePath: entity.path,
+                fallbackFileName: name,
+              ),
+            ),
+          );
         }
       }
     } catch (_) {
       // Mantem comportamento resiliente e retorna index parcial.
     }
 
-    return _indexer.indexFileNames(fileNames);
+    return _indexer.indexScannedFiles(scannedFiles);
   }
 
   String _basename(String path) {
@@ -49,5 +59,38 @@ class OfficialLibraryScanService {
       return normalized;
     }
     return normalized.substring(separatorIndex + 1);
+  }
+
+  String _relativePath({
+    required String baseFolderPath,
+    required String filePath,
+    required String fallbackFileName,
+  }) {
+    final normalizedBase = _normalizePath(baseFolderPath);
+    final normalizedFile = _normalizePath(filePath);
+
+    if (normalizedBase.isEmpty || normalizedFile.isEmpty) {
+      return fallbackFileName;
+    }
+
+    final baseWithSeparator = '$normalizedBase/';
+    if (!normalizedFile.startsWith(baseWithSeparator)) {
+      return fallbackFileName;
+    }
+
+    final relative = normalizedFile.substring(baseWithSeparator.length).trim();
+    if (relative.isEmpty) {
+      return fallbackFileName;
+    }
+
+    return relative.replaceAll('/', r'\');
+  }
+
+  String _normalizePath(String path) {
+    var normalized = path.replaceAll('\\', '/').trim();
+    while (normalized.endsWith('/')) {
+      normalized = normalized.substring(0, normalized.length - 1);
+    }
+    return normalized;
   }
 }

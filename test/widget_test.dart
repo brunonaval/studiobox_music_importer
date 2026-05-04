@@ -92,10 +92,22 @@ void main() {
     final fakePicker = _FakeFolderPickerService([
       SelectedFolder(path: 'C:/Biblioteca Oficial'),
     ]);
-    final fakeResult = BaseLibraryIndexer().indexFileNames([
-      'Artista A - Musica A - 00001.mp4',
-      'Artista B - Musica B - 00001.mp4',
-      'Arquivo Fora Do Padrao.mp4',
+    final fakeResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Artista A - Musica A - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Sub\Artista A - Musica A - 00001.mp4',
+        relativePath: r'Sub\Artista A - Musica A - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Artista B - Musica B - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Sub\Artista B - Musica B - 00001.mp4',
+        relativePath: r'Sub\Artista B - Musica B - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Arquivo Fora Do Padrao.mp4',
+        fullPath: r'C:\Biblioteca\Sub\Arquivo Fora Do Padrao.mp4',
+        relativePath: r'Sub\Arquivo Fora Do Padrao.mp4',
+      ),
     ]);
     final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
 
@@ -136,7 +148,7 @@ void main() {
     await tester.tap(invalidToggle);
     await tester.pumpAndSettle();
 
-    expect(find.text('Arquivo Fora Do Padrao.mp4'), findsOneWidget);
+    expect(find.text(r'Sub\Arquivo Fora Do Padrao.mp4'), findsOneWidget);
     expect(find.text('Motivo:'), findsWidgets);
 
     final duplicateToggle = find.text('Mostrar codigos duplicados');
@@ -147,5 +159,13 @@ void main() {
     expect(find.text('Codigo duplicado: 00001'), findsOneWidget);
     expect(find.textContaining('Artista A'), findsWidgets);
     expect(find.textContaining('Artista B'), findsWidgets);
+    expect(
+      find.textContaining(r'Arquivo: Sub\Artista A - Musica A - 00001.mp4'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(r'Arquivo: Sub\Artista B - Musica B - 00001.mp4'),
+      findsOneWidget,
+    );
   });
 }

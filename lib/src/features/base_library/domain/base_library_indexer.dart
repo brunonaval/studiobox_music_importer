@@ -4,6 +4,7 @@ import 'base_library_duplicate_code.dart';
 import 'base_library_index_entry.dart';
 import 'base_library_index_result.dart';
 import 'base_library_invalid_file.dart';
+import 'base_library_scanned_file.dart';
 import 'official_song_parser.dart';
 
 class BaseLibraryIndexer {
@@ -13,19 +14,36 @@ class BaseLibraryIndexer {
   final OfficialSongParser _parser;
 
   BaseLibraryIndexResult indexFileNames(List<String> fileNames) {
+    final scannedFiles = fileNames
+        .map(
+          (fileName) => BaseLibraryScannedFile(
+            fileName: fileName,
+            fullPath: '',
+            relativePath: fileName,
+          ),
+        )
+        .toList();
+    return indexScannedFiles(scannedFiles);
+  }
+
+  BaseLibraryIndexResult indexScannedFiles(
+    List<BaseLibraryScannedFile> scannedFiles,
+  ) {
     final entries = <BaseLibraryIndexEntry>[];
     final invalidFiles = <BaseLibraryInvalidFile>[];
     final usedCodes = SplayTreeSet<String>();
     final knownArtists = SplayTreeSet<String>();
 
-    for (final fileName in fileNames) {
-      final parseResult = _parser.parseFileName(fileName);
+    for (final scannedFile in scannedFiles) {
+      final parseResult = _parser.parseFileName(scannedFile.fileName);
 
       if (parseResult.isFailure) {
         invalidFiles.add(
           BaseLibraryInvalidFile(
-            fileName: fileName,
+            fileName: scannedFile.fileName,
             reason: parseResult.reason ?? 'Falha ao processar arquivo.',
+            fullPath: _nullablePath(scannedFile.fullPath),
+            relativePath: _nullablePath(scannedFile.relativePath),
           ),
         );
         continue;
@@ -34,7 +52,9 @@ class BaseLibraryIndexer {
       final song = parseResult.song!;
       final entry = BaseLibraryIndexEntry(
         song: song,
-        originalFileName: fileName,
+        originalFileName: scannedFile.fileName,
+        fullPath: _nullablePath(scannedFile.fullPath),
+        relativePath: _nullablePath(scannedFile.relativePath),
       );
       entries.add(entry);
       usedCodes.add(entry.code);
@@ -99,5 +119,13 @@ class BaseLibraryIndexer {
       maxCodeNumber: maxCodeNumber,
       knownArtists: Set.unmodifiable(knownArtists),
     );
+  }
+
+  String? _nullablePath(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
   }
 }

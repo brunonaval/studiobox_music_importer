@@ -25,6 +25,7 @@ void main() {
 
       expect(result.validCount, 2);
       expect(result.invalidCount, 0);
+      expect(result.entries.first.fullPath, isNotEmpty);
     });
 
     test('ignora arquivos que nao sao .mp4', () async {
@@ -48,13 +49,20 @@ void main() {
       final tempDir = await createTempDir();
       addTearDown(() => tempDir.delete(recursive: true));
 
-      await File('${tempDir.path}/Arquivo Invalido.mp4').writeAsString('');
+      final subDir = Directory('${tempDir.path}/Subpasta');
+      await subDir.create(recursive: true);
+      await File('${subDir.path}/Arquivo Invalido.mp4').writeAsString('');
 
       final service = OfficialLibraryScanService();
       final result = await service.scanFolder(tempDir.path);
 
       expect(result.validCount, 0);
       expect(result.invalidCount, 1);
+      expect(result.invalidFiles.first.fullPath, isNotEmpty);
+      expect(
+        result.invalidFiles.first.relativePath,
+        'Subpasta\\Arquivo Invalido.mp4',
+      );
     });
 
     test('detecta duplicidade por codigo', () async {
@@ -98,6 +106,27 @@ void main() {
 
       expect(result.validCount, 1);
       expect(result.invalidCount, 0);
+    });
+
+    test('scan com subpasta gera relativePath com subpasta', () async {
+      final tempDir = await createTempDir();
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final subDir = Directory('${tempDir.path}/Subpasta');
+      await subDir.create(recursive: true);
+      await File(
+        '${subDir.path}/Artista - Musica - 00001.mp4',
+      ).writeAsString('');
+
+      final service = OfficialLibraryScanService();
+      final result = await service.scanFolder(tempDir.path);
+
+      expect(result.validCount, 1);
+      expect(
+        result.entries.first.relativePath,
+        'Subpasta\\Artista - Musica - 00001.mp4',
+      );
+      expect(result.entries.first.fullPath, contains('Subpasta'));
     });
   });
 }

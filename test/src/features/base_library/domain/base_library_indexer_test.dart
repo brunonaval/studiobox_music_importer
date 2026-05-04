@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studiobox_music_importer/src/features/base_library/domain/base_library_indexer.dart';
+import 'package:studiobox_music_importer/src/features/base_library/domain/base_library_scanned_file.dart';
 
 void main() {
   group('BaseLibraryIndexer.indexFileNames', () {
@@ -92,6 +93,95 @@ void main() {
       expect(result.validCount, 1);
       expect(result.entries.first.artist, 'A-ha');
       expect(result.entries.first.code, '01234');
+    });
+  });
+
+  group('BaseLibraryIndexer.indexScannedFiles', () {
+    final indexer = BaseLibraryIndexer();
+
+    test('preserva fullPath e relativePath em entries validas', () {
+      final result = indexer.indexScannedFiles([
+        BaseLibraryScannedFile(
+          fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+          fullPath: r'C:\Base\Legiao Urbana - Tempo Perdido - 00001.mp4',
+          relativePath: r'Sub\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        ),
+      ]);
+
+      expect(result.validCount, 1);
+      expect(
+        result.entries.first.fullPath,
+        r'C:\Base\Legiao Urbana - Tempo Perdido - 00001.mp4',
+      );
+      expect(
+        result.entries.first.relativePath,
+        r'Sub\Legiao Urbana - Tempo Perdido - 00001.mp4',
+      );
+    });
+
+    test('preserva fullPath e relativePath em invalidFiles', () {
+      final result = indexer.indexScannedFiles([
+        BaseLibraryScannedFile(
+          fileName: 'Arquivo Invalido.mp4',
+          fullPath: r'C:\Base\Sub\Arquivo Invalido.mp4',
+          relativePath: r'Sub\Arquivo Invalido.mp4',
+        ),
+      ]);
+
+      expect(result.invalidCount, 1);
+      expect(
+        result.invalidFiles.first.fullPath,
+        r'C:\Base\Sub\Arquivo Invalido.mp4',
+      );
+      expect(
+        result.invalidFiles.first.relativePath,
+        r'Sub\Arquivo Invalido.mp4',
+      );
+    });
+
+    test('displayPath usa relativePath quando existe', () {
+      final result = indexer.indexScannedFiles([
+        BaseLibraryScannedFile(
+          fileName: 'Artista - Musica - 00001.mp4',
+          fullPath: r'C:\Base\Sub\Artista - Musica - 00001.mp4',
+          relativePath: r'Sub\Artista - Musica - 00001.mp4',
+        ),
+        BaseLibraryScannedFile(
+          fileName: 'Invalido.mp4',
+          fullPath: r'C:\Base\Sub\Invalido.mp4',
+          relativePath: r'Sub\Invalido.mp4',
+        ),
+      ]);
+
+      expect(
+        result.entries.first.displayPath,
+        r'Sub\Artista - Musica - 00001.mp4',
+      );
+      expect(result.invalidFiles.first.displayPath, r'Sub\Invalido.mp4');
+    });
+
+    test('displayPath usa fallback quando relativePath vazio', () {
+      final validResult = indexer.indexScannedFiles([
+        BaseLibraryScannedFile(
+          fileName: 'Artista - Musica - 00001.mp4',
+          fullPath: r'C:\Base\Artista - Musica - 00001.mp4',
+          relativePath: '',
+        ),
+      ]);
+
+      final invalidResult = indexer.indexScannedFiles([
+        BaseLibraryScannedFile(
+          fileName: 'Invalido.mp4',
+          fullPath: r'C:\Base\Invalido.mp4',
+          relativePath: '',
+        ),
+      ]);
+
+      expect(
+        validResult.entries.first.displayPath,
+        'Artista - Musica - 00001.mp4',
+      );
+      expect(invalidResult.invalidFiles.first.displayPath, 'Invalido.mp4');
     });
   });
 }
