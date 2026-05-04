@@ -118,6 +118,16 @@ Isso prepara os proximos rounds para reparo seguro de invalidos e duplicados.
 
 Nenhuma correcao automatica e executada nesta fase.
 
+## Plano de reparo de codigos duplicados
+
+O app agora monta um plano em memoria para reparo de codigos duplicados da biblioteca oficial.
+
+Uma musica do grupo duplicado mantem o codigo original e as demais recebem sugestoes de novos codigos.
+
+O plano preserva caminhos para futura execucao segura.
+
+Nesta fase nada e renomeado.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
