@@ -48,9 +48,24 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showDuplicateRepairExecutionPlan = false;
   String? _duplicateRepairExecutionMessage;
   bool _confirmDuplicateRepairExecution = false;
+  String _duplicateRepairConfirmationText = '';
   bool _executingDuplicateRepair = false;
   DuplicateCodeRepairExecutionResult? _duplicateRepairExecutionResult;
   String? _duplicateRepairExecutionResultMessage;
+
+  late final TextEditingController _duplicateRepairConfirmationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _duplicateRepairConfirmationController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _duplicateRepairConfirmationController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectOfficialLibraryFolder() async {
     if (_selectingOfficialFolder) {
@@ -108,6 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    _duplicateRepairConfirmationController.clear();
     setState(() {
       _indexingOfficialLibrary = false;
       _officialLibraryIndexResult = result;
@@ -121,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _showDuplicateRepairExecutionPlan = false;
       _duplicateRepairExecutionMessage = null;
       _confirmDuplicateRepairExecution = false;
+      _duplicateRepairConfirmationText = '';
       _executingDuplicateRepair = false;
       _duplicateRepairExecutionResult = null;
       _duplicateRepairExecutionResultMessage = null;
@@ -138,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final plan = DuplicateCodeRepairPlanner().buildPlan(baseIndex: indexResult);
 
+    _duplicateRepairConfirmationController.clear();
     setState(() {
       _duplicateCodeRepairPlan = plan;
       _showDuplicateRepairPlan = true;
@@ -146,6 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _showDuplicateRepairExecutionPlan = false;
       _duplicateRepairExecutionMessage = null;
       _confirmDuplicateRepairExecution = false;
+      _duplicateRepairConfirmationText = '';
       _executingDuplicateRepair = false;
       _duplicateRepairExecutionResult = null;
       _duplicateRepairExecutionResultMessage = null;
@@ -166,11 +185,13 @@ class _HomeScreenState extends State<HomeScreen> {
       repairPlan,
     );
 
+    _duplicateRepairConfirmationController.clear();
     setState(() {
       _duplicateRepairExecutionPlan = executionPlan;
       _showDuplicateRepairExecutionPlan = true;
       _duplicateRepairExecutionMessage = 'Dry-run do reparo gerado.';
       _confirmDuplicateRepairExecution = false;
+      _duplicateRepairConfirmationText = '';
       _executingDuplicateRepair = false;
       _duplicateRepairExecutionResult = null;
       _duplicateRepairExecutionResultMessage = null;
@@ -195,14 +216,16 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    final readyCount = executionPlan.readyToRenameCount;
+    final folderPath = _officialLibraryFolderPath ?? '-';
     final shouldExecute =
         await showDialog<bool>(
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: const Text('Confirmacao final'),
-              content: const Text(
-                'Esta acao ira renomear arquivos reais. Deseja continuar?',
+              title: const Text('Confirmar renomeio real'),
+              content: Text(
+                'Voce esta prestes a renomear $readyCount arquivo(s) em:\n\n$folderPath\n\nEsta acao altera arquivos reais e nao possui desfazer automatico nesta fase.\n\nDeseja continuar?',
               ),
               actions: [
                 TextButton(
@@ -211,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Executar'),
+                  child: const Text('Renomear arquivos reais'),
                 ),
               ],
             );
@@ -739,8 +762,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                     .hasReadyItems) ...[
                               const SizedBox(height: 12),
                               Text(
-                                'Confirmacao obrigatoria',
+                                'Confirmacao obrigatoria para renomear arquivos reais',
                                 style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Esta acao ira renomear arquivos reais na biblioteca oficial selecionada.',
+                              ),
+                              const SizedBox(height: 8),
+                              const Text('Pasta que sera alterada:'),
+                              Text(_officialLibraryFolderPath ?? '-'),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Arquivos prontos para renomear: ${_duplicateRepairExecutionPlan!.readyToRenameCount}',
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Esta acao nao possui desfazer automatico nesta fase.',
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Recomendado: teste primeiro em uma copia da biblioteca antes de executar na pasta oficial.',
                               ),
                               CheckboxListTile(
                                 contentPadding: EdgeInsets.zero,
@@ -757,16 +799,35 @@ class _HomeScreenState extends State<HomeScreen> {
                                         });
                                       },
                               ),
+                              TextField(
+                                controller:
+                                    _duplicateRepairConfirmationController,
+                                enabled: !_executingDuplicateRepair,
+                                decoration: const InputDecoration(
+                                  labelText:
+                                      'Digite RENOMEAR para liberar a execucao',
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _duplicateRepairConfirmationText = value;
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 12),
                               FilledButton(
                                 onPressed:
                                     _executingDuplicateRepair ||
-                                        !_confirmDuplicateRepairExecution
+                                        !_confirmDuplicateRepairExecution ||
+                                        _duplicateRepairConfirmationText
+                                                .trim()
+                                                .toUpperCase() !=
+                                            'RENOMEAR'
                                     ? null
                                     : _executeDuplicateRepair,
                                 child: Text(
                                   _executingDuplicateRepair
                                       ? 'Executando...'
-                                      : 'Executar reparo de duplicados',
+                                      : 'Renomear arquivos reais nesta pasta',
                                 ),
                               ),
                             ],
@@ -875,11 +936,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 17 - Execucao segura do reparo de duplicados',
+                            'Round 18 - Seguranca visual reforcada na execucao real',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Dry-run e execucao real com confirmacao explicita habilitados.',
+                            'Estado: Execucao exige checkbox e texto RENOMEAR para confirmar.',
                           ),
                         ],
                       ),

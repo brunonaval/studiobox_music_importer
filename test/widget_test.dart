@@ -262,7 +262,32 @@ void main() {
     expect(find.textContaining('Destino:'), findsWidgets);
     expect(find.textContaining('00004'), findsWidgets);
 
-    expect(find.text('Confirmacao obrigatoria'), findsOneWidget);
+    expect(
+      find.text('Confirmacao obrigatoria para renomear arquivos reais'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Esta acao ira renomear arquivos reais na biblioteca oficial selecionada.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Pasta que sera alterada:'), findsOneWidget);
+    expect(find.text('C:/Biblioteca Oficial'), findsWidgets);
+    expect(
+      find.textContaining('Arquivos prontos para renomear:'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Esta acao nao possui desfazer automatico nesta fase.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Recomendado: teste primeiro em uma copia da biblioteca antes de executar na pasta oficial.',
+      ),
+      findsOneWidget,
+    );
     expect(
       find.text(
         'Revisei o dry-run e confirmo que desejo renomear os arquivos prontos.',
@@ -270,28 +295,45 @@ void main() {
       findsOneWidget,
     );
 
+    final executeButtonFinder = find.widgetWithText(
+      FilledButton,
+      'Renomear arquivos reais nesta pasta',
+    );
     expect(
-      tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Executar reparo de duplicados'),
-      ),
+      tester.widget<FilledButton>(executeButtonFinder),
       isA<FilledButton>(),
     );
+
+    expect(tester.widget<FilledButton>(executeButtonFinder).onPressed, isNull);
 
     final checkboxFinder = find.byType(Checkbox).first;
     await tester.ensureVisible(checkboxFinder);
     await tester.tap(checkboxFinder, warnIfMissed: false);
     await tester.pumpAndSettle();
 
-    final executeRepairButton = find.text('Executar reparo de duplicados');
-    await tester.ensureVisible(executeRepairButton);
-    await tester.tap(executeRepairButton);
+    expect(tester.widget<FilledButton>(executeButtonFinder).onPressed, isNull);
+
+    final textFieldFinder = find.byType(TextField);
+    await tester.ensureVisible(textFieldFinder);
+    await tester.enterText(textFieldFinder, 'RENOMEAR');
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Esta acao ira renomear arquivos reais. Deseja continuar?'),
+      tester.widget<FilledButton>(executeButtonFinder).onPressed,
+      isNotNull,
+    );
+
+    await tester.ensureVisible(executeButtonFinder);
+    await tester.tap(executeButtonFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Confirmar renomeio real'), findsOneWidget);
+    expect(find.textContaining('Voce esta prestes a renomear'), findsOneWidget);
+    expect(
+      find.textContaining('Esta acao altera arquivos reais'),
       findsOneWidget,
     );
-    await tester.tap(find.text('Executar'));
+    await tester.tap(find.text('Renomear arquivos reais'));
     await tester.pumpAndSettle();
 
     expect(fakeExecutor.callCount, 1);
@@ -301,6 +343,150 @@ void main() {
     expect(find.text('Falhas: 0'), findsOneWidget);
     expect(find.textContaining('Reindexe a biblioteca oficial'), findsWidgets);
   });
+
+  testWidgets('keeps execute button disabled with wrong confirmation text', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService([
+      SelectedFolder(path: 'C:/Biblioteca Oficial'),
+    ]);
+    final fakeResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Artista A - Musica A - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Artista A - Musica A - 00001.mp4',
+        relativePath: r'Artista A - Musica A - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Artista B - Musica B - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Artista B - Musica B - 00001.mp4',
+        relativePath: r'Artista B - Musica B - 00001.mp4',
+      ),
+    ]);
+    final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
+    final fakeExecutor = _FakeDuplicateCodeRepairExecutor(
+      const DuplicateCodeRepairExecutionResult(items: [], warnings: []),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeScanService,
+          duplicateCodeRepairExecutor: fakeExecutor,
+        ),
+      ),
+    );
+
+    await tester.ensureVisible(find.text('Selecionar biblioteca oficial'));
+    await tester.tap(find.text('Selecionar biblioteca oficial'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Indexar biblioteca oficial'));
+    await tester.tap(find.text('Indexar biblioteca oficial'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.text('Gerar plano de reparo de duplicados'),
+    );
+    await tester.tap(find.text('Gerar plano de reparo de duplicados'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Validar execucao do reparo'));
+    await tester.tap(find.text('Validar execucao do reparo'));
+    await tester.pumpAndSettle();
+
+    final executeButtonFinder = find.widgetWithText(
+      FilledButton,
+      'Renomear arquivos reais nesta pasta',
+    );
+
+    final checkboxFinder = find.byType(Checkbox).first;
+    await tester.ensureVisible(checkboxFinder);
+    await tester.tap(checkboxFinder, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    final textFieldFinder = find.byType(TextField);
+    await tester.ensureVisible(textFieldFinder);
+    await tester.enterText(textFieldFinder, 'renomea');
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<FilledButton>(executeButtonFinder).onPressed, isNull);
+    expect(fakeExecutor.callCount, 0);
+  });
+
+  testWidgets(
+    'canceling confirmation dialog shows execution canceled message',
+    (WidgetTester tester) async {
+      final fakePicker = _FakeFolderPickerService([
+        SelectedFolder(path: 'C:/Biblioteca Oficial'),
+      ]);
+      final fakeResult = BaseLibraryIndexer().indexScannedFiles([
+        BaseLibraryScannedFile(
+          fileName: 'Artista A - Musica A - 00001.mp4',
+          fullPath: r'C:\Biblioteca\Artista A - Musica A - 00001.mp4',
+          relativePath: r'Artista A - Musica A - 00001.mp4',
+        ),
+        BaseLibraryScannedFile(
+          fileName: 'Artista B - Musica B - 00001.mp4',
+          fullPath: r'C:\Biblioteca\Artista B - Musica B - 00001.mp4',
+          relativePath: r'Artista B - Musica B - 00001.mp4',
+        ),
+      ]);
+      final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
+      final fakeExecutor = _FakeDuplicateCodeRepairExecutor(
+        const DuplicateCodeRepairExecutionResult(items: [], warnings: []),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HomeScreen(
+            folderPickerService: fakePicker,
+            officialLibraryScanService: fakeScanService,
+            duplicateCodeRepairExecutor: fakeExecutor,
+          ),
+        ),
+      );
+
+      await tester.ensureVisible(find.text('Selecionar biblioteca oficial'));
+      await tester.tap(find.text('Selecionar biblioteca oficial'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Indexar biblioteca oficial'));
+      await tester.tap(find.text('Indexar biblioteca oficial'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.text('Gerar plano de reparo de duplicados'),
+      );
+      await tester.tap(find.text('Gerar plano de reparo de duplicados'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Validar execucao do reparo'));
+      await tester.tap(find.text('Validar execucao do reparo'));
+      await tester.pumpAndSettle();
+
+      final checkboxFinder = find.byType(Checkbox).first;
+      await tester.ensureVisible(checkboxFinder);
+      await tester.tap(checkboxFinder, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      final textFieldFinder = find.byType(TextField);
+      await tester.ensureVisible(textFieldFinder);
+      await tester.enterText(textFieldFinder, 'RENOMEAR');
+      await tester.pumpAndSettle();
+
+      final executeButtonFinder = find.widgetWithText(
+        FilledButton,
+        'Renomear arquivos reais nesta pasta',
+      );
+      await tester.ensureVisible(executeButtonFinder);
+      await tester.tap(executeButtonFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Confirmar renomeio real'), findsOneWidget);
+      expect(find.text('Renomear arquivos reais'), findsWidgets);
+
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Execucao cancelada.'), findsOneWidget);
+      expect(fakeExecutor.callCount, 0);
+    },
+  );
 
   testWidgets('does not execute repair without confirmation checkbox', (
     WidgetTester tester,
@@ -358,7 +544,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final executeButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Executar reparo de duplicados'),
+      find.widgetWithText(FilledButton, 'Renomear arquivos reais nesta pasta'),
     );
     expect(executeButton.onPressed, isNull);
     expect(fakeExecutor.callCount, 0);

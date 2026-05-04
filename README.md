@@ -158,10 +158,21 @@ O app nao sobrescreve arquivos existentes e itens bloqueados nao sao executados.
 
 Depois da execucao, o recomendado e reindexar a biblioteca oficial para atualizar os resultados.
 
+## Seguranca na execucao real
+
+Para liberar a execucao real do reparo de duplicados, o app exige:
+
+- Marcar o checkbox de revisao do dry-run.
+- Digitar RENOMEAR no campo de confirmacao.
+
+A Home exibe claramente a pasta que sera alterada e quantos arquivos serao renomeados.
+
+Um aviso informa que a acao nao possui desfazer automatico nesta fase.
+
+O app recomenda testar primeiro em uma copia da biblioteca antes de executar na pasta oficial.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
 
 Android sera considerado depois.
-
-Esta fase ainda nao implementa renomeio real.
