@@ -56,6 +56,9 @@ class _HomeScreenState extends State<HomeScreen> {
   InvalidFileRepairPlan? _invalidFileRepairPlan;
   bool _showInvalidFileRepairPlan = false;
   String? _invalidFileRepairMessage;
+  InvalidFileRepairExecutionPlan? _invalidFileRepairExecutionPlan;
+  bool _showInvalidFileRepairExecutionPlan = false;
+  String? _invalidFileRepairExecutionMessage;
 
   late final TextEditingController _duplicateRepairConfirmationController;
 
@@ -148,6 +151,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _invalidFileRepairPlan = null;
       _showInvalidFileRepairPlan = false;
       _invalidFileRepairMessage = null;
+      _invalidFileRepairExecutionPlan = null;
+      _showInvalidFileRepairExecutionPlan = false;
+      _invalidFileRepairExecutionMessage = null;
     });
   }
 
@@ -220,6 +226,30 @@ class _HomeScreenState extends State<HomeScreen> {
       _invalidFileRepairPlan = plan;
       _showInvalidFileRepairPlan = true;
       _invalidFileRepairMessage = 'Plano de reparo de invalidos gerado.';
+      _invalidFileRepairExecutionPlan = null;
+      _showInvalidFileRepairExecutionPlan = false;
+      _invalidFileRepairExecutionMessage = null;
+    });
+  }
+
+  void _generateInvalidFileRepairExecutionDryRun() {
+    final repairPlan = _invalidFileRepairPlan;
+    if (repairPlan == null) {
+      setState(() {
+        _invalidFileRepairExecutionMessage =
+            'Gere o plano de invalidos antes de validar a execucao.';
+      });
+      return;
+    }
+
+    final executionPlan = InvalidFileRepairExecutionPlanner().buildDryRun(
+      repairPlan,
+    );
+
+    setState(() {
+      _invalidFileRepairExecutionPlan = executionPlan;
+      _showInvalidFileRepairExecutionPlan = true;
+      _invalidFileRepairExecutionMessage = 'Dry-run dos invalidos gerado.';
     });
   }
 
@@ -1038,6 +1068,124 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 10),
                               ],
                             ],
+                            if (_invalidFileRepairPlan != null) ...[
+                              const SizedBox(height: 16),
+                              FilledButton.tonal(
+                                onPressed:
+                                    _generateInvalidFileRepairExecutionDryRun,
+                                child: const Text(
+                                  'Validar execucao dos invalidos',
+                                ),
+                              ),
+                            ],
+                            if (_invalidFileRepairExecutionMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Text(_invalidFileRepairExecutionMessage!),
+                            ],
+                            if (_invalidFileRepairExecutionPlan != null) ...[
+                              const SizedBox(height: 12),
+                              OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _showInvalidFileRepairExecutionPlan =
+                                        !_showInvalidFileRepairExecutionPlan;
+                                  });
+                                },
+                                child: Text(
+                                  _showInvalidFileRepairExecutionPlan
+                                      ? 'Ocultar dry-run de invalidos'
+                                      : 'Mostrar dry-run de invalidos',
+                                ),
+                              ),
+                            ],
+                            if (_invalidFileRepairExecutionPlan != null &&
+                                _showInvalidFileRepairExecutionPlan) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'Dry-run dos arquivos invalidos',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Prontos para renomear: ${_invalidFileRepairExecutionPlan!.readyToRenameCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Aguardando revisao: ${_invalidFileRepairExecutionPlan!.skippedCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Bloqueados: ${_invalidFileRepairExecutionPlan!.blockedCount}',
+                              ),
+                              if (_invalidFileRepairExecutionPlan!
+                                  .warnings
+                                  .isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                const Text('Avisos do dry-run:'),
+                                const SizedBox(height: 4),
+                                for (final warning
+                                    in _invalidFileRepairExecutionPlan!
+                                        .warnings) ...[
+                                  Text('- $warning'),
+                                  const SizedBox(height: 2),
+                                ],
+                              ],
+                              const SizedBox(height: 8),
+                              if (_invalidFileRepairExecutionPlan!
+                                      .items
+                                      .length >
+                                  _invalidFileRepairItemsLimit)
+                                Text(
+                                  'Exibindo os primeiros $_invalidFileRepairItemsLimit de ${_invalidFileRepairExecutionPlan!.items.length} itens do dry-run de invalidos.',
+                                ),
+                              const SizedBox(height: 6),
+                              for (final item
+                                  in _invalidFileRepairExecutionPlan!.items
+                                      .take(_invalidFileRepairItemsLimit)) ...[
+                                if (item.isReadyToRename) ...[
+                                  const Text('Pronto para renomear:'),
+                                  if (item.detectedArtist != null &&
+                                      item.detectedTitle != null)
+                                    Text(
+                                      '${item.detectedArtist} - ${item.detectedTitle}',
+                                    ),
+                                  const Text('Arquivo atual:'),
+                                  Text(
+                                    item.sourcePathPreview ?? item.displayPath,
+                                  ),
+                                  const Text('Destino:'),
+                                  Text(item.destinationPathPreview ?? '-'),
+                                ] else if (item.isSkipped) ...[
+                                  const Text('Aguardando revisao:'),
+                                  if (item.detectedArtist != null &&
+                                      item.detectedTitle != null)
+                                    Text(
+                                      '${item.detectedArtist} - ${item.detectedTitle}',
+                                    ),
+                                  const Text('Arquivo atual:'),
+                                  Text(
+                                    item.sourcePathPreview ?? item.displayPath,
+                                  ),
+                                  if (item.warnings.isNotEmpty) ...[
+                                    const Text('Avisos:'),
+                                    for (final warning in item.warnings)
+                                      Text('- $warning'),
+                                  ],
+                                ] else ...[
+                                  const Text('Bloqueado:'),
+                                  const Text('Arquivo atual:'),
+                                  Text(
+                                    item.sourcePathPreview ?? item.displayPath,
+                                  ),
+                                  if (item.warnings.isNotEmpty) ...[
+                                    const Text('Avisos:'),
+                                    for (final warning in item.warnings)
+                                      Text('- $warning'),
+                                  ],
+                                ],
+                                const SizedBox(height: 8),
+                              ],
+                            ],
                           ],
                         ],
                       ),
@@ -1076,11 +1224,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 20 - Previa do plano de reparo de arquivos invalidos',
+                            'Round 21 - Dry-run do reparo de arquivos invalidos',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Plano de invalidos gerado em memoria e exibido na Home.',
+                            'Estado: Dry-run de invalidos gerado em memoria e exibido na Home.',
                           ),
                         ],
                       ),

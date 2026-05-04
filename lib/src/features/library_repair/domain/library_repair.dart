@@ -1,4 +1,8 @@
 export 'duplicate_code_repair_group.dart';
+export 'invalid_file_repair_execution_item.dart';
+export 'invalid_file_repair_execution_item_status.dart';
+export 'invalid_file_repair_execution_plan.dart';
+export 'invalid_file_repair_execution_planner.dart';
 export 'invalid_file_repair_item.dart';
 export 'invalid_file_repair_item_status.dart';
 export 'invalid_file_repair_plan.dart';

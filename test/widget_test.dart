@@ -571,6 +571,88 @@ void main() {
     expect(find.text('Plano de reparo de arquivos invalidos'), findsNothing);
   });
 
+  testWidgets('gera e exibe dry-run do reparo de invalidos', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService([
+      SelectedFolder(path: 'C:/Biblioteca Oficial'),
+    ]);
+    final fakeResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legião Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Musicas\Legião Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legião Urbana - Tempo Perdido - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+        fullPath: r'C:\Musicas\Capital Inicial - Primeiros Erros - 00002.mp4',
+        relativePath: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Legião Urbana - Pais e Filhos.mp4',
+        fullPath: r'C:\Musicas\Legião Urbana - Pais e Filhos.mp4',
+        relativePath: 'Legião Urbana - Pais e Filhos.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Pais e Filhos - Legião Urbana.mp4',
+        fullPath: r'C:\Musicas\Pais e Filhos - Legião Urbana.mp4',
+        relativePath: 'Pais e Filhos - Legião Urbana.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'ArquivoSemSeparador.mp4',
+        fullPath: r'C:\Musicas\ArquivoSemSeparador.mp4',
+        relativePath: 'ArquivoSemSeparador.mp4',
+      ),
+    ]);
+    final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
+    final fakeExecutor = _FakeDuplicateCodeRepairExecutor(
+      const DuplicateCodeRepairExecutionResult(items: [], warnings: []),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeScanService,
+          duplicateCodeRepairExecutor: fakeExecutor,
+        ),
+      ),
+    );
+
+    await tester.ensureVisible(find.text('Selecionar biblioteca oficial'));
+    await tester.tap(find.text('Selecionar biblioteca oficial'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Indexar biblioteca oficial'));
+    await tester.tap(find.text('Indexar biblioteca oficial'));
+    await tester.pumpAndSettle();
+
+    final generatePlanButton = find.text('Gerar plano de reparo de invalidos');
+    await tester.ensureVisible(generatePlanButton);
+    await tester.tap(generatePlanButton);
+    await tester.pumpAndSettle();
+
+    final dryRunButton = find.text('Validar execucao dos invalidos');
+    await tester.ensureVisible(dryRunButton);
+    await tester.tap(dryRunButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dry-run dos invalidos gerado.'), findsOneWidget);
+    expect(find.text('Dry-run dos arquivos invalidos'), findsOneWidget);
+    expect(find.textContaining('Prontos para renomear:'), findsOneWidget);
+    expect(find.textContaining('Aguardando revisao:'), findsWidgets);
+    expect(find.textContaining('Bloqueados:'), findsWidgets);
+    expect(find.text('Arquivo atual:'), findsWidgets);
+    expect(find.text('Destino:'), findsOneWidget);
+
+    final toggleButton = find.text('Ocultar dry-run de invalidos');
+    await tester.ensureVisible(toggleButton);
+    await tester.tap(toggleButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mostrar dry-run de invalidos'), findsOneWidget);
+    expect(find.text('Dry-run dos arquivos invalidos'), findsNothing);
+  });
+
   testWidgets('does not execute repair without confirmation checkbox', (
     WidgetTester tester,
   ) async {

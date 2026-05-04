@@ -183,6 +183,18 @@ Itens ambiguos ou com baixa confianca ficam marcados para revisao manual.
 
 Nesta fase nenhum arquivo e renomeado.
 
+## Dry-run do reparo de arquivos invalidos
+
+O app pode validar em memoria quais arquivos invalidos seriam renomeados no reparo.
+
+O dry-run mostra origem e destino sugerido para cada item pronto.
+
+Itens com revisao necessaria nao sao preparados para execucao automatica nesta fase.
+
+Bloqueios sao exibidos antes de qualquer execucao real.
+
+Nesta fase nenhum arquivo e alterado.
+
 ## Previa do reparo de arquivos invalidos
 
 Apos a indexacao, o app pode gerar e exibir uma previa visual do plano de reparo de invalidos.
