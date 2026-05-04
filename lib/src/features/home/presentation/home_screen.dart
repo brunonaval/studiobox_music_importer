@@ -31,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const int _repairGroupLimit = 50;
   static const int _repairItemsPerGroupLimit = 20;
   static const int _executionItemsLimit = 100;
+  static const int _invalidFileRepairItemsLimit = 100;
 
   String? _officialLibraryFolderPath;
   bool _selectingOfficialFolder = false;
@@ -52,6 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _executingDuplicateRepair = false;
   DuplicateCodeRepairExecutionResult? _duplicateRepairExecutionResult;
   String? _duplicateRepairExecutionResultMessage;
+  InvalidFileRepairPlan? _invalidFileRepairPlan;
+  bool _showInvalidFileRepairPlan = false;
+  String? _invalidFileRepairMessage;
 
   late final TextEditingController _duplicateRepairConfirmationController;
 
@@ -141,6 +145,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _executingDuplicateRepair = false;
       _duplicateRepairExecutionResult = null;
       _duplicateRepairExecutionResultMessage = null;
+      _invalidFileRepairPlan = null;
+      _showInvalidFileRepairPlan = false;
+      _invalidFileRepairMessage = null;
     });
   }
 
@@ -195,6 +202,24 @@ class _HomeScreenState extends State<HomeScreen> {
       _executingDuplicateRepair = false;
       _duplicateRepairExecutionResult = null;
       _duplicateRepairExecutionResultMessage = null;
+    });
+  }
+
+  void _generateInvalidFileRepairPlan() {
+    final indexResult = _officialLibraryIndexResult;
+    if (indexResult == null || indexResult.invalidFiles.isEmpty) {
+      setState(() {
+        _invalidFileRepairMessage = 'Nenhum arquivo invalido para reparar.';
+      });
+      return;
+    }
+
+    final plan = InvalidFileRepairPlanner().buildPlan(baseIndex: indexResult);
+
+    setState(() {
+      _invalidFileRepairPlan = plan;
+      _showInvalidFileRepairPlan = true;
+      _invalidFileRepairMessage = 'Plano de reparo de invalidos gerado.';
     });
   }
 
@@ -898,6 +923,121 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 8),
                               ],
                             ],
+                            if (officialLibraryResult.hasInvalidFiles) ...[
+                              const SizedBox(height: 16),
+                              FilledButton.tonal(
+                                onPressed: _generateInvalidFileRepairPlan,
+                                child: const Text(
+                                  'Gerar plano de reparo de invalidos',
+                                ),
+                              ),
+                            ],
+                            if (_invalidFileRepairMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Text(_invalidFileRepairMessage!),
+                            ],
+                            if (_invalidFileRepairPlan != null) ...[
+                              const SizedBox(height: 12),
+                              OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _showInvalidFileRepairPlan =
+                                        !_showInvalidFileRepairPlan;
+                                  });
+                                },
+                                child: Text(
+                                  _showInvalidFileRepairPlan
+                                      ? 'Ocultar plano de invalidos'
+                                      : 'Mostrar plano de invalidos',
+                                ),
+                              ),
+                            ],
+                            if (_invalidFileRepairPlan != null &&
+                                _showInvalidFileRepairPlan) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'Plano de reparo de arquivos invalidos',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Total: ${_invalidFileRepairPlan!.totalCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Sugestoes prontas: ${_invalidFileRepairPlan!.readyToSuggestCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Revisao necessaria: ${_invalidFileRepairPlan!.needsReviewCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Bloqueados: ${_invalidFileRepairPlan!.blockedCount}',
+                              ),
+                              if (_invalidFileRepairPlan!
+                                  .warnings
+                                  .isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                const Text('Avisos do plano:'),
+                                const SizedBox(height: 4),
+                                for (final warning
+                                    in _invalidFileRepairPlan!.warnings) ...[
+                                  Text('- $warning'),
+                                  const SizedBox(height: 2),
+                                ],
+                              ],
+                              const SizedBox(height: 8),
+                              if (_invalidFileRepairPlan!.items.length >
+                                  _invalidFileRepairItemsLimit)
+                                Text(
+                                  'Exibindo os primeiros $_invalidFileRepairItemsLimit de ${_invalidFileRepairPlan!.items.length} itens do plano.',
+                                ),
+                              const SizedBox(height: 6),
+                              for (final item
+                                  in _invalidFileRepairPlan!.items.take(
+                                    _invalidFileRepairItemsLimit,
+                                  )) ...[
+                                Text('Status: ${item.status.label}'),
+                                const SizedBox(height: 2),
+                                const Text('Arquivo atual:'),
+                                Text(item.displayPath),
+                                const SizedBox(height: 2),
+                                const Text('Motivo original:'),
+                                Text(item.originalReason),
+                                if (item.analysis.detectedArtist != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Artista detectado: ${item.analysis.detectedArtist}',
+                                  ),
+                                ],
+                                if (item.analysis.detectedTitle != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Musica detectada: ${item.analysis.detectedTitle}',
+                                  ),
+                                ],
+                                if (item.hasSuggestedFileName) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Novo nome sugerido: ${item.suggestedFileName}',
+                                  ),
+                                ],
+                                if (item.hasSuggestedCode) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Codigo sugerido: ${item.suggestedCode}',
+                                  ),
+                                ],
+                                if (item.warnings.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  const Text('Avisos:'),
+                                  for (final warning in item.warnings)
+                                    Text('- $warning'),
+                                ],
+                                const SizedBox(height: 10),
+                              ],
+                            ],
                           ],
                         ],
                       ),
@@ -936,11 +1076,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 18 - Seguranca visual reforcada na execucao real',
+                            'Round 20 - Previa do plano de reparo de arquivos invalidos',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Execucao exige checkbox e texto RENOMEAR para confirmar.',
+                            'Estado: Plano de invalidos gerado em memoria e exibido na Home.',
                           ),
                         ],
                       ),

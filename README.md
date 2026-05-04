@@ -183,6 +183,18 @@ Itens ambiguos ou com baixa confianca ficam marcados para revisao manual.
 
 Nesta fase nenhum arquivo e renomeado.
 
+## Previa do reparo de arquivos invalidos
+
+Apos a indexacao, o app pode gerar e exibir uma previa visual do plano de reparo de invalidos.
+
+A previa mostra status, arquivo atual, motivo original, artista e musica detectados, novo nome sugerido e codigo sugerido para cada item.
+
+Itens bloqueados exibem avisos explicando o impedimento.
+
+A previa e limitada a 100 itens e pode ser ocultada ou revelada por alternancia.
+
+Nesta fase nenhum arquivo e alterado.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
