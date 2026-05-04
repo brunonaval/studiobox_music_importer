@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../base_library/application/official_library_scan_service.dart';
 import '../../base_library/domain/base_library.dart';
 import '../../folder_selection/application/folder_picker_service.dart';
+import '../../library_repair/application/duplicate_code_repair_executor.dart';
 import '../../library_repair/domain/library_repair.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -10,12 +11,16 @@ class HomeScreen extends StatefulWidget {
     super.key,
     FolderPickerService? folderPickerService,
     OfficialLibraryScanService? officialLibraryScanService,
+    DuplicateCodeRepairExecutor? duplicateCodeRepairExecutor,
   }) : folderPickerService = folderPickerService ?? const FolderPickerService(),
        officialLibraryScanService =
-           officialLibraryScanService ?? OfficialLibraryScanService();
+           officialLibraryScanService ?? OfficialLibraryScanService(),
+       duplicateCodeRepairExecutor =
+           duplicateCodeRepairExecutor ?? DuplicateCodeRepairExecutor();
 
   final FolderPickerService folderPickerService;
   final OfficialLibraryScanService officialLibraryScanService;
+  final DuplicateCodeRepairExecutor duplicateCodeRepairExecutor;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -42,6 +47,10 @@ class _HomeScreenState extends State<HomeScreen> {
   DuplicateCodeRepairExecutionPlan? _duplicateRepairExecutionPlan;
   bool _showDuplicateRepairExecutionPlan = false;
   String? _duplicateRepairExecutionMessage;
+  bool _confirmDuplicateRepairExecution = false;
+  bool _executingDuplicateRepair = false;
+  DuplicateCodeRepairExecutionResult? _duplicateRepairExecutionResult;
+  String? _duplicateRepairExecutionResultMessage;
 
   Future<void> _selectOfficialLibraryFolder() async {
     if (_selectingOfficialFolder) {
@@ -111,6 +120,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _duplicateRepairExecutionPlan = null;
       _showDuplicateRepairExecutionPlan = false;
       _duplicateRepairExecutionMessage = null;
+      _confirmDuplicateRepairExecution = false;
+      _executingDuplicateRepair = false;
+      _duplicateRepairExecutionResult = null;
+      _duplicateRepairExecutionResultMessage = null;
     });
   }
 
@@ -132,6 +145,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _duplicateRepairExecutionPlan = null;
       _showDuplicateRepairExecutionPlan = false;
       _duplicateRepairExecutionMessage = null;
+      _confirmDuplicateRepairExecution = false;
+      _executingDuplicateRepair = false;
+      _duplicateRepairExecutionResult = null;
+      _duplicateRepairExecutionResultMessage = null;
     });
   }
 
@@ -153,6 +170,80 @@ class _HomeScreenState extends State<HomeScreen> {
       _duplicateRepairExecutionPlan = executionPlan;
       _showDuplicateRepairExecutionPlan = true;
       _duplicateRepairExecutionMessage = 'Dry-run do reparo gerado.';
+      _confirmDuplicateRepairExecution = false;
+      _executingDuplicateRepair = false;
+      _duplicateRepairExecutionResult = null;
+      _duplicateRepairExecutionResultMessage = null;
+    });
+  }
+
+  Future<void> _executeDuplicateRepair() async {
+    final executionPlan = _duplicateRepairExecutionPlan;
+    if (executionPlan == null || !executionPlan.hasReadyItems) {
+      setState(() {
+        _duplicateRepairExecutionResultMessage =
+            'Nenhum item pronto para executar.';
+      });
+      return;
+    }
+
+    if (!_confirmDuplicateRepairExecution) {
+      setState(() {
+        _duplicateRepairExecutionResultMessage =
+            'Confirme a revisao do dry-run antes de executar.';
+      });
+      return;
+    }
+
+    final shouldExecute =
+        await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Confirmacao final'),
+              content: const Text(
+                'Esta acao ira renomear arquivos reais. Deseja continuar?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Executar'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!shouldExecute) {
+      setState(() {
+        _duplicateRepairExecutionResultMessage = 'Execucao cancelada.';
+      });
+      return;
+    }
+
+    setState(() {
+      _executingDuplicateRepair = true;
+      _duplicateRepairExecutionResultMessage = null;
+    });
+
+    final result = await widget.duplicateCodeRepairExecutor.execute(
+      executionPlan,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _executingDuplicateRepair = false;
+      _duplicateRepairExecutionResult = result;
+      _duplicateRepairExecutionResultMessage =
+          'Execucao do reparo concluida. Reindexe a biblioteca oficial para atualizar os resultados.';
     });
   }
 
@@ -643,6 +734,109 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 8),
                               ],
                             ],
+                            if (_duplicateRepairExecutionPlan != null &&
+                                _duplicateRepairExecutionPlan!
+                                    .hasReadyItems) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'Confirmacao obrigatoria',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              CheckboxListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: const Text(
+                                  'Revisei o dry-run e confirmo que desejo renomear os arquivos prontos.',
+                                ),
+                                value: _confirmDuplicateRepairExecution,
+                                onChanged: _executingDuplicateRepair
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          _confirmDuplicateRepairExecution =
+                                              value ?? false;
+                                        });
+                                      },
+                              ),
+                              FilledButton(
+                                onPressed:
+                                    _executingDuplicateRepair ||
+                                        !_confirmDuplicateRepairExecution
+                                    ? null
+                                    : _executeDuplicateRepair,
+                                child: Text(
+                                  _executingDuplicateRepair
+                                      ? 'Executando...'
+                                      : 'Executar reparo de duplicados',
+                                ),
+                              ),
+                            ],
+                            if (_duplicateRepairExecutionResultMessage !=
+                                null) ...[
+                              const SizedBox(height: 8),
+                              Text(_duplicateRepairExecutionResultMessage!),
+                            ],
+                            if (_duplicateRepairExecutionResult != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'Resultado da execucao',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Renomeados: ${_duplicateRepairExecutionResult!.renamedCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Ignorados: ${_duplicateRepairExecutionResult!.skippedCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Falhas: ${_duplicateRepairExecutionResult!.failedCount}',
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Reindexe a biblioteca oficial para conferir o resultado atualizado.',
+                              ),
+                              const SizedBox(height: 8),
+                              if (_duplicateRepairExecutionResult!
+                                      .items
+                                      .length >
+                                  _executionItemsLimit)
+                                Text(
+                                  'Exibindo os primeiros $_executionItemsLimit de ${_duplicateRepairExecutionResult!.items.length} itens do resultado.',
+                                ),
+                              const SizedBox(height: 6),
+                              for (final item
+                                  in _duplicateRepairExecutionResult!.items
+                                      .take(_executionItemsLimit)) ...[
+                                if (item.isRenamed) ...[
+                                  const Text('Renomeado:'),
+                                  Text('${item.artist} - ${item.title}'),
+                                  Text('Origem: ${item.sourcePath ?? '-'}'),
+                                  Text(
+                                    'Destino: ${item.destinationPath ?? '-'}',
+                                  ),
+                                  if (item.messages.isNotEmpty)
+                                    Text('Mensagem: ${item.messages.first}'),
+                                ] else if (item.isSkipped) ...[
+                                  const Text('Ignorado:'),
+                                  Text('${item.artist} - ${item.title}'),
+                                  for (final message in item.messages)
+                                    Text('Mensagem: $message'),
+                                ] else ...[
+                                  const Text('Falhou:'),
+                                  Text('${item.artist} - ${item.title}'),
+                                  Text('Origem: ${item.sourcePath ?? '-'}'),
+                                  Text(
+                                    'Destino: ${item.destinationPath ?? '-'}',
+                                  ),
+                                  const Text('Mensagens:'),
+                                  for (final message in item.messages)
+                                    Text('- $message'),
+                                ],
+                                const SizedBox(height: 8),
+                              ],
+                            ],
                           ],
                         ],
                       ),
@@ -681,11 +875,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 11 - Indexacao da biblioteca oficial',
+                            'Round 17 - Execucao segura do reparo de duplicados',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Selecao e indexacao real da biblioteca oficial habilitadas.',
+                            'Estado: Dry-run e execucao real com confirmacao explicita habilitados.',
                           ),
                         ],
                       ),

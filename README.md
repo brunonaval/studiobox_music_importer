@@ -148,6 +148,16 @@ Tambem detecta bloqueios basicos antes de qualquer execucao futura.
 
 Nesta fase nenhum arquivo e alterado.
 
+## Execucao segura do reparo de duplicados
+
+Apos revisar o dry-run, o app pode executar o reparo real somente para itens prontos.
+
+A execucao exige confirmacao explicita antes de renomear arquivos.
+
+O app nao sobrescreve arquivos existentes e itens bloqueados nao sao executados.
+
+Depois da execucao, o recomendado e reindexar a biblioteca oficial para atualizar os resultados.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.

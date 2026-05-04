@@ -7,6 +7,8 @@ import 'package:studiobox_music_importer/src/features/base_library/domain/base_l
 import 'package:studiobox_music_importer/src/features/folder_selection/application/folder_picker_service.dart';
 import 'package:studiobox_music_importer/src/features/folder_selection/domain/selected_folder.dart';
 import 'package:studiobox_music_importer/src/features/home/presentation/home_screen.dart';
+import 'package:studiobox_music_importer/src/features/library_repair/application/duplicate_code_repair_executor.dart';
+import 'package:studiobox_music_importer/src/features/library_repair/domain/library_repair.dart';
 
 class _FakeFolderPickerService extends FolderPickerService {
   _FakeFolderPickerService(this._responses);
@@ -33,6 +35,21 @@ class _FakeOfficialLibraryScanService extends OfficialLibraryScanService {
 
   @override
   Future<BaseLibraryIndexResult> scanFolder(String folderPath) async => result;
+}
+
+class _FakeDuplicateCodeRepairExecutor extends DuplicateCodeRepairExecutor {
+  _FakeDuplicateCodeRepairExecutor(this.result);
+
+  final DuplicateCodeRepairExecutionResult result;
+  int callCount = 0;
+
+  @override
+  Future<DuplicateCodeRepairExecutionResult> execute(
+    DuplicateCodeRepairExecutionPlan executionPlan,
+  ) async {
+    callCount++;
+    return result;
+  }
 }
 
 void main() {
@@ -115,12 +132,43 @@ void main() {
       ),
     ]);
     final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
+    final fakeExecutor = _FakeDuplicateCodeRepairExecutor(
+      DuplicateCodeRepairExecutionResult(
+        items: [
+          DuplicateCodeRepairExecutionResultItem(
+            artist: 'Artista B',
+            title: 'Musica B',
+            originalCode: '00001',
+            suggestedCode: '00004',
+            sourcePath: r'C:\Biblioteca\Sub\Artista B - Musica B - 00001.mp4',
+            destinationPath:
+                r'C:\Biblioteca\Sub\Artista B - Musica B - 00004.mp4',
+            suggestedFileName: 'Artista B - Musica B - 00004.mp4',
+            status: DuplicateCodeRepairExecutionResultItemStatus.renamed,
+            messages: const ['Arquivo renomeado com sucesso.'],
+          ),
+          DuplicateCodeRepairExecutionResultItem(
+            artist: 'Artista A',
+            title: 'Musica A',
+            originalCode: '00001',
+            suggestedCode: null,
+            sourcePath: r'C:\Biblioteca\Sub\Artista A - Musica A - 00001.mp4',
+            destinationPath: null,
+            suggestedFileName: null,
+            status: DuplicateCodeRepairExecutionResultItemStatus.skipped,
+            messages: const ['Item ignorado porque mantem o codigo original.'],
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
 
     await tester.pumpWidget(
       MaterialApp(
         home: HomeScreen(
           folderPickerService: fakePicker,
           officialLibraryScanService: fakeScanService,
+          duplicateCodeRepairExecutor: fakeExecutor,
         ),
       ),
     );
@@ -213,5 +261,106 @@ void main() {
     expect(find.textContaining('Origem:'), findsWidgets);
     expect(find.textContaining('Destino:'), findsWidgets);
     expect(find.textContaining('00004'), findsWidgets);
+
+    expect(find.text('Confirmacao obrigatoria'), findsOneWidget);
+    expect(
+      find.text(
+        'Revisei o dry-run e confirmo que desejo renomear os arquivos prontos.',
+      ),
+      findsOneWidget,
+    );
+
+    expect(
+      tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Executar reparo de duplicados'),
+      ),
+      isA<FilledButton>(),
+    );
+
+    final checkboxFinder = find.byType(Checkbox).first;
+    await tester.ensureVisible(checkboxFinder);
+    await tester.tap(checkboxFinder, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    final executeRepairButton = find.text('Executar reparo de duplicados');
+    await tester.ensureVisible(executeRepairButton);
+    await tester.tap(executeRepairButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Esta acao ira renomear arquivos reais. Deseja continuar?'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Executar'));
+    await tester.pumpAndSettle();
+
+    expect(fakeExecutor.callCount, 1);
+    expect(find.text('Resultado da execucao'), findsOneWidget);
+    expect(find.text('Renomeados: 1'), findsOneWidget);
+    expect(find.text('Ignorados: 1'), findsWidgets);
+    expect(find.text('Falhas: 0'), findsOneWidget);
+    expect(find.textContaining('Reindexe a biblioteca oficial'), findsWidgets);
+  });
+
+  testWidgets('does not execute repair without confirmation checkbox', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService([
+      SelectedFolder(path: 'C:/Biblioteca Oficial'),
+    ]);
+    final fakeResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Artista A - Musica A - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Sub\Artista A - Musica A - 00001.mp4',
+        relativePath: r'Sub\Artista A - Musica A - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Artista B - Musica B - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Sub\Artista B - Musica B - 00001.mp4',
+        relativePath: r'Sub\Artista B - Musica B - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Artista C - Musica C - 00003.mp4',
+        fullPath: r'C:\Biblioteca\Sub\Artista C - Musica C - 00003.mp4',
+        relativePath: r'Sub\Artista C - Musica C - 00003.mp4',
+      ),
+    ]);
+    final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
+    final fakeExecutor = _FakeDuplicateCodeRepairExecutor(
+      const DuplicateCodeRepairExecutionResult(items: [], warnings: []),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeScanService,
+          duplicateCodeRepairExecutor: fakeExecutor,
+        ),
+      ),
+    );
+
+    final selectButton = find.text('Selecionar biblioteca oficial');
+    await tester.ensureVisible(selectButton);
+    await tester.tap(selectButton);
+    await tester.pumpAndSettle();
+    final indexButton = find.text('Indexar biblioteca oficial');
+    await tester.ensureVisible(indexButton);
+    await tester.tap(indexButton);
+    await tester.pumpAndSettle();
+    final generatePlanButton = find.text('Gerar plano de reparo de duplicados');
+    await tester.ensureVisible(generatePlanButton);
+    await tester.tap(generatePlanButton);
+    await tester.pumpAndSettle();
+    final dryRunButton = find.text('Validar execucao do reparo');
+    await tester.ensureVisible(dryRunButton);
+    await tester.tap(dryRunButton);
+    await tester.pumpAndSettle();
+
+    final executeButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Executar reparo de duplicados'),
+    );
+    expect(executeButton.onPressed, isNull);
+    expect(fakeExecutor.callCount, 0);
   });
 }
