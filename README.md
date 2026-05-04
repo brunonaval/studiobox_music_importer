@@ -171,6 +171,18 @@ Um aviso informa que a acao nao possui desfazer automatico nesta fase.
 
 O app recomenda testar primeiro em uma copia da biblioteca antes de executar na pasta oficial.
 
+## Plano de reparo de arquivos invalidos
+
+O app consegue montar sugestoes em memoria para arquivos invalidos da biblioteca oficial.
+
+Ele usa artistas conhecidos da propria biblioteca para interpretar os nomes dos arquivos invalidos.
+
+Codigos seguros sao alocados automaticamente para cada arquivo que possa ser identificado.
+
+Itens ambiguos ou com baixa confianca ficam marcados para revisao manual.
+
+Nesta fase nenhum arquivo e renomeado.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
