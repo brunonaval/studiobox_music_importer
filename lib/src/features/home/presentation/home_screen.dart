@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const int _auditListLimit = 50;
   static const int _repairGroupLimit = 50;
   static const int _repairItemsPerGroupLimit = 20;
+  static const int _executionItemsLimit = 100;
 
   String? _officialLibraryFolderPath;
   bool _selectingOfficialFolder = false;
@@ -38,6 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   DuplicateCodeRepairPlan? _duplicateCodeRepairPlan;
   bool _showDuplicateRepairPlan = false;
   String? _duplicateRepairMessage;
+  DuplicateCodeRepairExecutionPlan? _duplicateRepairExecutionPlan;
+  bool _showDuplicateRepairExecutionPlan = false;
+  String? _duplicateRepairExecutionMessage;
 
   Future<void> _selectOfficialLibraryFolder() async {
     if (_selectingOfficialFolder) {
@@ -104,6 +108,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _duplicateCodeRepairPlan = null;
       _showDuplicateRepairPlan = false;
       _duplicateRepairMessage = null;
+      _duplicateRepairExecutionPlan = null;
+      _showDuplicateRepairExecutionPlan = false;
+      _duplicateRepairExecutionMessage = null;
     });
   }
 
@@ -122,6 +129,30 @@ class _HomeScreenState extends State<HomeScreen> {
       _duplicateCodeRepairPlan = plan;
       _showDuplicateRepairPlan = true;
       _duplicateRepairMessage = 'Plano de reparo de duplicados gerado.';
+      _duplicateRepairExecutionPlan = null;
+      _showDuplicateRepairExecutionPlan = false;
+      _duplicateRepairExecutionMessage = null;
+    });
+  }
+
+  void _generateDuplicateRepairExecutionDryRun() {
+    final repairPlan = _duplicateCodeRepairPlan;
+    if (repairPlan == null) {
+      setState(() {
+        _duplicateRepairExecutionMessage =
+            'Gere o plano de reparo antes de validar a execucao.';
+      });
+      return;
+    }
+
+    final executionPlan = DuplicateCodeRepairExecutionPlanner().buildDryRun(
+      repairPlan,
+    );
+
+    setState(() {
+      _duplicateRepairExecutionPlan = executionPlan;
+      _showDuplicateRepairExecutionPlan = true;
+      _duplicateRepairExecutionMessage = 'Dry-run do reparo gerado.';
     });
   }
 
@@ -434,6 +465,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                       : 'Mostrar plano de reparo',
                                 ),
                               ),
+                              const SizedBox(height: 8),
+                              FilledButton.tonal(
+                                onPressed:
+                                    _generateDuplicateRepairExecutionDryRun,
+                                child: const Text('Validar execucao do reparo'),
+                              ),
+                            ],
+                            if (_duplicateRepairExecutionMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Text(_duplicateRepairExecutionMessage!),
                             ],
                             if (_duplicateCodeRepairPlan != null &&
                                 _showDuplicateRepairPlan) ...[
@@ -516,6 +557,88 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Text('- $warning'),
                                   ],
                                   const SizedBox(height: 8),
+                                ],
+                                const SizedBox(height: 8),
+                              ],
+                            ],
+                            if (_duplicateRepairExecutionPlan != null) ...[
+                              const SizedBox(height: 12),
+                              OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _showDuplicateRepairExecutionPlan =
+                                        !_showDuplicateRepairExecutionPlan;
+                                  });
+                                },
+                                child: Text(
+                                  _showDuplicateRepairExecutionPlan
+                                      ? 'Ocultar dry-run'
+                                      : 'Mostrar dry-run',
+                                ),
+                              ),
+                            ],
+                            if (_duplicateRepairExecutionPlan != null &&
+                                _showDuplicateRepairExecutionPlan) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'Dry-run da execucao',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Prontos para renomear: ${_duplicateRepairExecutionPlan!.readyToRenameCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Ignorados: ${_duplicateRepairExecutionPlan!.skippedCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Bloqueados: ${_duplicateRepairExecutionPlan!.blockedCount}',
+                              ),
+                              if (_duplicateRepairExecutionPlan!
+                                  .hasWarnings) ...[
+                                const SizedBox(height: 8),
+                                const Text('Avisos do dry-run:'),
+                                const SizedBox(height: 4),
+                                for (final warning
+                                    in _duplicateRepairExecutionPlan!
+                                        .warnings) ...[
+                                  Text('- $warning'),
+                                  const SizedBox(height: 2),
+                                ],
+                              ],
+                              const SizedBox(height: 8),
+                              if (_duplicateRepairExecutionPlan!.items.length >
+                                  _executionItemsLimit)
+                                Text(
+                                  'Exibindo os primeiros $_executionItemsLimit de ${_duplicateRepairExecutionPlan!.items.length} itens do dry-run.',
+                                ),
+                              const SizedBox(height: 6),
+                              for (final item
+                                  in _duplicateRepairExecutionPlan!.items.take(
+                                    _executionItemsLimit,
+                                  )) ...[
+                                if (item.isReadyToRename) ...[
+                                  const Text('Pronto para renomear:'),
+                                  Text('${item.artist} - ${item.title}'),
+                                  Text('Origem: ${item.sourcePathPreview}'),
+                                  Text(
+                                    'Destino: ${item.destinationPathPreview}',
+                                  ),
+                                ] else if (item.isSkipped) ...[
+                                  const Text(
+                                    'Ignorado: mantem codigo original',
+                                  ),
+                                  Text('${item.artist} - ${item.title}'),
+                                  Text('Origem: ${item.sourcePathPreview}'),
+                                ] else ...[
+                                  const Text('Bloqueado:'),
+                                  Text('${item.artist} - ${item.title}'),
+                                  Text('Origem: ${item.sourcePathPreview}'),
+                                  const Text('Avisos:'),
+                                  for (final warning in item.warnings)
+                                    Text('- $warning'),
                                 ],
                                 const SizedBox(height: 8),
                               ],

@@ -138,6 +138,16 @@ A previa mostra novo nome sugerido e caminho relativo quando disponivel.
 
 Nesta fase nenhum arquivo e alterado.
 
+## Dry-run do reparo de duplicados
+
+O app tambem consegue validar em memoria quais arquivos seriam renomeados no reparo de duplicados.
+
+O dry-run mostra origem e destino sugerido para cada item, sem executar operacoes reais.
+
+Tambem detecta bloqueios basicos antes de qualquer execucao futura.
+
+Nesta fase nenhum arquivo e alterado.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.

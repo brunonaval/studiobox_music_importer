@@ -199,5 +199,19 @@ void main() {
     await tester.tap(hidePlanButton);
     await tester.pumpAndSettle();
     expect(find.text('Mostrar plano de reparo'), findsOneWidget);
+
+    final dryRunButton = find.text('Validar execucao do reparo');
+    await tester.ensureVisible(dryRunButton);
+    await tester.tap(dryRunButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dry-run do reparo gerado.'), findsOneWidget);
+    expect(find.text('Dry-run da execucao'), findsOneWidget);
+    expect(find.textContaining('Prontos para renomear:'), findsOneWidget);
+    expect(find.textContaining('Ignorados:'), findsOneWidget);
+    expect(find.textContaining('Bloqueados:'), findsOneWidget);
+    expect(find.textContaining('Origem:'), findsWidgets);
+    expect(find.textContaining('Destino:'), findsWidgets);
+    expect(find.textContaining('00004'), findsWidgets);
   });
 }
