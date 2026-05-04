@@ -104,6 +104,11 @@ void main() {
         relativePath: r'Sub\Artista B - Musica B - 00001.mp4',
       ),
       BaseLibraryScannedFile(
+        fileName: 'Artista C - Musica C - 00003.mp4',
+        fullPath: r'C:\Biblioteca\Sub\Artista C - Musica C - 00003.mp4',
+        relativePath: r'Sub\Artista C - Musica C - 00003.mp4',
+      ),
+      BaseLibraryScannedFile(
         fileName: 'Arquivo Fora Do Padrao.mp4',
         fullPath: r'C:\Biblioteca\Sub\Arquivo Fora Do Padrao.mp4',
         relativePath: r'Sub\Arquivo Fora Do Padrao.mp4',
@@ -143,6 +148,27 @@ void main() {
       findsOneWidget,
     );
 
+    final repairButton = find.text('Gerar plano de reparo de duplicados');
+    await tester.ensureVisible(repairButton);
+    await tester.tap(repairButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Plano de reparo de duplicados gerado.'), findsOneWidget);
+    expect(find.text('Plano de reparo de duplicados'), findsOneWidget);
+    expect(find.text('Grupos duplicados: 1'), findsOneWidget);
+    expect(
+      find.textContaining('Itens que manterao codigo original:'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Itens que receberao novo codigo:'),
+      findsOneWidget,
+    );
+    expect(find.text('Manter codigo original:'), findsOneWidget);
+    expect(find.text('Atribuir novo codigo:'), findsOneWidget);
+    expect(find.textContaining('Novo nome sugerido:'), findsOneWidget);
+    expect(find.textContaining('00004'), findsWidgets);
+
     final invalidToggle = find.text('Mostrar arquivos invalidos');
     await tester.ensureVisible(invalidToggle);
     await tester.tap(invalidToggle);
@@ -156,16 +182,22 @@ void main() {
     await tester.tap(duplicateToggle);
     await tester.pumpAndSettle();
 
-    expect(find.text('Codigo duplicado: 00001'), findsOneWidget);
+    expect(find.text('Codigo duplicado: 00001'), findsWidgets);
     expect(find.textContaining('Artista A'), findsWidgets);
     expect(find.textContaining('Artista B'), findsWidgets);
     expect(
       find.textContaining(r'Arquivo: Sub\Artista A - Musica A - 00001.mp4'),
-      findsOneWidget,
+      findsWidgets,
     );
     expect(
       find.textContaining(r'Arquivo: Sub\Artista B - Musica B - 00001.mp4'),
-      findsOneWidget,
+      findsWidgets,
     );
+
+    final hidePlanButton = find.text('Ocultar plano de reparo');
+    await tester.ensureVisible(hidePlanButton);
+    await tester.tap(hidePlanButton);
+    await tester.pumpAndSettle();
+    expect(find.text('Mostrar plano de reparo'), findsOneWidget);
   });
 }

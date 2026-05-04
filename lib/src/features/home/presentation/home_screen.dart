@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../base_library/application/official_library_scan_service.dart';
 import '../../base_library/domain/base_library.dart';
 import '../../folder_selection/application/folder_picker_service.dart';
+import '../../library_repair/domain/library_repair.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({
@@ -22,6 +23,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   static const int _auditListLimit = 50;
+  static const int _repairGroupLimit = 50;
+  static const int _repairItemsPerGroupLimit = 20;
 
   String? _officialLibraryFolderPath;
   bool _selectingOfficialFolder = false;
@@ -32,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _officialLibraryIndexMessage;
   bool _showInvalidFiles = false;
   bool _showDuplicateCodes = false;
+  DuplicateCodeRepairPlan? _duplicateCodeRepairPlan;
+  bool _showDuplicateRepairPlan = false;
+  String? _duplicateRepairMessage;
 
   Future<void> _selectOfficialLibraryFolder() async {
     if (_selectingOfficialFolder) {
@@ -95,6 +101,27 @@ class _HomeScreenState extends State<HomeScreen> {
       _officialLibraryIndexMessage = 'Biblioteca oficial indexada.';
       _showInvalidFiles = false;
       _showDuplicateCodes = false;
+      _duplicateCodeRepairPlan = null;
+      _showDuplicateRepairPlan = false;
+      _duplicateRepairMessage = null;
+    });
+  }
+
+  void _generateDuplicateRepairPlan() {
+    final indexResult = _officialLibraryIndexResult;
+    if (indexResult == null || indexResult.duplicateCodes.isEmpty) {
+      setState(() {
+        _duplicateRepairMessage = 'Nenhum codigo duplicado para reparar.';
+      });
+      return;
+    }
+
+    final plan = DuplicateCodeRepairPlanner().buildPlan(baseIndex: indexResult);
+
+    setState(() {
+      _duplicateCodeRepairPlan = plan;
+      _showDuplicateRepairPlan = true;
+      _duplicateRepairMessage = 'Plano de reparo de duplicados gerado.';
     });
   }
 
@@ -375,6 +402,122 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ],
                                   const SizedBox(height: 8),
                                 ],
+                              ],
+                            ],
+                            if (officialLibraryResult
+                                .duplicateCodes
+                                .isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              FilledButton.tonal(
+                                onPressed: _generateDuplicateRepairPlan,
+                                child: const Text(
+                                  'Gerar plano de reparo de duplicados',
+                                ),
+                              ),
+                            ],
+                            if (_duplicateRepairMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Text(_duplicateRepairMessage!),
+                            ],
+                            if (_duplicateCodeRepairPlan != null) ...[
+                              const SizedBox(height: 12),
+                              OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _showDuplicateRepairPlan =
+                                        !_showDuplicateRepairPlan;
+                                  });
+                                },
+                                child: Text(
+                                  _showDuplicateRepairPlan
+                                      ? 'Ocultar plano de reparo'
+                                      : 'Mostrar plano de reparo',
+                                ),
+                              ),
+                            ],
+                            if (_duplicateCodeRepairPlan != null &&
+                                _showDuplicateRepairPlan) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'Plano de reparo de duplicados',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Grupos duplicados: ${_duplicateCodeRepairPlan!.totalGroups}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Itens que manterao codigo original: ${_duplicateCodeRepairPlan!.totalKeepOriginal}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Itens que receberao novo codigo: ${_duplicateCodeRepairPlan!.totalAssignNewCode}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Itens bloqueados: ${_duplicateCodeRepairPlan!.totalBlocked}',
+                              ),
+                              if (_duplicateCodeRepairPlan!.hasWarnings) ...[
+                                const SizedBox(height: 8),
+                                const Text('Avisos do plano:'),
+                                const SizedBox(height: 4),
+                                for (final warning
+                                    in _duplicateCodeRepairPlan!.warnings) ...[
+                                  Text('- $warning'),
+                                  const SizedBox(height: 2),
+                                ],
+                              ],
+                              const SizedBox(height: 8),
+                              if (_duplicateCodeRepairPlan!.groups.length >
+                                  _repairGroupLimit)
+                                Text(
+                                  'Exibindo os primeiros $_repairGroupLimit de ${_duplicateCodeRepairPlan!.groups.length} grupos de reparo.',
+                                ),
+                              const SizedBox(height: 6),
+                              for (final group
+                                  in _duplicateCodeRepairPlan!.groups.take(
+                                    _repairGroupLimit,
+                                  )) ...[
+                                Text(
+                                  'Codigo duplicado: ${group.duplicatedCode}',
+                                ),
+                                const SizedBox(height: 4),
+                                if (group.items.length >
+                                    _repairItemsPerGroupLimit)
+                                  Text(
+                                    'Exibindo os primeiros $_repairItemsPerGroupLimit de ${group.items.length} itens deste grupo.',
+                                  ),
+                                const SizedBox(height: 4),
+                                for (final item in group.items.take(
+                                  _repairItemsPerGroupLimit,
+                                )) ...[
+                                  if (item.keepsOriginalCode) ...[
+                                    const Text('Manter codigo original:'),
+                                    Text('${item.artist} - ${item.title}'),
+                                    Text('Arquivo: ${item.displayPath}'),
+                                    Text(
+                                      'Codigo mantido: ${item.originalCode}',
+                                    ),
+                                  ] else if (item.assignsNewCode) ...[
+                                    const Text('Atribuir novo codigo:'),
+                                    Text('${item.artist} - ${item.title}'),
+                                    Text('Arquivo atual: ${item.displayPath}'),
+                                    Text('Novo codigo: ${item.suggestedCode}'),
+                                    Text(
+                                      'Novo nome sugerido: ${item.suggestedFileName}',
+                                    ),
+                                  ] else ...[
+                                    const Text('Bloqueado:'),
+                                    Text('${item.artist} - ${item.title}'),
+                                    Text('Arquivo: ${item.displayPath}'),
+                                    const Text('Avisos:'),
+                                    for (final warning in item.warnings)
+                                      Text('- $warning'),
+                                  ],
+                                  const SizedBox(height: 8),
+                                ],
+                                const SizedBox(height: 8),
                               ],
                             ],
                           ],

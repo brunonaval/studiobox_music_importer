@@ -128,6 +128,16 @@ O plano preserva caminhos para futura execucao segura.
 
 Nesta fase nada e renomeado.
 
+## Previa do reparo de duplicados
+
+Apos a auditoria, o app pode gerar uma previa visual do plano de reparo de codigos duplicados.
+
+Uma musica mantem o codigo original e as demais recebem novos codigos sugeridos.
+
+A previa mostra novo nome sugerido e caminho relativo quando disponivel.
+
+Nesta fase nenhum arquivo e alterado.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
