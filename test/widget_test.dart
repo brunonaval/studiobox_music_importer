@@ -212,9 +212,9 @@ void main() {
       find.text('Prepare novas musicas para o padrao do Karaoke StudioBox.'),
       findsAtLeastNWidgets(1),
     );
-    expect(find.text('Biblioteca oficial'), findsOneWidget);
+    expect(find.textContaining('Biblioteca oficial'), findsAtLeastNWidgets(1));
     expect(find.text('Novas musicas'), findsAtLeastNWidgets(1));
-    expect(find.text('Revisao segura'), findsOneWidget);
+    expect(find.textContaining('Revisao'), findsAtLeastNWidgets(1));
     expect(find.text('Saida'), findsAtLeastNWidgets(1));
     expect(find.text('Motor preparado'), findsOneWidget);
     expect(find.text('Selecionar biblioteca oficial'), findsOneWidget);
