@@ -680,10 +680,9 @@ void main() {
     ]);
     final fakeResult = BaseLibraryIndexer().indexScannedFiles([
       BaseLibraryScannedFile(
-        fileName: 'LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
-        fullPath:
-            r'C:\Biblioteca\LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
-        relativePath: 'LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
       ),
       BaseLibraryScannedFile(
         fileName: 'Capital Inicial - Primeiros Erros - 00002.mp4',
@@ -692,15 +691,15 @@ void main() {
         relativePath: 'Capital Inicial - Primeiros Erros - 00002.mp4',
       ),
       BaseLibraryScannedFile(
-        fileName: 'Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
-        fullPath: r'C:\Biblioteca\Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
-        relativePath: 'Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
+        fileName: 'Pais e Filhos - Legiao Urbana.mp4',
+        fullPath: r'C:\Biblioteca\Pais e Filhos - Legiao Urbana.mp4',
+        relativePath: 'Pais e Filhos - Legiao Urbana.mp4',
       ),
       BaseLibraryScannedFile(
-        fileName: 'Tribalistas - Velha InfÃƒÆ’Ã‚Â¢ncia - Marisa Monte.mp4',
+        fileName: 'Tribalistas - Velha Infancia - Marisa Monte.mp4',
         fullPath:
-            r'C:\Biblioteca\Tribalistas - Velha InfÃƒÆ’Ã‚Â¢ncia - Marisa Monte.mp4',
-        relativePath: 'Tribalistas - Velha InfÃƒÆ’Ã‚Â¢ncia - Marisa Monte.mp4',
+            r'C:\Biblioteca\Tribalistas - Velha Infancia - Marisa Monte.mp4',
+        relativePath: 'Tribalistas - Velha Infancia - Marisa Monte.mp4',
       ),
       BaseLibraryScannedFile(
         fileName: 'ArquivoSemSeparador.mp4',
@@ -764,10 +763,9 @@ void main() {
     ]);
     final fakeResult = BaseLibraryIndexer().indexScannedFiles([
       BaseLibraryScannedFile(
-        fileName: 'LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
-        fullPath:
-            r'C:\Musicas\LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
-        relativePath: 'LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Musicas\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
       ),
       BaseLibraryScannedFile(
         fileName: 'Capital Inicial - Primeiros Erros - 00002.mp4',
@@ -775,14 +773,14 @@ void main() {
         relativePath: 'Capital Inicial - Primeiros Erros - 00002.mp4',
       ),
       BaseLibraryScannedFile(
-        fileName: 'LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
-        fullPath: r'C:\Musicas\LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
-        relativePath: 'LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
+        fileName: 'Legiao Urbana - Pais e Filhos.mp4',
+        fullPath: r'C:\Musicas\Legiao Urbana - Pais e Filhos.mp4',
+        relativePath: 'Legiao Urbana - Pais e Filhos.mp4',
       ),
       BaseLibraryScannedFile(
-        fileName: 'Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
-        fullPath: r'C:\Musicas\Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
-        relativePath: 'Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
+        fileName: 'Pais e Filhos - Legiao Urbana.mp4',
+        fullPath: r'C:\Musicas\Pais e Filhos - Legiao Urbana.mp4',
+        relativePath: 'Pais e Filhos - Legiao Urbana.mp4',
       ),
       BaseLibraryScannedFile(
         fileName: 'ArquivoSemSeparador.mp4',
@@ -909,10 +907,9 @@ void main() {
     ]);
     final fakeResult = BaseLibraryIndexer().indexScannedFiles([
       BaseLibraryScannedFile(
-        fileName: 'LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
-        fullPath:
-            r'C:\Musicas\LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
-        relativePath: 'LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Musicas\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
       ),
       BaseLibraryScannedFile(
         fileName: 'Capital Inicial - Primeiros Erros - 00002.mp4',
@@ -920,14 +917,14 @@ void main() {
         relativePath: 'Capital Inicial - Primeiros Erros - 00002.mp4',
       ),
       BaseLibraryScannedFile(
-        fileName: 'LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
-        fullPath: r'C:\Musicas\LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
-        relativePath: 'LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
+        fileName: 'Legiao Urbana - Pais e Filhos.mp4',
+        fullPath: r'C:\Musicas\Legiao Urbana - Pais e Filhos.mp4',
+        relativePath: 'Legiao Urbana - Pais e Filhos.mp4',
       ),
       BaseLibraryScannedFile(
-        fileName: 'Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
-        fullPath: r'C:\Musicas\Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
-        relativePath: 'Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
+        fileName: 'Pais e Filhos - Legiao Urbana.mp4',
+        fullPath: r'C:\Musicas\Pais e Filhos - Legiao Urbana.mp4',
+        relativePath: 'Pais e Filhos - Legiao Urbana.mp4',
       ),
       BaseLibraryScannedFile(
         fileName: 'ArquivoSemSeparador.mp4',
@@ -943,32 +940,29 @@ void main() {
       InvalidFileRepairExecutionResult(
         items: [
           InvalidFileRepairExecutionResultItem(
-            originalFileName: 'LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
-            originalReason: 'Fora do padrÃƒÆ’Ã‚Â£o',
-            detectedArtist: 'LegiÃƒÆ’Ã‚Â£o Urbana',
+            originalFileName: 'Legiao Urbana - Pais e Filhos.mp4',
+            originalReason: 'Fora do padrao',
+            detectedArtist: 'Legiao Urbana',
             detectedTitle: 'Pais e Filhos',
             suggestedCode: '00003',
-            sourcePath: r'C:\Musicas\LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
+            sourcePath: r'C:\Musicas\Legiao Urbana - Pais e Filhos.mp4',
             destinationPath:
-                r'C:\Musicas\LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos - 00003.mp4',
-            suggestedFileName:
-                'LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos - 00003.mp4',
+                r'C:\Musicas\Legiao Urbana - Pais e Filhos - 00003.mp4',
+            suggestedFileName: 'Legiao Urbana - Pais e Filhos - 00003.mp4',
             status: InvalidFileRepairExecutionResultItemStatus.renamed,
             messages: const ['Arquivo renomeado com sucesso.'],
           ),
           InvalidFileRepairExecutionResultItem(
-            originalFileName: 'Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
-            originalReason: 'Fora do padrÃƒÆ’Ã‚Â£o',
-            detectedArtist: 'LegiÃƒÆ’Ã‚Â£o Urbana',
+            originalFileName: 'Pais e Filhos - Legiao Urbana.mp4',
+            originalReason: 'Fora do padrao',
+            detectedArtist: 'Legiao Urbana',
             detectedTitle: 'Pais e Filhos',
             suggestedCode: null,
-            sourcePath: r'C:\Musicas\Pais e Filhos - LegiÃƒÆ’Ã‚Â£o Urbana.mp4',
+            sourcePath: r'C:\Musicas\Pais e Filhos - Legiao Urbana.mp4',
             destinationPath: null,
             suggestedFileName: null,
             status: InvalidFileRepairExecutionResultItemStatus.skipped,
-            messages: const [
-              'Item ignorado porque precisa de revisÃƒÆ’Ã‚Â£o manual.',
-            ],
+            messages: const ['Item ignorado porque precisa de revisao manual.'],
           ),
         ],
         warnings: const [],
@@ -1071,15 +1065,14 @@ void main() {
       ]);
       final fakeResult = BaseLibraryIndexer().indexScannedFiles([
         BaseLibraryScannedFile(
-          fileName: 'LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
-          fullPath:
-              r'C:\Musicas\LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
-          relativePath: 'LegiÃƒÆ’Ã‚Â£o Urbana - Tempo Perdido - 00001.mp4',
+          fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+          fullPath: r'C:\Musicas\Legiao Urbana - Tempo Perdido - 00001.mp4',
+          relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
         ),
         BaseLibraryScannedFile(
-          fileName: 'LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
-          fullPath: r'C:\Musicas\LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
-          relativePath: 'LegiÃƒÆ’Ã‚Â£o Urbana - Pais e Filhos.mp4',
+          fileName: 'Legiao Urbana - Pais e Filhos.mp4',
+          fullPath: r'C:\Musicas\Legiao Urbana - Pais e Filhos.mp4',
+          relativePath: 'Legiao Urbana - Pais e Filhos.mp4',
         ),
       ]);
       final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
@@ -1359,10 +1352,9 @@ void main() {
       IncomingSongsScanResult(
         files: [
           IncomingSongScannedFile(
-            fileName: 'KaraokÃƒÆ’Ã‚Âª - Pais e Filhos - Legiao Urbana.mp4',
-            fullPath:
-                r'C:\Novas\KaraokÃƒÆ’Ã‚Âª - Pais e Filhos - Legiao Urbana.mp4',
-            relativePath: 'KaraokÃƒÆ’Ã‚Âª - Pais e Filhos - Legiao Urbana.mp4',
+            fileName: 'Karaoke - Pais e Filhos - Legiao Urbana.mp4',
+            fullPath: r'C:\Novas\Karaoke - Pais e Filhos - Legiao Urbana.mp4',
+            relativePath: 'Karaoke - Pais e Filhos - Legiao Urbana.mp4',
           ),
         ],
         warnings: const [],

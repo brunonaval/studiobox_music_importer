@@ -231,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _incomingSongsFolderPath!.trim().isEmpty) {
       setState(() {
         _incomingSongsScanMessage =
-            'Selecione a pasta de mÃºsicas novas antes de escanear.';
+            'Selecione a pasta de musicas novas antes de escanear.';
       });
       return;
     }
@@ -252,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _scanningIncomingSongsFolder = false;
       _incomingSongsScanResult = result;
-      _incomingSongsScanMessage = 'Pasta de mÃºsicas novas escaneada.';
+      _incomingSongsScanMessage = 'Pasta de musicas novas escaneada.';
       _incomingSongCleaningPreviewPlan = null;
       _showIncomingSongCleaningPreview = false;
       _incomingSongCleaningMessage = null;
@@ -268,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (scanResult == null || scanResult.totalCount == 0) {
       setState(() {
         _incomingSongCleaningMessage =
-            'Escaneie a pasta de mÃºsicas novas antes da prÃ©-limpeza.';
+            'Escaneie a pasta de musicas novas antes da pre-limpeza.';
       });
       return;
     }
@@ -281,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _incomingSongCleaningPreviewPlan = plan;
       _showIncomingSongCleaningPreview = true;
-      _incomingSongCleaningMessage = 'PrÃ©-limpeza de nomes gerada.';
+      _incomingSongCleaningMessage = 'pre-limpeza de nomes gerada.';
       _importSuggestionPlan = null;
       _showImportSuggestionPlan = false;
       _importSuggestionMessage = null;
@@ -346,6 +346,10 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
     return ImportOutputMode.renameInIncomingFolder;
+  }
+
+  String _importOutputModeLabelFromName(String? name) {
+    return _importOutputModeFromName(name).label;
   }
 
   Future<void> _loadSessionCache() async {
@@ -587,7 +591,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (baseIndex == null) {
       setState(() {
         _importSuggestionMessage =
-            'Indexe a biblioteca oficial antes de gerar sugestÃµes.';
+            'Indexe a biblioteca oficial antes de gerar sugestoes.';
       });
       return;
     }
@@ -603,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       setState(() {
         _importSuggestionMessage =
-            'Escaneie a pasta de mÃºsicas novas antes de gerar sugestÃµes.';
+            'Escaneie a pasta de musicas novas antes de gerar sugestoes.';
       });
       return;
     }
@@ -611,7 +615,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (fileNames.isEmpty) {
       setState(() {
         _importSuggestionMessage =
-            'Nenhum arquivo novo para sugerir importaÃ§Ã£o.';
+            'Nenhum arquivo novo para sugerir importacao.';
       });
       return;
     }
@@ -650,7 +654,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _importCandidateEditMessage = 'Edicao manual dos candidatos preparada.';
       _importOutputValidationResult = initialOutputValidation;
       _showImportSuggestionPlan = true;
-      _importSuggestionMessage = 'SugestÃµes de importaÃ§Ã£o geradas.';
+      _importSuggestionMessage = 'sugestoes de importacao geradas.';
       _showReadyImportCandidates = true;
       _showReviewImportCandidates = true;
       _showBlockedImportCandidates = true;
@@ -1258,10 +1262,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(32),
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1420),
+                    constraints: const BoxConstraints(maxWidth: 1500),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1461,7 +1465,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Não selecionados: ${_importCandidateSelectionPlan!.notSelectedCount}',
+                                      'Nao selecionados: ${_importCandidateSelectionPlan!.notSelectedCount}',
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
@@ -1469,7 +1473,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Selecionáveis: ${_importCandidateSelectionPlan!.selectableCount}',
+                                      'Selecionaveis: ${_importCandidateSelectionPlan!.selectableCount}',
                                     ),
                                     if (_importCandidateSelectionPlan!
                                         .hasWarnings) ...[
@@ -1740,6 +1744,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    Text(
+                                      '4. Saida e execucao',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge,
+                                    ),
+                                    const SizedBox(height: 8),
                                     Text(
                                       'Modo de saida da importacao',
                                       style: Theme.of(
@@ -2139,6 +2150,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ],
                                       if (_importOperationManifest != null) ...[
                                         const SizedBox(height: 12),
+                                        Text(
+                                          '5. Manifesto',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleLarge,
+                                        ),
+                                        const SizedBox(height: 8),
                                         KeyedSubtree(
                                           key: _manifestKey,
                                           child: Text(
@@ -2347,7 +2365,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Modo de saida salvo: ${_lastSessionSnapshot?.importOutputModeName ?? '-'}',
+                                    'Modo de saida salvo: ${_lastSessionSnapshot?.importOutputModeName == null ? '-' : _importOutputModeLabelFromName(_lastSessionSnapshot?.importOutputModeName)}',
                                   ),
                                   const SizedBox(height: 8),
                                   Wrap(
@@ -2384,6 +2402,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Text(
+                                    '1. Biblioteca oficial',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 8),
                                   Text(
                                     'Biblioteca oficial selecionada:',
                                     style: Theme.of(
@@ -3424,6 +3449,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
+                                    '2. Musicas novas',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
                                     'Pasta de musicas novas selecionada:',
                                     style: Theme.of(
                                       context,
@@ -3459,7 +3491,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: Text(
                                         _scanningIncomingSongsFolder
                                             ? 'Escaneando...'
-                                            : 'Escanear mÃºsicas novas',
+                                            : 'Escanear musicas novas',
                                       ),
                                     ),
                                   ],
@@ -3470,7 +3502,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (_incomingSongsScanResult != null) ...[
                                     const SizedBox(height: 12),
                                     Text(
-                                      'MÃºsicas novas encontradas: ${_incomingSongsScanResult!.totalCount}',
+                                      'musicas novas encontradas: ${_incomingSongsScanResult!.totalCount}',
                                     ),
                                     if (_incomingSongsScanResult!
                                         .hasWarnings) ...[
@@ -3488,7 +3520,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         0) ...[
                                       const SizedBox(height: 8),
                                       const Text(
-                                        'Nenhum .mp4 encontrado na pasta de mÃºsicas novas.',
+                                        'Nenhum .mp4 encontrado na pasta de musicas novas.',
                                       ),
                                     ] else ...[
                                       const SizedBox(height: 12),
@@ -3514,7 +3546,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         onPressed:
                                             _generateIncomingSongCleaningPreview,
                                         child: const Text(
-                                          'Gerar prÃ©-limpeza dos nomes',
+                                          'Gerar pre-limpeza dos nomes',
                                         ),
                                       ),
                                     ],
@@ -3535,8 +3567,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       },
                                       child: Text(
                                         _showIncomingSongCleaningPreview
-                                            ? 'Ocultar prÃ©-limpeza'
-                                            : 'Mostrar prÃ©-limpeza',
+                                            ? 'Ocultar pre-limpeza'
+                                            : 'Mostrar pre-limpeza',
                                       ),
                                     ),
                                   ],
@@ -3545,7 +3577,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       _showIncomingSongCleaningPreview) ...[
                                     const SizedBox(height: 12),
                                     Text(
-                                      'PrÃ©-limpeza dos nomes',
+                                      'pre-limpeza dos nomes',
                                       style: Theme.of(
                                         context,
                                       ).textTheme.titleMedium,
@@ -3560,7 +3592,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Nomes sem alteraÃ§Ã£o: ${_incomingSongCleaningPreviewPlan!.unchangedCount}',
+                                      'Nomes sem alteracao: ${_incomingSongCleaningPreviewPlan!.unchangedCount}',
                                     ),
                                     if (_incomingSongCleaningPreviewPlan!
                                         .hasWarnings) ...[
@@ -3579,7 +3611,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             .totalCount >
                                         50)
                                       Text(
-                                        'Exibindo os primeiros 50 de ${_incomingSongCleaningPreviewPlan!.totalCount} itens da prÃ©-limpeza.',
+                                        'Exibindo os primeiros 50 de ${_incomingSongCleaningPreviewPlan!.totalCount} itens da pre-limpeza.',
                                       ),
                                     const SizedBox(height: 4),
                                     for (final item
@@ -3613,10 +3645,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       _incomingSongsScanResult!.totalCount >
                                           0) ...[
                                     const SizedBox(height: 16),
+                                    Text(
+                                      '3. Sugestoes e revisao',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge,
+                                    ),
+                                    const SizedBox(height: 16),
                                     FilledButton.tonal(
                                       onPressed: _generateImportSuggestions,
                                       child: const Text(
-                                        'Gerar sugestÃµes de importaÃ§Ã£o',
+                                        'Gerar sugestoes de importacao',
                                       ),
                                     ),
                                   ],
@@ -3635,8 +3674,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       },
                                       child: Text(
                                         _showImportSuggestionPlan
-                                            ? 'Ocultar sugestÃµes de importaÃ§Ã£o'
-                                            : 'Mostrar sugestÃµes de importaÃ§Ã£o',
+                                            ? 'Ocultar sugestoes de importacao'
+                                            : 'Mostrar sugestoes de importacao',
                                       ),
                                     ),
                                   ],
@@ -3644,7 +3683,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       _showImportSuggestionPlan) ...[
                                     const SizedBox(height: 12),
                                     Text(
-                                      'SugestÃµes de importaÃ§Ã£o',
+                                      'sugestoes de importacao',
                                       style: Theme.of(
                                         context,
                                       ).textTheme.titleMedium,
@@ -3659,7 +3698,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'RevisÃ£o necessÃ¡ria: ${_importSuggestionPlan!.needsReviewCount}',
+                                      'Revisao necessaria: ${_importSuggestionPlan!.needsReviewCount}',
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
@@ -3667,7 +3706,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'PossÃ­veis duplicados: ${_duplicateImportCandidates().length}',
+                                      'Possiveis duplicados: ${_duplicateImportCandidates().length}',
                                     ),
                                     if (_importSuggestionPlan!.hasWarnings) ...[
                                       const SizedBox(height: 8),
@@ -3682,7 +3721,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                     const SizedBox(height: 16),
                                     Text(
-                                      'RevisÃ£o dos candidatos',
+                                      'Revisao dos candidatos',
                                       style: Theme.of(
                                         context,
                                       ).textTheme.titleMedium,
@@ -3749,13 +3788,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                             null) ...[
                                           const SizedBox(height: 2),
                                           Text(
-                                            'MÃºsica: ${candidate.analysis.detectedTitle}',
+                                            'Musica: ${candidate.analysis.detectedTitle}',
                                           ),
                                         ],
                                         if (candidate.hasSuggestedCode) ...[
                                           const SizedBox(height: 2),
                                           Text(
-                                            'CÃ³digo sugerido: ${candidate.suggestedCode}',
+                                            'Codigo sugerido: ${candidate.suggestedCode}',
                                           ),
                                         ],
                                         if (candidate
@@ -3769,13 +3808,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                         const SizedBox(height: 10),
                                       ],
                                     ],
-                                    // --- revisÃ£o ---
+                                    // --- revisao ---
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            'Precisam de revisÃ£o: ${_reviewImportCandidates().length}',
+                                            'Precisam de revisao: ${_reviewImportCandidates().length}',
                                             style: Theme.of(
                                               context,
                                             ).textTheme.titleSmall,
@@ -3790,8 +3829,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           },
                                           child: Text(
                                             _showReviewImportCandidates
-                                                ? 'Ocultar revisÃ£o'
-                                                : 'Mostrar revisÃ£o',
+                                                ? 'Ocultar revisao'
+                                                : 'Mostrar revisao',
                                           ),
                                         ),
                                       ],
@@ -3800,7 +3839,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       const SizedBox(height: 8),
                                       if (_reviewImportCandidates().isEmpty)
                                         const Text(
-                                          'Nenhum candidato para revisÃ£o.',
+                                          'Nenhum candidato para revisao.',
                                         ),
                                       if (_reviewImportCandidates().length > 50)
                                         Text(
@@ -3810,7 +3849,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           in _reviewImportCandidates().take(
                                             50,
                                           )) ...[
-                                        const Text('RevisÃ£o necessÃ¡ria'),
+                                        const Text('Revisao necessaria'),
                                         const SizedBox(height: 2),
                                         const Text('Arquivo:'),
                                         Text(candidate.originalFileName),
@@ -3833,12 +3872,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                             null) ...[
                                           const SizedBox(height: 2),
                                           Text(
-                                            'MÃºsica detectada: ${candidate.analysis.detectedTitle}',
+                                            'Musica detectada: ${candidate.analysis.detectedTitle}',
                                           ),
                                         ],
                                         const SizedBox(height: 2),
                                         Text(
-                                          'ConfianÃ§a: ${candidate.analysis.confidence.label}',
+                                          'Confianca: ${candidate.analysis.confidence.label}',
                                         ),
                                         if (candidate
                                                 .suggestedOfficialFileName !=
@@ -3928,7 +3967,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            'PossÃ­veis duplicados: ${_duplicateImportCandidates().length}',
+                                            'Possiveis duplicados: ${_duplicateImportCandidates().length}',
                                             style: Theme.of(
                                               context,
                                             ).textTheme.titleSmall,
@@ -3953,18 +3992,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                       const SizedBox(height: 8),
                                       if (_duplicateImportCandidates().isEmpty)
                                         const Text(
-                                          'Nenhum possÃ­vel duplicado encontrado.',
+                                          'Nenhum possivel duplicado encontrado.',
                                         ),
                                       if (_duplicateImportCandidates().length >
                                           50)
                                         Text(
-                                          'Exibindo os primeiros 50 de ${_duplicateImportCandidates().length} possÃ­veis duplicados.',
+                                          'Exibindo os primeiros 50 de ${_duplicateImportCandidates().length} Possiveis duplicados.',
                                         ),
                                       for (final candidate
                                           in _duplicateImportCandidates().take(
                                             50,
                                           )) ...[
-                                        const Text('PossÃ­vel duplicado'),
+                                        const Text('possivel duplicado'),
                                         const SizedBox(height: 2),
                                         const Text('Arquivo:'),
                                         Text(candidate.originalFileName),
@@ -4037,11 +4076,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 const Text(
-                                  'Round 35B - Dashboard visual lapidado',
+                                  'Round 35C - Dashboard visual premium',
                                 ),
                                 const SizedBox(height: 4),
                                 const Text(
-                                  'Estado: Dashboard sem duplicacao visual, com sidebar clicavel e secoes organizadas.',
+                                  'Estado: Layout desktop em duas colunas, com cards principais largos e coluna lateral organizada.',
                                 ),
                               ],
                             ),
@@ -4186,7 +4225,7 @@ class _WorkflowStepBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: Colors.white24),
       ),
-      child: Text('$label • ${done ? 'Concluido' : 'Pendente'}'),
+      child: Text('$label - ${done ? 'Concluido' : 'Pendente'}'),
     );
   }
 }

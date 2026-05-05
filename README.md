@@ -349,13 +349,13 @@ O MVP inicial sera para Windows.
 
 Android sera considerado depois.
 
-## Dashboard visual da interface
+## Dashboard visual premium
 
-A Home foi redesenhada como dashboard desktop com sidebar, header e etapas do fluxo.
+A Home foi reorganizada em dashboard desktop de duas colunas.
 
-O fluxo visual foi dividido em Biblioteca, Musicas novas, Sugestoes/Revisao, Saida/Execucao e Manifesto.
+Os cards principais do fluxo ficaram na coluna principal, com foco em leitura e acao.
 
-A coluna lateral destaca resumo da sessao, cache local, motor e status do projeto.
+Resumo da sessao, cache local, motor e status do projeto ficaram na coluna lateral.
 
 Nenhuma regra de negocio foi alterada nesta rodada.
 
