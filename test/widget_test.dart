@@ -12,18 +12,23 @@ import 'package:studiobox_music_importer/src/features/incoming_songs/domain/inco
 import 'package:studiobox_music_importer/src/features/library_repair/application/duplicate_code_repair_executor.dart';
 import 'package:studiobox_music_importer/src/features/library_repair/application/invalid_file_repair_executor.dart';
 import 'package:studiobox_music_importer/src/features/library_repair/domain/library_repair.dart';
+import 'package:studiobox_music_importer/src/features/output_plan/domain/output_plan.dart';
 
 class _FakeFolderPickerService extends FolderPickerService {
   _FakeFolderPickerService(
     List<SelectedFolder?> officialResponses, {
     List<SelectedFolder?> incomingResponses = const [],
+    List<SelectedFolder?> outputResponses = const [],
   }) : _officialResponses = officialResponses,
-       _incomingResponses = incomingResponses;
+       _incomingResponses = incomingResponses,
+       _outputResponses = outputResponses;
 
   final List<SelectedFolder?> _officialResponses;
   final List<SelectedFolder?> _incomingResponses;
+  final List<SelectedFolder?> _outputResponses;
   int _officialIndex = 0;
   int _incomingIndex = 0;
+  int _outputIndex = 0;
 
   @override
   Future<SelectedFolder?> pickOfficialLibraryFolder() async {
@@ -42,6 +47,16 @@ class _FakeFolderPickerService extends FolderPickerService {
     }
     final response = _incomingResponses[_incomingIndex];
     _incomingIndex++;
+    return response;
+  }
+
+  @override
+  Future<SelectedFolder?> pickImportOutputFolder() async {
+    if (_outputIndex >= _outputResponses.length) {
+      return null;
+    }
+    final response = _outputResponses[_outputIndex];
+    _outputIndex++;
     return response;
   }
 }
@@ -1432,9 +1447,24 @@ void main() {
       IncomingSongsScanResult(
         files: [
           IncomingSongScannedFile(
-            fileName: 'Karaoke - Pais e Filhos - Legiao Urbana.mp4',
-            fullPath: r'C:\Novas\Karaoke - Pais e Filhos - Legiao Urbana.mp4',
-            relativePath: 'Karaoke - Pais e Filhos - Legiao Urbana.mp4',
+            fileName: 'Legiao Urbana - Musica Nova.mp4',
+            fullPath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            relativePath: 'Legiao Urbana - Musica Nova.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'Musica Ambigua - Legiao Urbana.mp4',
+            fullPath: r'C:\Novas\Musica Ambigua - Legiao Urbana.mp4',
+            relativePath: 'Musica Ambigua - Legiao Urbana.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'ArquivoSemSeparador.mp4',
+            fullPath: r'C:\Novas\ArquivoSemSeparador.mp4',
+            relativePath: 'ArquivoSemSeparador.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'Capital Inicial - Primeiros Erros.mp4',
+            fullPath: r'C:\Novas\Capital Inicial - Primeiros Erros.mp4',
+            relativePath: 'Capital Inicial - Primeiros Erros.mp4',
           ),
         ],
         warnings: const [],
@@ -1490,5 +1520,119 @@ void main() {
 
     expect(find.textContaining('Invalido'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Codigo invalido'), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('modo de saida da importacao em memoria', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+      outputResponses: [SelectedFolder(path: 'C:/Saida Importacao')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+        fullPath:
+            r'C:\Biblioteca\Capital Inicial - Primeiros Erros - 00002.mp4',
+        relativePath: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Legiao Urbana - Musica Nova.mp4',
+            fullPath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            relativePath: 'Legiao Urbana - Musica Nova.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'Musica Ambigua - Legiao Urbana.mp4',
+            fullPath: r'C:\Novas\Musica Ambigua - Legiao Urbana.mp4',
+            relativePath: 'Musica Ambigua - Legiao Urbana.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'ArquivoSemSeparador.mp4',
+            fullPath: r'C:\Novas\ArquivoSemSeparador.mp4',
+            relativePath: 'ArquivoSemSeparador.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'Capital Inicial - Primeiros Erros.mp4',
+            fullPath: r'C:\Novas\Capital Inicial - Primeiros Erros.mp4',
+            relativePath: 'Capital Inicial - Primeiros Erros.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+        ),
+      ),
+    );
+
+    await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
+    await tapFirstTextContaining(tester, 'Escanear');
+    await tapFirstTextContaining(tester, 'limpeza');
+    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Selecionar todos os prontos');
+
+    expect(find.textContaining('Modo de saida da importacao'), findsWidgets);
+    expect(
+      find.textContaining('Renomear na pasta de musicas novas'),
+      findsWidgets,
+    );
+    expect(
+      find.textContaining('Validar configuracao de saida'),
+      findsAtLeastNWidgets(1),
+    );
+    final modeDropdown = find.byType(DropdownButtonFormField<ImportOutputMode>);
+    await tester.ensureVisible(modeDropdown);
+    await tester.tap(modeDropdown);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Copiar para biblioteca oficial'), findsWidgets);
+    expect(find.textContaining('Mover para biblioteca oficial'), findsWidgets);
+    expect(find.textContaining('Copiar para pasta de saida'), findsWidgets);
+    expect(find.textContaining('Mover para pasta de saida'), findsWidgets);
+    await tester.tap(find.text('Copiar para pasta de saida').last);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Selecionar pasta de saida'), findsWidgets);
+    await tapFirstTextContaining(tester, 'Selecionar pasta de saida');
+    expect(find.textContaining('Pasta de saida selecionada.'), findsWidgets);
+    expect(find.textContaining('C:/Saida Importacao'), findsWidgets);
+
+    final selectionCheckbox = find.byType(Checkbox).first;
+    await tester.ensureVisible(selectionCheckbox);
+    final checkboxBefore = tester.widget<Checkbox>(selectionCheckbox);
+    if (checkboxBefore.value != true) {
+      await tester.tap(selectionCheckbox, warnIfMissed: false);
+      await tester.pumpAndSettle();
+    }
+
+    await tapFirstTextContaining(tester, 'Validar configuracao de saida');
+    expect(
+      find.textContaining('Configuracao de saida validada.'),
+      findsWidgets,
+    );
+    expect(
+      find.textContaining('Configuracao de saida valida.'),
+      findsAtLeastNWidgets(1),
+    );
   });
 }

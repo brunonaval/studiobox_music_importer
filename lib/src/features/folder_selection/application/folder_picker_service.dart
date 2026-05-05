@@ -38,4 +38,21 @@ class FolderPickerService {
 
     return selectedFolder;
   }
+
+  Future<SelectedFolder?> pickImportOutputFolder() async {
+    final selectedPath = await FilePicker.getDirectoryPath(
+      dialogTitle: 'Selecione a pasta de saida da importacao',
+    );
+
+    if (selectedPath == null || selectedPath.trim().isEmpty) {
+      return null;
+    }
+
+    final selectedFolder = SelectedFolder(path: selectedPath);
+    if (selectedFolder.isEmpty) {
+      return null;
+    }
+
+    return selectedFolder;
+  }
 }

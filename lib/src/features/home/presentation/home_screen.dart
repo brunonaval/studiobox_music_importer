@@ -9,6 +9,7 @@ import '../../incoming_songs/domain/incoming_songs.dart';
 import '../../library_repair/application/duplicate_code_repair_executor.dart';
 import '../../library_repair/application/invalid_file_repair_executor.dart';
 import '../../library_repair/domain/library_repair.dart';
+import '../../output_plan/domain/output_plan.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({
@@ -65,6 +66,11 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _importCandidateSelectionMessage;
   ImportCandidateEditPlan? _importCandidateEditPlan;
   String? _importCandidateEditMessage;
+  ImportOutputMode _importOutputMode = ImportOutputMode.renameInIncomingFolder;
+  String? _customImportOutputFolderPath;
+  bool _selectingImportOutputFolder = false;
+  ImportOutputConfigurationValidationResult? _importOutputValidationResult;
+  String? _importOutputMessage;
   bool _showReadyImportCandidates = true;
   bool _showReviewImportCandidates = true;
   bool _showBlockedImportCandidates = true;
@@ -256,6 +262,73 @@ class _HomeScreenState extends State<HomeScreen> {
     _importCandidateSelectionMessage = null;
     _importCandidateEditPlan = null;
     _importCandidateEditMessage = null;
+    _importOutputMode = ImportOutputMode.renameInIncomingFolder;
+    _customImportOutputFolderPath = null;
+    _selectingImportOutputFolder = false;
+    _importOutputValidationResult = null;
+    _importOutputMessage = null;
+  }
+
+  ImportOutputConfiguration _buildImportOutputConfiguration() {
+    return ImportOutputConfiguration(
+      mode: _importOutputMode,
+      incomingSongsFolderPath: _incomingSongsFolderPath,
+      officialLibraryFolderPath: _officialLibraryFolderPath,
+      customOutputFolderPath: _customImportOutputFolderPath,
+    );
+  }
+
+  void _validateImportOutputConfiguration({bool setSuccessMessage = false}) {
+    final selectionPlan = _importCandidateSelectionPlan;
+    final editPlan = _importCandidateEditPlan;
+    if (selectionPlan == null || editPlan == null) {
+      return;
+    }
+
+    final result = ImportOutputConfigurationValidator().validate(
+      configuration: _buildImportOutputConfiguration(),
+      selectionPlan: selectionPlan,
+      editPlan: editPlan,
+    );
+
+    setState(() {
+      _importOutputValidationResult = result;
+      if (setSuccessMessage) {
+        _importOutputMessage = 'Configuracao de saida validada.';
+      }
+    });
+  }
+
+  Future<void> _selectImportOutputFolder() async {
+    if (_selectingImportOutputFolder) {
+      return;
+    }
+
+    setState(() {
+      _selectingImportOutputFolder = true;
+    });
+
+    final selectedFolder = await widget.folderPickerService
+        .pickImportOutputFolder();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (selectedFolder == null) {
+      setState(() {
+        _selectingImportOutputFolder = false;
+        _importOutputMessage = 'Selecao cancelada.';
+      });
+      return;
+    }
+
+    setState(() {
+      _selectingImportOutputFolder = false;
+      _customImportOutputFolderPath = selectedFolder.path;
+      _importOutputMessage = 'Pasta de saida selecionada.';
+    });
+    _validateImportOutputConfiguration();
   }
 
   void _selectAllReadyCandidates() {
@@ -269,6 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _importCandidateSelectionMessage =
           'Selecionados todos os candidatos prontos.';
     });
+    _validateImportOutputConfiguration();
   }
 
   void _clearSelectedCandidates() {
@@ -281,6 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _importCandidateSelectionPlan = plan.clearSelection();
       _importCandidateSelectionMessage = 'Selecao de candidatos limpa.';
     });
+    _validateImportOutputConfiguration();
   }
 
   void _updateCandidateArtist({required String id, required String value}) {
@@ -290,6 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
         artist: value,
       );
     });
+    _validateImportOutputConfiguration();
   }
 
   void _updateCandidateTitle({required String id, required String value}) {
@@ -299,6 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: value,
       );
     });
+    _validateImportOutputConfiguration();
   }
 
   void _updateCandidateCode({required String id, required String value}) {
@@ -308,6 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
         code: value,
       );
     });
+    _validateImportOutputConfiguration();
   }
 
   void _generateImportSuggestions() {
@@ -356,6 +434,17 @@ class _HomeScreenState extends State<HomeScreen> {
       baseIndex: baseIndex,
       selectionPlan: selectionPlan,
     );
+    final initialOutputValidation = ImportOutputConfigurationValidator()
+        .validate(
+          configuration: ImportOutputConfiguration(
+            mode: ImportOutputMode.renameInIncomingFolder,
+            incomingSongsFolderPath: _incomingSongsFolderPath,
+            officialLibraryFolderPath: _officialLibraryFolderPath,
+            customOutputFolderPath: null,
+          ),
+          selectionPlan: selectionPlan,
+          editPlan: editPlan,
+        );
 
     setState(() {
       _resetImportSelection();
@@ -365,6 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'Selecao inicial dos candidatos preparada.';
       _importCandidateEditPlan = editPlan;
       _importCandidateEditMessage = 'Edicao manual dos candidatos preparada.';
+      _importOutputValidationResult = initialOutputValidation;
       _showImportSuggestionPlan = true;
       _importSuggestionMessage = 'SugestÃµes de importaÃ§Ã£o geradas.';
       _showReadyImportCandidates = true;
@@ -868,6 +958,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     value ?? false,
                                                   );
                                         });
+                                        _validateImportOutputConfiguration();
                                       }
                                     : null,
                                 title: Text(
@@ -1052,6 +1143,110 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 8),
                             ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (_importCandidateSelectionPlan != null &&
+                      _importCandidateEditPlan != null) ...[
+                    const SizedBox(height: 16),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Modo de saida da importacao',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<ImportOutputMode>(
+                              initialValue: _importOutputMode,
+                              decoration: const InputDecoration(
+                                labelText: 'Modo de saida',
+                              ),
+                              items: ImportOutputMode.values
+                                  .map(
+                                    (mode) => DropdownMenuItem(
+                                      value: mode,
+                                      child: Text(mode.label),
+                                    ),
+                                  )
+                                  .toList(growable: false),
+                              onChanged: (value) {
+                                if (value == null) {
+                                  return;
+                                }
+                                setState(() {
+                                  _importOutputMode = value;
+                                });
+                                _validateImportOutputConfiguration();
+                              },
+                            ),
+                            if (_importOutputMode.targetsCustomFolder) ...[
+                              const SizedBox(height: 8),
+                              FilledButton.tonal(
+                                onPressed: _selectingImportOutputFolder
+                                    ? null
+                                    : _selectImportOutputFolder,
+                                child: Text(
+                                  _selectingImportOutputFolder
+                                      ? 'Selecionando...'
+                                      : 'Selecionar pasta de saida',
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Text(
+                              'Pasta de musicas novas: ${_incomingSongsFolderPath ?? '-'}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Biblioteca oficial: ${_officialLibraryFolderPath ?? '-'}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Pasta de saida: ${_customImportOutputFolderPath ?? '-'}',
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              (_importOutputValidationResult?.isValid ?? false)
+                                  ? 'Configuracao de saida valida.'
+                                  : 'Configuracao de saida invalida.',
+                            ),
+                            if (_importOutputValidationResult?.hasErrors ??
+                                false) ...[
+                              const SizedBox(height: 8),
+                              const Text('Erros:'),
+                              for (final error
+                                  in _importOutputValidationResult!.errors)
+                                Text('- $error'),
+                            ],
+                            if (_importOutputValidationResult?.hasWarnings ??
+                                false) ...[
+                              const SizedBox(height: 8),
+                              const Text('Avisos:'),
+                              for (final warning
+                                  in _importOutputValidationResult!.warnings)
+                                Text('- $warning'),
+                            ],
+                            if (_importOutputMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Text(_importOutputMessage!),
+                            ],
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              onPressed: () {
+                                _validateImportOutputConfiguration(
+                                  setSuccessMessage: true,
+                                );
+                              },
+                              child: const Text(
+                                'Validar configuracao de saida',
+                              ),
+                            ),
                           ],
                         ),
                       ),

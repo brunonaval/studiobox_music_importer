@@ -239,6 +239,16 @@ O codigo e validado contra os codigos usados na biblioteca e contra duplicidade 
 
 Nesta fase nada e importado ou renomeado.
 
+## Modo de saida da importacao
+
+O app permite escolher como os candidatos selecionados serao tratados futuramente.
+
+Opcoes: renomear na origem, copiar/mover para biblioteca oficial, copiar/mover para pasta de saida.
+
+Nesta fase nada e copiado, movido ou renomeado.
+
+A operacao real sera adicionada em rodada futura.
+
 ## Sugestoes de importacao de musicas novas
 
 Apos a pre-limpeza, o app gera sugestoes de importacao para os arquivos novos.
