@@ -61,6 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
   ImportSuggestionPlan? _importSuggestionPlan;
   bool _showImportSuggestionPlan = false;
   String? _importSuggestionMessage;
+  ImportCandidateSelectionPlan? _importCandidateSelectionPlan;
+  String? _importCandidateSelectionMessage;
   bool _showReadyImportCandidates = true;
   bool _showReviewImportCandidates = true;
   bool _showBlockedImportCandidates = true;
@@ -146,6 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _importSuggestionPlan = null;
       _showImportSuggestionPlan = false;
       _importSuggestionMessage = null;
+      _resetImportSelection();
     });
   }
 
@@ -158,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _incomingSongsFolderPath!.trim().isEmpty) {
       setState(() {
         _incomingSongsScanMessage =
-            'Selecione a pasta de músicas novas antes de escanear.';
+            'Selecione a pasta de mÃºsicas novas antes de escanear.';
       });
       return;
     }
@@ -179,13 +182,14 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _scanningIncomingSongsFolder = false;
       _incomingSongsScanResult = result;
-      _incomingSongsScanMessage = 'Pasta de músicas novas escaneada.';
+      _incomingSongsScanMessage = 'Pasta de mÃºsicas novas escaneada.';
       _incomingSongCleaningPreviewPlan = null;
       _showIncomingSongCleaningPreview = false;
       _incomingSongCleaningMessage = null;
       _importSuggestionPlan = null;
       _showImportSuggestionPlan = false;
       _importSuggestionMessage = null;
+      _resetImportSelection();
     });
   }
 
@@ -194,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (scanResult == null || scanResult.totalCount == 0) {
       setState(() {
         _incomingSongCleaningMessage =
-            'Escaneie a pasta de músicas novas antes da pré-limpeza.';
+            'Escaneie a pasta de mÃºsicas novas antes da prÃ©-limpeza.';
       });
       return;
     }
@@ -207,10 +211,11 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _incomingSongCleaningPreviewPlan = plan;
       _showIncomingSongCleaningPreview = true;
-      _incomingSongCleaningMessage = 'Pré-limpeza de nomes gerada.';
+      _incomingSongCleaningMessage = 'PrÃ©-limpeza de nomes gerada.';
       _importSuggestionPlan = null;
       _showImportSuggestionPlan = false;
       _importSuggestionMessage = null;
+      _resetImportSelection();
     });
   }
 
@@ -238,12 +243,45 @@ class _HomeScreenState extends State<HomeScreen> {
           .where((c) => c.hasDuplicate)
           .toList();
 
+  List<ImportCandidateSelectionItem> _selectionItemsForDisplay() =>
+      (_importCandidateSelectionPlan?.items ?? []).take(100).toList();
+
+  void _resetImportSelection() {
+    _importCandidateSelectionPlan = null;
+    _importCandidateSelectionMessage = null;
+  }
+
+  void _selectAllReadyCandidates() {
+    final plan = _importCandidateSelectionPlan;
+    if (plan == null) {
+      return;
+    }
+
+    setState(() {
+      _importCandidateSelectionPlan = plan.selectAllReady();
+      _importCandidateSelectionMessage =
+          'Selecionados todos os candidatos prontos.';
+    });
+  }
+
+  void _clearSelectedCandidates() {
+    final plan = _importCandidateSelectionPlan;
+    if (plan == null) {
+      return;
+    }
+
+    setState(() {
+      _importCandidateSelectionPlan = plan.clearSelection();
+      _importCandidateSelectionMessage = 'Selecao de candidatos limpa.';
+    });
+  }
+
   void _generateImportSuggestions() {
     final baseIndex = _officialLibraryIndexResult;
     if (baseIndex == null) {
       setState(() {
         _importSuggestionMessage =
-            'Indexe a biblioteca oficial antes de gerar sugestões.';
+            'Indexe a biblioteca oficial antes de gerar sugestÃµes.';
       });
       return;
     }
@@ -259,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       setState(() {
         _importSuggestionMessage =
-            'Escaneie a pasta de músicas novas antes de gerar sugestões.';
+            'Escaneie a pasta de mÃºsicas novas antes de gerar sugestÃµes.';
       });
       return;
     }
@@ -267,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (fileNames.isEmpty) {
       setState(() {
         _importSuggestionMessage =
-            'Nenhum arquivo novo para sugerir importação.';
+            'Nenhum arquivo novo para sugerir importaÃ§Ã£o.';
       });
       return;
     }
@@ -277,11 +315,18 @@ class _HomeScreenState extends State<HomeScreen> {
       baseIndex: baseIndex,
       codeStrategy: SongCodeAllocationStrategy.fillGapsFirst,
     );
+    final selectionPlan = ImportCandidateSelectionPlanner().buildInitialPlan(
+      plan,
+    );
 
     setState(() {
+      _resetImportSelection();
       _importSuggestionPlan = plan;
+      _importCandidateSelectionPlan = selectionPlan;
+      _importCandidateSelectionMessage =
+          'Selecao inicial dos candidatos preparada.';
       _showImportSuggestionPlan = true;
-      _importSuggestionMessage = 'Sugestões de importação geradas.';
+      _importSuggestionMessage = 'SugestÃµes de importaÃ§Ã£o geradas.';
       _showReadyImportCandidates = true;
       _showReviewImportCandidates = true;
       _showBlockedImportCandidates = true;
@@ -377,6 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _importSuggestionPlan = null;
       _showImportSuggestionPlan = false;
       _importSuggestionMessage = null;
+      _resetImportSelection();
     });
   }
 
@@ -698,6 +744,126 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Indexe sua biblioteca oficial, analise novos arquivos .mp4, gere codigos seguros e revise tudo antes de renomear.',
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
+                  if (_importCandidateSelectionPlan != null) ...[
+                    const SizedBox(height: 16),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Selecao dos candidatos de importacao',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Total de candidatos: ${_importCandidateSelectionPlan!.totalCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Selecionados: ${_importCandidateSelectionPlan!.selectedCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Não selecionados: ${_importCandidateSelectionPlan!.notSelectedCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Bloqueados: ${_importCandidateSelectionPlan!.blockedCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Selecionáveis: ${_importCandidateSelectionPlan!.selectableCount}',
+                            ),
+                            if (_importCandidateSelectionPlan!.hasWarnings) ...[
+                              const SizedBox(height: 8),
+                              const Text('Avisos do plano:'),
+                              const SizedBox(height: 4),
+                              for (final warning
+                                  in _importCandidateSelectionPlan!
+                                      .warnings) ...[
+                                Text('- $warning'),
+                                const SizedBox(height: 2),
+                              ],
+                            ],
+                            if (_importCandidateSelectionMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Text(_importCandidateSelectionMessage!),
+                            ],
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: _selectAllReadyCandidates,
+                                  child: const Text(
+                                    'Selecionar todos os prontos',
+                                  ),
+                                ),
+                                OutlinedButton(
+                                  onPressed: _clearSelectedCandidates,
+                                  child: const Text('Limpar selecao'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            if (_importCandidateSelectionPlan!.totalCount > 100)
+                              Text(
+                                'Exibindo os primeiros 100 de ${_importCandidateSelectionPlan!.totalCount} candidatos para selecao.',
+                              ),
+                            const SizedBox(height: 8),
+                            for (final item in _selectionItemsForDisplay()) ...[
+                              CheckboxListTile(
+                                contentPadding: EdgeInsets.zero,
+                                value: item.isSelected,
+                                onChanged: item.selectable
+                                    ? (value) {
+                                        setState(() {
+                                          _importCandidateSelectionPlan =
+                                              _importCandidateSelectionPlan
+                                                  ?.withCandidateSelection(
+                                                    item.id,
+                                                    value ?? false,
+                                                  );
+                                        });
+                                      }
+                                    : null,
+                                title: Text(
+                                  'Selecao: ${item.selectionStatus.label}',
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Status do candidato: ${item.candidate.status.label}',
+                                    ),
+                                    Text(
+                                      'Arquivo: ${item.candidate.originalFileName}',
+                                    ),
+                                    Text(
+                                      'Nome oficial sugerido: ${item.candidate.suggestedOfficialFileName ?? '-'}',
+                                    ),
+                                    Text(
+                                      'Codigo sugerido: ${item.candidate.suggestedCode ?? '-'}',
+                                    ),
+                                    if (item.hasWarnings) ...[
+                                      const SizedBox(height: 4),
+                                      const Text('Avisos:'),
+                                      for (final warning in item.warnings)
+                                        Text('- $warning'),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 28),
                   Wrap(
                     spacing: 16,
@@ -1687,7 +1853,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Text(
                                 _scanningIncomingSongsFolder
                                     ? 'Escaneando...'
-                                    : 'Escanear músicas novas',
+                                    : 'Escanear mÃºsicas novas',
                               ),
                             ),
                           ],
@@ -1698,7 +1864,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (_incomingSongsScanResult != null) ...[
                             const SizedBox(height: 12),
                             Text(
-                              'Músicas novas encontradas: ${_incomingSongsScanResult!.totalCount}',
+                              'MÃºsicas novas encontradas: ${_incomingSongsScanResult!.totalCount}',
                             ),
                             if (_incomingSongsScanResult!.hasWarnings) ...[
                               const SizedBox(height: 8),
@@ -1713,7 +1879,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (_incomingSongsScanResult!.totalCount == 0) ...[
                               const SizedBox(height: 8),
                               const Text(
-                                'Nenhum .mp4 encontrado na pasta de músicas novas.',
+                                'Nenhum .mp4 encontrado na pasta de mÃºsicas novas.',
                               ),
                             ] else ...[
                               const SizedBox(height: 12),
@@ -1737,7 +1903,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               FilledButton.tonal(
                                 onPressed: _generateIncomingSongCleaningPreview,
                                 child: const Text(
-                                  'Gerar pré-limpeza dos nomes',
+                                  'Gerar prÃ©-limpeza dos nomes',
                                 ),
                               ),
                             ],
@@ -1757,8 +1923,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                               child: Text(
                                 _showIncomingSongCleaningPreview
-                                    ? 'Ocultar pré-limpeza'
-                                    : 'Mostrar pré-limpeza',
+                                    ? 'Ocultar prÃ©-limpeza'
+                                    : 'Mostrar prÃ©-limpeza',
                               ),
                             ),
                           ],
@@ -1766,7 +1932,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               _showIncomingSongCleaningPreview) ...[
                             const SizedBox(height: 12),
                             Text(
-                              'Pré-limpeza dos nomes',
+                              'PrÃ©-limpeza dos nomes',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 8),
@@ -1779,7 +1945,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Nomes sem alteração: ${_incomingSongCleaningPreviewPlan!.unchangedCount}',
+                              'Nomes sem alteraÃ§Ã£o: ${_incomingSongCleaningPreviewPlan!.unchangedCount}',
                             ),
                             if (_incomingSongCleaningPreviewPlan!
                                 .hasWarnings) ...[
@@ -1797,7 +1963,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (_incomingSongCleaningPreviewPlan!.totalCount >
                                 50)
                               Text(
-                                'Exibindo os primeiros 50 de ${_incomingSongCleaningPreviewPlan!.totalCount} itens da pré-limpeza.',
+                                'Exibindo os primeiros 50 de ${_incomingSongCleaningPreviewPlan!.totalCount} itens da prÃ©-limpeza.',
                               ),
                             const SizedBox(height: 4),
                             for (final item
@@ -1833,7 +1999,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             FilledButton.tonal(
                               onPressed: _generateImportSuggestions,
                               child: const Text(
-                                'Gerar sugestões de importação',
+                                'Gerar sugestÃµes de importaÃ§Ã£o',
                               ),
                             ),
                           ],
@@ -1852,8 +2018,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                               child: Text(
                                 _showImportSuggestionPlan
-                                    ? 'Ocultar sugestões de importação'
-                                    : 'Mostrar sugestões de importação',
+                                    ? 'Ocultar sugestÃµes de importaÃ§Ã£o'
+                                    : 'Mostrar sugestÃµes de importaÃ§Ã£o',
                               ),
                             ),
                           ],
@@ -1861,7 +2027,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               _showImportSuggestionPlan) ...[
                             const SizedBox(height: 12),
                             Text(
-                              'Sugestões de importação',
+                              'SugestÃµes de importaÃ§Ã£o',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 8),
@@ -1870,7 +2036,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text('Prontos: ${_readyImportCandidates().length}'),
                             const SizedBox(height: 4),
                             Text(
-                              'Revisão necessária: ${_importSuggestionPlan!.needsReviewCount}',
+                              'RevisÃ£o necessÃ¡ria: ${_importSuggestionPlan!.needsReviewCount}',
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -1878,7 +2044,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Possíveis duplicados: ${_duplicateImportCandidates().length}',
+                              'PossÃ­veis duplicados: ${_duplicateImportCandidates().length}',
                             ),
                             if (_importSuggestionPlan!.hasWarnings) ...[
                               const SizedBox(height: 8),
@@ -1892,7 +2058,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                             const SizedBox(height: 16),
                             Text(
-                              'Revisão dos candidatos',
+                              'RevisÃ£o dos candidatos',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             // --- prontos ---
@@ -1953,13 +2119,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     null) ...[
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Música: ${candidate.analysis.detectedTitle}',
+                                    'MÃºsica: ${candidate.analysis.detectedTitle}',
                                   ),
                                 ],
                                 if (candidate.hasSuggestedCode) ...[
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Código sugerido: ${candidate.suggestedCode}',
+                                    'CÃ³digo sugerido: ${candidate.suggestedCode}',
                                   ),
                                 ],
                                 if (candidate.suggestedOfficialFileName !=
@@ -1972,13 +2138,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 10),
                               ],
                             ],
-                            // --- revisão ---
+                            // --- revisÃ£o ---
                             const SizedBox(height: 12),
                             Row(
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Precisam de revisão: ${_reviewImportCandidates().length}',
+                                    'Precisam de revisÃ£o: ${_reviewImportCandidates().length}',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.titleSmall,
@@ -1993,8 +2159,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   },
                                   child: Text(
                                     _showReviewImportCandidates
-                                        ? 'Ocultar revisão'
-                                        : 'Mostrar revisão',
+                                        ? 'Ocultar revisÃ£o'
+                                        : 'Mostrar revisÃ£o',
                                   ),
                                 ),
                               ],
@@ -2002,14 +2168,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (_showReviewImportCandidates) ...[
                               const SizedBox(height: 8),
                               if (_reviewImportCandidates().isEmpty)
-                                const Text('Nenhum candidato para revisão.'),
+                                const Text('Nenhum candidato para revisÃ£o.'),
                               if (_reviewImportCandidates().length > 50)
                                 Text(
                                   'Exibindo os primeiros 50 de ${_reviewImportCandidates().length} candidatos.',
                                 ),
                               for (final candidate
                                   in _reviewImportCandidates().take(50)) ...[
-                                const Text('Revisão necessária'),
+                                const Text('RevisÃ£o necessÃ¡ria'),
                                 const SizedBox(height: 2),
                                 const Text('Arquivo:'),
                                 Text(candidate.originalFileName),
@@ -2030,12 +2196,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     null) ...[
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Música detectada: ${candidate.analysis.detectedTitle}',
+                                    'MÃºsica detectada: ${candidate.analysis.detectedTitle}',
                                   ),
                                 ],
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Confiança: ${candidate.analysis.confidence.label}',
+                                  'ConfianÃ§a: ${candidate.analysis.confidence.label}',
                                 ),
                                 if (candidate.suggestedOfficialFileName !=
                                     null) ...[
@@ -2115,7 +2281,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Possíveis duplicados: ${_duplicateImportCandidates().length}',
+                                    'PossÃ­veis duplicados: ${_duplicateImportCandidates().length}',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.titleSmall,
@@ -2140,15 +2306,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 8),
                               if (_duplicateImportCandidates().isEmpty)
                                 const Text(
-                                  'Nenhum possível duplicado encontrado.',
+                                  'Nenhum possÃ­vel duplicado encontrado.',
                                 ),
                               if (_duplicateImportCandidates().length > 50)
                                 Text(
-                                  'Exibindo os primeiros 50 de ${_duplicateImportCandidates().length} possíveis duplicados.',
+                                  'Exibindo os primeiros 50 de ${_duplicateImportCandidates().length} possÃ­veis duplicados.',
                                 ),
                               for (final candidate
                                   in _duplicateImportCandidates().take(50)) ...[
-                                const Text('Possível duplicado'),
+                                const Text('PossÃ­vel duplicado'),
                                 const SizedBox(height: 2),
                                 const Text('Arquivo:'),
                                 Text(candidate.originalFileName),
@@ -2211,11 +2377,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 27 - Revisao visual dos candidatos de importacao',
+                            'Round 28 - Selecao/aprovacao em memoria dos candidatos de importacao',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Candidatos separados por prontos, revisao, bloqueados e duplicados.',
+                            'Estado: Selecao inicial com marcacao individual, selecionar prontos e limpar selecao.',
                           ),
                         ],
                       ),

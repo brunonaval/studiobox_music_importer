@@ -217,6 +217,18 @@ Cada grupo exibe contador, botao de mostrar/ocultar e lista limitada a 50 itens.
 
 Edicao manual e aprovacao individual virao em rodada futura.
 
+## Selecao dos candidatos de importacao
+
+Apos gerar as sugestoes, o app monta uma selecao inicial em memoria para os candidatos.
+
+Candidatos prontos ficam selecionados por padrao.
+
+Itens em revisao e possiveis duplicados ficam fora da selecao por padrao.
+
+Candidatos bloqueados nao podem ser selecionados.
+
+Nesta fase nada e importado, renomeado ou alterado em disco.
+
 ## Sugestoes de importacao de musicas novas
 
 Apos a pre-limpeza, o app gera sugestoes de importacao para os arquivos novos.
