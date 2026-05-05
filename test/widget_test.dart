@@ -1404,4 +1404,91 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('edicao manual dos candidatos em memoria', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+        fullPath:
+            r'C:\Biblioteca\Capital Inicial - Primeiros Erros - 00002.mp4',
+        relativePath: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Karaoke - Pais e Filhos - Legiao Urbana.mp4',
+            fullPath: r'C:\Novas\Karaoke - Pais e Filhos - Legiao Urbana.mp4',
+            relativePath: 'Karaoke - Pais e Filhos - Legiao Urbana.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+        ),
+      ),
+    );
+
+    await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
+    await tapFirstTextContaining(tester, 'Escanear');
+    await tapFirstTextContaining(tester, 'limpeza');
+    await tapFirstTextContaining(tester, 'sugest');
+
+    expect(find.textContaining('Edicao manual'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('Total de candidatos:'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('Editaveis:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Validos:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Invalidos:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Nome oficial atual:'), findsAtLeastNWidgets(1));
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('import-edit-artist-0')),
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('import-edit-artist-0')),
+      'Novo Artista',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Novo Artista -'), findsAtLeastNWidgets(1));
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('import-edit-code-0')),
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('import-edit-code-0')),
+      '12A45',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Invalido'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Codigo invalido'), findsAtLeastNWidgets(1));
+  });
 }

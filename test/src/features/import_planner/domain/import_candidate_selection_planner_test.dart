@@ -282,7 +282,7 @@ void main() {
 
   test('labels do enum retornam textos esperados', () {
     expect(ImportCandidateSelectionStatus.selected.label, 'Selecionado');
-    expect(ImportCandidateSelectionStatus.notSelected.label, 'Não selecionado');
+    expect(ImportCandidateSelectionStatus.notSelected.label, 'Nao selecionado');
     expect(ImportCandidateSelectionStatus.blocked.label, 'Bloqueado');
   });
 

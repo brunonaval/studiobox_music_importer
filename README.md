@@ -229,6 +229,16 @@ Candidatos bloqueados nao podem ser selecionados.
 
 Nesta fase nada e importado, renomeado ou alterado em disco.
 
+## Edicao manual dos candidatos
+
+Apos gerar a selecao, o app permite ajustar artista, musica e codigo em memoria.
+
+O nome oficial atual e recalculado automaticamente no padrao oficial.
+
+O codigo e validado contra os codigos usados na biblioteca e contra duplicidade entre candidatos editaveis.
+
+Nesta fase nada e importado ou renomeado.
+
 ## Sugestoes de importacao de musicas novas
 
 Apos a pre-limpeza, o app gera sugestoes de importacao para os arquivos novos.

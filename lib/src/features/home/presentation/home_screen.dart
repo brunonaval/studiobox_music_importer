@@ -63,6 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _importSuggestionMessage;
   ImportCandidateSelectionPlan? _importCandidateSelectionPlan;
   String? _importCandidateSelectionMessage;
+  ImportCandidateEditPlan? _importCandidateEditPlan;
+  String? _importCandidateEditMessage;
   bool _showReadyImportCandidates = true;
   bool _showReviewImportCandidates = true;
   bool _showBlockedImportCandidates = true;
@@ -246,9 +248,14 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ImportCandidateSelectionItem> _selectionItemsForDisplay() =>
       (_importCandidateSelectionPlan?.items ?? []).take(100).toList();
 
+  List<ImportCandidateEditItem> _editItemsForDisplay() =>
+      (_importCandidateEditPlan?.items ?? []).take(50).toList();
+
   void _resetImportSelection() {
     _importCandidateSelectionPlan = null;
     _importCandidateSelectionMessage = null;
+    _importCandidateEditPlan = null;
+    _importCandidateEditMessage = null;
   }
 
   void _selectAllReadyCandidates() {
@@ -273,6 +280,33 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _importCandidateSelectionPlan = plan.clearSelection();
       _importCandidateSelectionMessage = 'Selecao de candidatos limpa.';
+    });
+  }
+
+  void _updateCandidateArtist({required String id, required String value}) {
+    setState(() {
+      _importCandidateEditPlan = _importCandidateEditPlan?.withManualEdit(
+        id: id,
+        artist: value,
+      );
+    });
+  }
+
+  void _updateCandidateTitle({required String id, required String value}) {
+    setState(() {
+      _importCandidateEditPlan = _importCandidateEditPlan?.withManualEdit(
+        id: id,
+        title: value,
+      );
+    });
+  }
+
+  void _updateCandidateCode({required String id, required String value}) {
+    setState(() {
+      _importCandidateEditPlan = _importCandidateEditPlan?.withManualEdit(
+        id: id,
+        code: value,
+      );
     });
   }
 
@@ -318,6 +352,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final selectionPlan = ImportCandidateSelectionPlanner().buildInitialPlan(
       plan,
     );
+    final editPlan = ImportCandidateEditPlanner().buildInitialPlan(
+      baseIndex: baseIndex,
+      selectionPlan: selectionPlan,
+    );
 
     setState(() {
       _resetImportSelection();
@@ -325,6 +363,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _importCandidateSelectionPlan = selectionPlan;
       _importCandidateSelectionMessage =
           'Selecao inicial dos candidatos preparada.';
+      _importCandidateEditPlan = editPlan;
+      _importCandidateEditMessage = 'Edicao manual dos candidatos preparada.';
       _showImportSuggestionPlan = true;
       _importSuggestionMessage = 'SugestÃµes de importaÃ§Ã£o geradas.';
       _showReadyImportCandidates = true;
@@ -856,6 +896,159 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ],
                                 ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (_importCandidateEditPlan != null) ...[
+                    const SizedBox(height: 16),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Edicao manual dos candidatos',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Total de candidatos: ${_importCandidateEditPlan!.totalCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Editaveis: ${_importCandidateEditPlan!.editableCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Validos: ${_importCandidateEditPlan!.validCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Invalidos: ${_importCandidateEditPlan!.invalidCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Bloqueados: ${_importCandidateEditPlan!.blockedCount}',
+                            ),
+                            if (_importCandidateEditPlan!.hasWarnings) ...[
+                              const SizedBox(height: 8),
+                              const Text('Avisos do plano:'),
+                              const SizedBox(height: 4),
+                              for (final warning
+                                  in _importCandidateEditPlan!.warnings) ...[
+                                Text('- $warning'),
+                                const SizedBox(height: 2),
+                              ],
+                            ],
+                            if (_importCandidateEditMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Text(_importCandidateEditMessage!),
+                            ],
+                            const SizedBox(height: 8),
+                            if (_importCandidateEditPlan!.totalCount > 50)
+                              Text(
+                                'Exibindo os primeiros 50 de ${_importCandidateEditPlan!.totalCount} candidatos para edicao.',
+                              ),
+                            const SizedBox(height: 8),
+                            for (
+                              var i = 0;
+                              i < _editItemsForDisplay().length;
+                              i++
+                            ) ...[
+                              Builder(
+                                builder: (context) {
+                                  final item = _editItemsForDisplay()[i];
+                                  return Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Status da edicao: ${item.editStatus.label}',
+                                          ),
+                                          Text(
+                                            'Status da selecao: ${item.selectionItem.selectionStatus.label}',
+                                          ),
+                                          Text(
+                                            'Arquivo/original: ${item.selectionItem.candidate.originalFileName}',
+                                          ),
+                                          Text(
+                                            'Nome oficial atual: ${item.officialFileName.isEmpty ? '-' : item.officialFileName}',
+                                          ),
+                                          if (item.editable) ...[
+                                            const SizedBox(height: 8),
+                                            TextFormField(
+                                              key: ValueKey(
+                                                'import-edit-artist-$i',
+                                              ),
+                                              initialValue: item.artist,
+                                              onChanged: (value) {
+                                                _updateCandidateArtist(
+                                                  id: item.id,
+                                                  value: value,
+                                                );
+                                              },
+                                              decoration: const InputDecoration(
+                                                labelText: 'Artista',
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            TextFormField(
+                                              key: ValueKey(
+                                                'import-edit-title-$i',
+                                              ),
+                                              initialValue: item.title,
+                                              onChanged: (value) {
+                                                _updateCandidateTitle(
+                                                  id: item.id,
+                                                  value: value,
+                                                );
+                                              },
+                                              decoration: const InputDecoration(
+                                                labelText: 'Musica',
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            TextFormField(
+                                              key: ValueKey(
+                                                'import-edit-code-$i',
+                                              ),
+                                              initialValue: item.code,
+                                              onChanged: (value) {
+                                                _updateCandidateCode(
+                                                  id: item.id,
+                                                  value: value,
+                                                );
+                                              },
+                                              decoration: const InputDecoration(
+                                                labelText: 'Codigo',
+                                              ),
+                                            ),
+                                          ] else ...[
+                                            const SizedBox(height: 8),
+                                            const Text(
+                                              'Candidato bloqueado nao pode ser editado nesta etapa.',
+                                            ),
+                                          ],
+                                          if (item.hasWarnings) ...[
+                                            const SizedBox(height: 8),
+                                            const Text('Avisos:'),
+                                            for (final warning in item.warnings)
+                                              Text('- $warning'),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                               const SizedBox(height: 8),
                             ],

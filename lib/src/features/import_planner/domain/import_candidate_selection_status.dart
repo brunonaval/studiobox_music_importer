@@ -8,7 +8,7 @@ enum ImportCandidateSelectionStatus {
       case ImportCandidateSelectionStatus.selected:
         return 'Selecionado';
       case ImportCandidateSelectionStatus.notSelected:
-        return 'Não selecionado';
+        return 'Nao selecionado';
       case ImportCandidateSelectionStatus.blocked:
         return 'Bloqueado';
     }
