@@ -8,6 +8,7 @@ import 'package:studiobox_music_importer/src/features/folder_selection/applicati
 import 'package:studiobox_music_importer/src/features/folder_selection/domain/selected_folder.dart';
 import 'package:studiobox_music_importer/src/features/home/presentation/home_screen.dart';
 import 'package:studiobox_music_importer/src/features/library_repair/application/duplicate_code_repair_executor.dart';
+import 'package:studiobox_music_importer/src/features/library_repair/application/invalid_file_repair_executor.dart';
 import 'package:studiobox_music_importer/src/features/library_repair/domain/library_repair.dart';
 
 class _FakeFolderPickerService extends FolderPickerService {
@@ -35,6 +36,21 @@ class _FakeOfficialLibraryScanService extends OfficialLibraryScanService {
 
   @override
   Future<BaseLibraryIndexResult> scanFolder(String folderPath) async => result;
+}
+
+class _FakeInvalidFileRepairExecutor extends InvalidFileRepairExecutor {
+  _FakeInvalidFileRepairExecutor(this.result);
+
+  final InvalidFileRepairExecutionResult result;
+  int callCount = 0;
+
+  @override
+  Future<InvalidFileRepairExecutionResult> execute(
+    InvalidFileRepairExecutionPlan executionPlan,
+  ) async {
+    callCount++;
+    return result;
+  }
 }
 
 class _FakeDuplicateCodeRepairExecutor extends DuplicateCodeRepairExecutor {
@@ -714,4 +730,244 @@ void main() {
     expect(executeButton.onPressed, isNull);
     expect(fakeExecutor.callCount, 0);
   });
+
+  testWidgets('executa reparo de invalidos e exibe resultado', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService([
+      SelectedFolder(path: 'C:/Biblioteca Oficial'),
+    ]);
+    final fakeResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legião Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Musicas\Legião Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legião Urbana - Tempo Perdido - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+        fullPath: r'C:\Musicas\Capital Inicial - Primeiros Erros - 00002.mp4',
+        relativePath: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Legião Urbana - Pais e Filhos.mp4',
+        fullPath: r'C:\Musicas\Legião Urbana - Pais e Filhos.mp4',
+        relativePath: 'Legião Urbana - Pais e Filhos.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Pais e Filhos - Legião Urbana.mp4',
+        fullPath: r'C:\Musicas\Pais e Filhos - Legião Urbana.mp4',
+        relativePath: 'Pais e Filhos - Legião Urbana.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'ArquivoSemSeparador.mp4',
+        fullPath: r'C:\Musicas\ArquivoSemSeparador.mp4',
+        relativePath: 'ArquivoSemSeparador.mp4',
+      ),
+    ]);
+    final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
+    final fakeDuplicateExecutor = _FakeDuplicateCodeRepairExecutor(
+      const DuplicateCodeRepairExecutionResult(items: [], warnings: []),
+    );
+    final fakeInvalidExecutor = _FakeInvalidFileRepairExecutor(
+      InvalidFileRepairExecutionResult(
+        items: [
+          InvalidFileRepairExecutionResultItem(
+            originalFileName: 'Legião Urbana - Pais e Filhos.mp4',
+            originalReason: 'Fora do padrão',
+            detectedArtist: 'Legião Urbana',
+            detectedTitle: 'Pais e Filhos',
+            suggestedCode: '00003',
+            sourcePath: r'C:\Musicas\Legião Urbana - Pais e Filhos.mp4',
+            destinationPath:
+                r'C:\Musicas\Legião Urbana - Pais e Filhos - 00003.mp4',
+            suggestedFileName: 'Legião Urbana - Pais e Filhos - 00003.mp4',
+            status: InvalidFileRepairExecutionResultItemStatus.renamed,
+            messages: const ['Arquivo renomeado com sucesso.'],
+          ),
+          InvalidFileRepairExecutionResultItem(
+            originalFileName: 'Pais e Filhos - Legião Urbana.mp4',
+            originalReason: 'Fora do padrão',
+            detectedArtist: 'Legião Urbana',
+            detectedTitle: 'Pais e Filhos',
+            suggestedCode: null,
+            sourcePath: r'C:\Musicas\Pais e Filhos - Legião Urbana.mp4',
+            destinationPath: null,
+            suggestedFileName: null,
+            status: InvalidFileRepairExecutionResultItemStatus.skipped,
+            messages: const ['Item ignorado porque precisa de revisão manual.'],
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeScanService,
+          duplicateCodeRepairExecutor: fakeDuplicateExecutor,
+          invalidFileRepairExecutor: fakeInvalidExecutor,
+        ),
+      ),
+    );
+
+    await tester.ensureVisible(find.text('Selecionar biblioteca oficial'));
+    await tester.tap(find.text('Selecionar biblioteca oficial'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Indexar biblioteca oficial'));
+    await tester.tap(find.text('Indexar biblioteca oficial'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Gerar plano de reparo de invalidos'));
+    await tester.tap(find.text('Gerar plano de reparo de invalidos'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Validar execucao dos invalidos'));
+    await tester.tap(find.text('Validar execucao dos invalidos'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Confirmacao obrigatoria para renomear arquivos invalidos reais',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Pasta que sera alterada:'), findsOneWidget);
+    expect(find.text('C:/Biblioteca Oficial'), findsWidgets);
+    expect(
+      find.textContaining('Arquivos invalidos prontos para renomear:'),
+      findsOneWidget,
+    );
+
+    final executeButtonFinder = find.widgetWithText(
+      FilledButton,
+      'Renomear arquivos invalidos reais nesta pasta',
+    );
+    expect(tester.widget<FilledButton>(executeButtonFinder).onPressed, isNull);
+
+    final checkboxFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is CheckboxListTile &&
+          (widget.title as Text).data!.contains('dry-run dos invalidos'),
+    );
+    await tester.ensureVisible(checkboxFinder);
+    await tester.tap(checkboxFinder, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<FilledButton>(executeButtonFinder).onPressed, isNull);
+
+    final textFieldFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField &&
+          (widget.decoration?.labelText ?? '').contains('RENOMEAR'),
+    );
+    await tester.ensureVisible(textFieldFinder);
+    await tester.enterText(textFieldFinder, 'RENOMEAR');
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<FilledButton>(executeButtonFinder).onPressed,
+      isNotNull,
+    );
+
+    await tester.ensureVisible(executeButtonFinder);
+    await tester.tap(executeButtonFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Confirmar renomeio real de invalidos'), findsOneWidget);
+    expect(find.textContaining('Voce esta prestes a renomear'), findsOneWidget);
+
+    await tester.tap(find.text('Renomear arquivos invalidos reais'));
+    await tester.pumpAndSettle();
+
+    expect(fakeInvalidExecutor.callCount, 1);
+    expect(find.text('Resultado da execucao dos invalidos'), findsOneWidget);
+    expect(find.text('Renomeados: 1'), findsOneWidget);
+    expect(find.text('Ignorados: 1'), findsOneWidget);
+    expect(find.text('Falhas: 0'), findsOneWidget);
+    expect(find.textContaining('Reindexe a biblioteca oficial'), findsWidgets);
+  });
+
+  testWidgets(
+    'botao de invalidos permanece desabilitado sem digitar RENOMEAR',
+    (WidgetTester tester) async {
+      final fakePicker = _FakeFolderPickerService([
+        SelectedFolder(path: 'C:/Biblioteca Oficial'),
+      ]);
+      final fakeResult = BaseLibraryIndexer().indexScannedFiles([
+        BaseLibraryScannedFile(
+          fileName: 'Legião Urbana - Tempo Perdido - 00001.mp4',
+          fullPath: r'C:\Musicas\Legião Urbana - Tempo Perdido - 00001.mp4',
+          relativePath: 'Legião Urbana - Tempo Perdido - 00001.mp4',
+        ),
+        BaseLibraryScannedFile(
+          fileName: 'Legião Urbana - Pais e Filhos.mp4',
+          fullPath: r'C:\Musicas\Legião Urbana - Pais e Filhos.mp4',
+          relativePath: 'Legião Urbana - Pais e Filhos.mp4',
+        ),
+      ]);
+      final fakeScanService = _FakeOfficialLibraryScanService(fakeResult);
+      final fakeDuplicateExecutor = _FakeDuplicateCodeRepairExecutor(
+        const DuplicateCodeRepairExecutionResult(items: [], warnings: []),
+      );
+      final fakeInvalidExecutor = _FakeInvalidFileRepairExecutor(
+        const InvalidFileRepairExecutionResult(items: [], warnings: []),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HomeScreen(
+            folderPickerService: fakePicker,
+            officialLibraryScanService: fakeScanService,
+            duplicateCodeRepairExecutor: fakeDuplicateExecutor,
+            invalidFileRepairExecutor: fakeInvalidExecutor,
+          ),
+        ),
+      );
+
+      await tester.ensureVisible(find.text('Selecionar biblioteca oficial'));
+      await tester.tap(find.text('Selecionar biblioteca oficial'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Indexar biblioteca oficial'));
+      await tester.tap(find.text('Indexar biblioteca oficial'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.text('Gerar plano de reparo de invalidos'),
+      );
+      await tester.tap(find.text('Gerar plano de reparo de invalidos'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Validar execucao dos invalidos'));
+      await tester.tap(find.text('Validar execucao dos invalidos'));
+      await tester.pumpAndSettle();
+
+      final checkboxFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is CheckboxListTile &&
+            (widget.title as Text).data!.contains('dry-run dos invalidos'),
+      );
+      await tester.ensureVisible(checkboxFinder);
+      await tester.tap(checkboxFinder, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      final textFieldFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            (widget.decoration?.labelText ?? '').contains('RENOMEAR'),
+      );
+      await tester.ensureVisible(textFieldFinder);
+      await tester.enterText(textFieldFinder, 'renomea');
+      await tester.pumpAndSettle();
+
+      final executeButtonFinder = find.widgetWithText(
+        FilledButton,
+        'Renomear arquivos invalidos reais nesta pasta',
+      );
+      expect(
+        tester.widget<FilledButton>(executeButtonFinder).onPressed,
+        isNull,
+      );
+      expect(fakeInvalidExecutor.callCount, 0);
+    },
+  );
 }

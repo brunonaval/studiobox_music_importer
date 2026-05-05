@@ -4,6 +4,7 @@ import '../../base_library/application/official_library_scan_service.dart';
 import '../../base_library/domain/base_library.dart';
 import '../../folder_selection/application/folder_picker_service.dart';
 import '../../library_repair/application/duplicate_code_repair_executor.dart';
+import '../../library_repair/application/invalid_file_repair_executor.dart';
 import '../../library_repair/domain/library_repair.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -12,15 +13,19 @@ class HomeScreen extends StatefulWidget {
     FolderPickerService? folderPickerService,
     OfficialLibraryScanService? officialLibraryScanService,
     DuplicateCodeRepairExecutor? duplicateCodeRepairExecutor,
+    InvalidFileRepairExecutor? invalidFileRepairExecutor,
   }) : folderPickerService = folderPickerService ?? const FolderPickerService(),
        officialLibraryScanService =
            officialLibraryScanService ?? OfficialLibraryScanService(),
        duplicateCodeRepairExecutor =
-           duplicateCodeRepairExecutor ?? DuplicateCodeRepairExecutor();
+           duplicateCodeRepairExecutor ?? DuplicateCodeRepairExecutor(),
+       invalidFileRepairExecutor =
+           invalidFileRepairExecutor ?? InvalidFileRepairExecutor();
 
   final FolderPickerService folderPickerService;
   final OfficialLibraryScanService officialLibraryScanService;
   final DuplicateCodeRepairExecutor duplicateCodeRepairExecutor;
+  final InvalidFileRepairExecutor invalidFileRepairExecutor;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -59,18 +64,26 @@ class _HomeScreenState extends State<HomeScreen> {
   InvalidFileRepairExecutionPlan? _invalidFileRepairExecutionPlan;
   bool _showInvalidFileRepairExecutionPlan = false;
   String? _invalidFileRepairExecutionMessage;
+  bool _confirmInvalidRepairExecution = false;
+  String _invalidRepairConfirmationText = '';
+  bool _executingInvalidRepair = false;
+  InvalidFileRepairExecutionResult? _invalidRepairExecutionResult;
+  String? _invalidRepairExecutionResultMessage;
 
   late final TextEditingController _duplicateRepairConfirmationController;
+  late final TextEditingController _invalidRepairConfirmationController;
 
   @override
   void initState() {
     super.initState();
     _duplicateRepairConfirmationController = TextEditingController();
+    _invalidRepairConfirmationController = TextEditingController();
   }
 
   @override
   void dispose() {
     _duplicateRepairConfirmationController.dispose();
+    _invalidRepairConfirmationController.dispose();
     super.dispose();
   }
 
@@ -154,6 +167,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _invalidFileRepairExecutionPlan = null;
       _showInvalidFileRepairExecutionPlan = false;
       _invalidFileRepairExecutionMessage = null;
+      _confirmInvalidRepairExecution = false;
+      _invalidRepairConfirmationText = '';
+      _executingInvalidRepair = false;
+      _invalidRepairExecutionResult = null;
+      _invalidRepairExecutionResultMessage = null;
     });
   }
 
@@ -222,6 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final plan = InvalidFileRepairPlanner().buildPlan(baseIndex: indexResult);
 
+    _invalidRepairConfirmationController.clear();
     setState(() {
       _invalidFileRepairPlan = plan;
       _showInvalidFileRepairPlan = true;
@@ -229,6 +248,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _invalidFileRepairExecutionPlan = null;
       _showInvalidFileRepairExecutionPlan = false;
       _invalidFileRepairExecutionMessage = null;
+      _confirmInvalidRepairExecution = false;
+      _invalidRepairConfirmationText = '';
+      _executingInvalidRepair = false;
+      _invalidRepairExecutionResult = null;
+      _invalidRepairExecutionResultMessage = null;
     });
   }
 
@@ -246,10 +270,89 @@ class _HomeScreenState extends State<HomeScreen> {
       repairPlan,
     );
 
+    _invalidRepairConfirmationController.clear();
     setState(() {
       _invalidFileRepairExecutionPlan = executionPlan;
       _showInvalidFileRepairExecutionPlan = true;
       _invalidFileRepairExecutionMessage = 'Dry-run dos invalidos gerado.';
+      _confirmInvalidRepairExecution = false;
+      _invalidRepairConfirmationText = '';
+      _executingInvalidRepair = false;
+      _invalidRepairExecutionResult = null;
+      _invalidRepairExecutionResultMessage = null;
+    });
+  }
+
+  Future<void> _executeInvalidRepair() async {
+    final executionPlan = _invalidFileRepairExecutionPlan;
+    if (executionPlan == null || !executionPlan.hasReadyItems) {
+      setState(() {
+        _invalidRepairExecutionResultMessage =
+            'Nenhum item pronto para executar.';
+      });
+      return;
+    }
+
+    if (!_confirmInvalidRepairExecution) {
+      setState(() {
+        _invalidRepairExecutionResultMessage =
+            'Confirme a revisao do dry-run dos invalidos antes de executar.';
+      });
+      return;
+    }
+
+    final readyCount = executionPlan.readyToRenameCount;
+    final folderPath = _officialLibraryFolderPath ?? '-';
+    final shouldExecute =
+        await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Confirmar renomeio real de invalidos'),
+              content: Text(
+                'Voce esta prestes a renomear $readyCount arquivo(s) invalido(s) em:\n\n$folderPath\n\nEsta acao altera arquivos reais e nao possui desfazer automatico nesta fase.\n\nDeseja continuar?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Renomear arquivos invalidos reais'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!shouldExecute) {
+      setState(() {
+        _invalidRepairExecutionResultMessage =
+            'Execucao de invalidos cancelada.';
+      });
+      return;
+    }
+
+    setState(() {
+      _executingInvalidRepair = true;
+      _invalidRepairExecutionResultMessage = null;
+    });
+
+    final result = await widget.invalidFileRepairExecutor.execute(
+      executionPlan,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _executingInvalidRepair = false;
+      _invalidRepairExecutionResult = result;
+      _invalidRepairExecutionResultMessage =
+          'Execucao do reparo de invalidos concluida. Reindexe a biblioteca oficial para atualizar os resultados.';
     });
   }
 
@@ -1186,6 +1289,154 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 8),
                               ],
                             ],
+                            if (_invalidFileRepairExecutionPlan != null &&
+                                _invalidFileRepairExecutionPlan!
+                                    .hasReadyItems) ...[
+                              const SizedBox(height: 16),
+                              Text(
+                                'Confirmacao obrigatoria para renomear arquivos invalidos reais',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Esta acao ira renomear arquivos reais na biblioteca oficial selecionada.',
+                              ),
+                              const SizedBox(height: 8),
+                              const Text('Pasta que sera alterada:'),
+                              Text(_officialLibraryFolderPath ?? '-'),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Arquivos invalidos prontos para renomear: ${_invalidFileRepairExecutionPlan!.readyToRenameCount}',
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Esta acao nao possui desfazer automatico nesta fase.',
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Recomendado: teste primeiro em uma copia da biblioteca antes de executar na pasta oficial.',
+                              ),
+                              CheckboxListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: const Text(
+                                  'Revisei o dry-run dos invalidos e confirmo que desejo renomear os arquivos prontos.',
+                                ),
+                                value: _confirmInvalidRepairExecution,
+                                onChanged: _executingInvalidRepair
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          _confirmInvalidRepairExecution =
+                                              value ?? false;
+                                        });
+                                      },
+                              ),
+                              TextField(
+                                controller:
+                                    _invalidRepairConfirmationController,
+                                enabled: !_executingInvalidRepair,
+                                decoration: const InputDecoration(
+                                  labelText:
+                                      'Digite RENOMEAR para liberar a execucao',
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _invalidRepairConfirmationText = value;
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              FilledButton(
+                                onPressed:
+                                    _executingInvalidRepair ||
+                                        !_confirmInvalidRepairExecution ||
+                                        _invalidRepairConfirmationText
+                                                .trim()
+                                                .toUpperCase() !=
+                                            'RENOMEAR'
+                                    ? null
+                                    : _executeInvalidRepair,
+                                child: Text(
+                                  _executingInvalidRepair
+                                      ? 'Executando...'
+                                      : 'Renomear arquivos invalidos reais nesta pasta',
+                                ),
+                              ),
+                            ],
+                            if (_invalidRepairExecutionResultMessage !=
+                                null) ...[
+                              const SizedBox(height: 8),
+                              Text(_invalidRepairExecutionResultMessage!),
+                            ],
+                            if (_invalidRepairExecutionResult != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'Resultado da execucao dos invalidos',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Renomeados: ${_invalidRepairExecutionResult!.renamedCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Ignorados: ${_invalidRepairExecutionResult!.skippedCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Falhas: ${_invalidRepairExecutionResult!.failedCount}',
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Reindexe a biblioteca oficial para conferir o resultado atualizado.',
+                              ),
+                              const SizedBox(height: 8),
+                              if (_invalidRepairExecutionResult!.items.length >
+                                  _invalidFileRepairItemsLimit)
+                                Text(
+                                  'Exibindo os primeiros $_invalidFileRepairItemsLimit de ${_invalidRepairExecutionResult!.items.length} itens do resultado.',
+                                ),
+                              const SizedBox(height: 6),
+                              for (final item
+                                  in _invalidRepairExecutionResult!.items.take(
+                                    _invalidFileRepairItemsLimit,
+                                  )) ...[
+                                if (item.isRenamed) ...[
+                                  const Text('Renomeado:'),
+                                  if (item.detectedArtist != null &&
+                                      item.detectedTitle != null)
+                                    Text(
+                                      '${item.detectedArtist} - ${item.detectedTitle}',
+                                    ),
+                                  Text('Origem: ${item.sourcePath ?? '-'}'),
+                                  Text(
+                                    'Destino: ${item.destinationPath ?? '-'}',
+                                  ),
+                                  if (item.messages.isNotEmpty)
+                                    Text('Mensagem: ${item.messages.first}'),
+                                ] else if (item.isSkipped) ...[
+                                  const Text('Ignorado:'),
+                                  Text(
+                                    'Arquivo original: ${item.originalFileName}',
+                                  ),
+                                  for (final message in item.messages)
+                                    Text('Mensagem: $message'),
+                                ] else ...[
+                                  const Text('Falhou:'),
+                                  Text(
+                                    'Arquivo original: ${item.originalFileName}',
+                                  ),
+                                  Text('Origem: ${item.sourcePath ?? '-'}'),
+                                  Text(
+                                    'Destino: ${item.destinationPath ?? '-'}',
+                                  ),
+                                  const Text('Mensagens:'),
+                                  for (final message in item.messages)
+                                    Text('- $message'),
+                                ],
+                                const SizedBox(height: 8),
+                              ],
+                            ],
                           ],
                         ],
                       ),
@@ -1224,11 +1475,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 21 - Dry-run do reparo de arquivos invalidos',
+                            'Round 22 - Execucao segura do reparo de arquivos invalidos',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Dry-run de invalidos gerado em memoria e exibido na Home.',
+                            'Estado: Execucao real de invalidos com confirmacao forte.',
                           ),
                         ],
                       ),

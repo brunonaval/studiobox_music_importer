@@ -207,6 +207,18 @@ A previa e limitada a 100 itens e pode ser ocultada ou revelada por alternancia.
 
 Nesta fase nenhum arquivo e alterado.
 
+## Execucao segura do reparo de arquivos invalidos
+
+Apos revisar o dry-run dos invalidos, o app pode executar o reparo real somente para itens prontos.
+
+A execucao exige marcar o checkbox de revisao e digitar RENOMEAR no campo de confirmacao.
+
+O app nao sobrescreve arquivos existentes e somente permite renomear dentro do mesmo diretorio.
+
+Itens marcados para revisao manual sao ignorados automaticamente na execucao.
+
+Depois da execucao, o recomendado e reindexar a biblioteca oficial para atualizar os resultados.
+
 O app sera desenvolvido em fases.
 
 O MVP inicial sera para Windows.
