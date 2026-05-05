@@ -207,15 +207,15 @@ void main() {
   ) async {
     await tester.pumpWidget(const StudioBoxMusicImporterApp());
 
-    expect(find.text('StudioBox Music Importer'), findsOneWidget);
+    expect(find.text('StudioBox Music Importer'), findsWidgets);
     expect(
       find.text('Prepare novas musicas para o padrao do Karaoke StudioBox.'),
-      findsOneWidget,
+      findsAtLeastNWidgets(1),
     );
     expect(find.text('Biblioteca oficial'), findsOneWidget);
-    expect(find.text('Novas musicas'), findsOneWidget);
+    expect(find.text('Novas musicas'), findsAtLeastNWidgets(1));
     expect(find.text('Revisao segura'), findsOneWidget);
-    expect(find.text('Saida'), findsOneWidget);
+    expect(find.text('Saida'), findsAtLeastNWidgets(1));
     expect(find.text('Motor preparado'), findsOneWidget);
     expect(find.text('Selecionar biblioteca oficial'), findsOneWidget);
     expect(find.text('Indexar biblioteca oficial'), findsOneWidget);
@@ -225,6 +225,36 @@ void main() {
       find.text('Nenhuma pasta de musicas novas selecionada.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('mostra dashboard redesenhado da Home', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const StudioBoxMusicImporterApp());
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
+    expect(find.textContaining('Round 35'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Fluxo seguro'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Dashboard'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('1 Biblioteca oficial'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('2 Musicas novas'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('3 Sugestoes e revisao'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('4 Saida e execucao'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('5 Manifesto'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Resumo da sessao'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('Cache local da sessao'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('Motor e status'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Status do projeto'), findsAtLeastNWidgets(1));
   });
 
   testWidgets(
@@ -245,14 +275,14 @@ void main() {
       await tester.tap(buttonFinder);
       await tester.pumpAndSettle();
 
-      expect(find.text('C:/Biblioteca Oficial'), findsOneWidget);
+      expect(find.text('C:/Biblioteca Oficial'), findsWidgets);
       expect(find.text('Biblioteca oficial selecionada.'), findsOneWidget);
 
       await tester.ensureVisible(buttonFinder);
       await tester.tap(buttonFinder);
       await tester.pumpAndSettle();
 
-      expect(find.text('C:/Biblioteca Oficial'), findsOneWidget);
+      expect(find.text('C:/Biblioteca Oficial'), findsWidgets);
       expect(find.text('Selecao cancelada.'), findsOneWidget);
     },
   );
@@ -1138,7 +1168,7 @@ void main() {
     await tester.tap(buttonFinder);
     await tester.pumpAndSettle();
 
-    expect(find.text('C:/Novas Musicas'), findsOneWidget);
+    expect(find.text('C:/Novas Musicas'), findsWidgets);
     expect(find.text('Pasta de musicas novas selecionada.'), findsOneWidget);
   });
 
@@ -1181,7 +1211,7 @@ void main() {
     await tester.tap(selectButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('C:/Novas Musicas'), findsOneWidget);
+    expect(find.text('C:/Novas Musicas'), findsWidgets);
 
     await tapFirstTextContaining(tester, 'Escanear');
 
@@ -1226,13 +1256,13 @@ void main() {
     await tester.tap(buttonFinder);
     await tester.pumpAndSettle();
 
-    expect(find.text('C:/Novas Musicas'), findsOneWidget);
+    expect(find.text('C:/Novas Musicas'), findsWidgets);
 
     await tester.ensureVisible(buttonFinder);
     await tester.tap(buttonFinder);
     await tester.pumpAndSettle();
 
-    expect(find.text('C:/Novas Musicas'), findsOneWidget);
+    expect(find.text('C:/Novas Musicas'), findsWidgets);
     expect(find.text('Selecao cancelada.'), findsOneWidget);
   });
 

@@ -348,3 +348,14 @@ O app sera desenvolvido em fases.
 O MVP inicial sera para Windows.
 
 Android sera considerado depois.
+
+## Dashboard visual da interface
+
+A Home foi redesenhada como dashboard desktop com sidebar, header e etapas do fluxo.
+
+O fluxo visual foi dividido em Biblioteca, Musicas novas, Sugestoes/Revisao, Saida/Execucao e Manifesto.
+
+A coluna lateral destaca resumo da sessao, cache local, motor e status do projeto.
+
+Nenhuma regra de negocio foi alterada nesta rodada.
+
