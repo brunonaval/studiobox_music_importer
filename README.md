@@ -207,6 +207,20 @@ A previa e limitada a 100 itens e pode ser ocultada ou revelada por alternancia.
 
 Nesta fase nenhum arquivo e alterado.
 
+## Sugestoes de importacao de musicas novas
+
+Apos a pre-limpeza, o app gera sugestoes de importacao para os arquivos novos.
+
+Usa o parser de nomes e os artistas conhecidos da biblioteca oficial para identificar artista e musica.
+
+Aloca codigos seguros para cada item identificado usando a estrategia preencher buracos primeiro.
+
+Cada candidato recebe status: aprovado automaticamente, revisao necessaria ou bloqueado.
+
+Duplicidades com a biblioteca oficial sao detectadas e apontadas por aviso.
+
+Nesta fase nada e renomeado.
+
 ## Pre-limpeza dos nomes novos
 
 O app pode gerar uma previa de limpeza dos nomes de musicas baixadas.

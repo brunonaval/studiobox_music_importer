@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../base_library/application/official_library_scan_service.dart';
 import '../../base_library/domain/base_library.dart';
 import '../../folder_selection/application/folder_picker_service.dart';
+import '../../import_planner/domain/import_planner.dart';
 import '../../incoming_songs/application/incoming_songs_scan_service.dart';
 import '../../incoming_songs/domain/incoming_songs.dart';
 import '../../library_repair/application/duplicate_code_repair_executor.dart';
@@ -57,6 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
   IncomingSongCleaningPreviewPlan? _incomingSongCleaningPreviewPlan;
   bool _showIncomingSongCleaningPreview = false;
   String? _incomingSongCleaningMessage;
+  ImportSuggestionPlan? _importSuggestionPlan;
+  bool _showImportSuggestionPlan = false;
+  String? _importSuggestionMessage;
 
   bool _indexingOfficialLibrary = false;
   BaseLibraryIndexResult? _officialLibraryIndexResult;
@@ -135,6 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _incomingSongCleaningPreviewPlan = null;
       _showIncomingSongCleaningPreview = false;
       _incomingSongCleaningMessage = null;
+      _importSuggestionPlan = null;
+      _showImportSuggestionPlan = false;
+      _importSuggestionMessage = null;
     });
   }
 
@@ -172,6 +179,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _incomingSongCleaningPreviewPlan = null;
       _showIncomingSongCleaningPreview = false;
       _incomingSongCleaningMessage = null;
+      _importSuggestionPlan = null;
+      _showImportSuggestionPlan = false;
+      _importSuggestionMessage = null;
     });
   }
 
@@ -194,6 +204,56 @@ class _HomeScreenState extends State<HomeScreen> {
       _incomingSongCleaningPreviewPlan = plan;
       _showIncomingSongCleaningPreview = true;
       _incomingSongCleaningMessage = 'Pré-limpeza de nomes gerada.';
+      _importSuggestionPlan = null;
+      _showImportSuggestionPlan = false;
+      _importSuggestionMessage = null;
+    });
+  }
+
+  void _generateImportSuggestions() {
+    final baseIndex = _officialLibraryIndexResult;
+    if (baseIndex == null) {
+      setState(() {
+        _importSuggestionMessage =
+            'Indexe a biblioteca oficial antes de gerar sugestões.';
+      });
+      return;
+    }
+
+    final cleaningPlan = _incomingSongCleaningPreviewPlan;
+    final scanResult = _incomingSongsScanResult;
+
+    final List<String> fileNames;
+    if (cleaningPlan != null) {
+      fileNames = cleaningPlan.items.map((i) => i.cleanedFileName).toList();
+    } else if (scanResult != null && scanResult.hasFiles) {
+      fileNames = scanResult.files.map((f) => f.fileName).toList();
+    } else {
+      setState(() {
+        _importSuggestionMessage =
+            'Escaneie a pasta de músicas novas antes de gerar sugestões.';
+      });
+      return;
+    }
+
+    if (fileNames.isEmpty) {
+      setState(() {
+        _importSuggestionMessage =
+            'Nenhum arquivo novo para sugerir importação.';
+      });
+      return;
+    }
+
+    final plan = ImportSuggestionPlanner().buildPlan(
+      incomingFileNames: fileNames,
+      baseIndex: baseIndex,
+      codeStrategy: SongCodeAllocationStrategy.fillGapsFirst,
+    );
+
+    setState(() {
+      _importSuggestionPlan = plan;
+      _showImportSuggestionPlan = true;
+      _importSuggestionMessage = 'Sugestões de importação geradas.';
     });
   }
 
@@ -282,6 +342,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _executingInvalidRepair = false;
       _invalidRepairExecutionResult = null;
       _invalidRepairExecutionResultMessage = null;
+      _importSuggestionPlan = null;
+      _showImportSuggestionPlan = false;
+      _importSuggestionMessage = null;
     });
   }
 
@@ -1732,6 +1795,109 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 10),
                             ],
                           ],
+                          if (_incomingSongsScanResult != null &&
+                              _incomingSongsScanResult!.totalCount > 0) ...[
+                            const SizedBox(height: 16),
+                            FilledButton.tonal(
+                              onPressed: _generateImportSuggestions,
+                              child: const Text(
+                                'Gerar sugestões de importação',
+                              ),
+                            ),
+                          ],
+                          if (_importSuggestionMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(_importSuggestionMessage!),
+                          ],
+                          if (_importSuggestionPlan != null) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _showImportSuggestionPlan =
+                                      !_showImportSuggestionPlan;
+                                });
+                              },
+                              child: Text(
+                                _showImportSuggestionPlan
+                                    ? 'Ocultar sugestões de importação'
+                                    : 'Mostrar sugestões de importação',
+                              ),
+                            ),
+                          ],
+                          if (_importSuggestionPlan != null &&
+                              _showImportSuggestionPlan) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Sugestões de importação',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text('Total: ${_importSuggestionPlan!.totalCount}'),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Aprovados automaticamente: ${_importSuggestionPlan!.autoApprovedCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Revisão necessária: ${_importSuggestionPlan!.needsReviewCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Bloqueados: ${_importSuggestionPlan!.blockedCount}',
+                            ),
+                            if (_importSuggestionPlan!.hasWarnings) ...[
+                              const SizedBox(height: 8),
+                              const Text('Avisos:'),
+                              const SizedBox(height: 4),
+                              for (final warning
+                                  in _importSuggestionPlan!.warnings) ...[
+                                Text('- $warning'),
+                                const SizedBox(height: 2),
+                              ],
+                            ],
+                            const SizedBox(height: 8),
+                            if (_importSuggestionPlan!.candidates.length > 100)
+                              Text(
+                                'Exibindo os primeiros 100 de ${_importSuggestionPlan!.candidates.length} sugestões.',
+                              ),
+                            const SizedBox(height: 4),
+                            for (final candidate
+                                in _importSuggestionPlan!.candidates.take(
+                                  100,
+                                )) ...[
+                              Text('Status: ${candidate.status.label}'),
+                              const SizedBox(height: 2),
+                              const Text('Arquivo:'),
+                              Text(candidate.originalFileName),
+                              if (candidate.hasSuggestedCode) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Código sugerido: ${candidate.suggestedCode}',
+                                ),
+                              ],
+                              if (candidate.suggestedOfficialFileName !=
+                                  null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Novo nome sugerido: ${candidate.suggestedOfficialFileName}',
+                                ),
+                              ],
+                              if (candidate.hasDuplicate) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Possível duplicidade: ${candidate.duplicateMatch!.existingArtist} - ${candidate.duplicateMatch!.existingTitle} (${candidate.duplicateMatch!.existingCode})',
+                                ),
+                              ],
+                              if (candidate.warnings.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                const Text('Avisos:'),
+                                for (final warning in candidate.warnings)
+                                  Text('- $warning'),
+                              ],
+                              const SizedBox(height: 10),
+                            ],
+                          ],
                         ],
                       ),
                     ),
@@ -1769,11 +1935,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 25 - Pre-limpeza dos nomes de musicas novas',
+                            'Round 26 - Sugestoes de importacao de musicas novas',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Previa de limpeza de prefixos/sufixos em memoria.',
+                            'Estado: Sugestoes de importacao em memoria usando nomes limpos.',
                           ),
                         ],
                       ),

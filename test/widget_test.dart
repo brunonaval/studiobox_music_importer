@@ -1189,4 +1189,90 @@ void main() {
     expect(find.text('Regras aplicadas:'), findsWidgets);
     expect(find.text('Chifre não é asa - Guto Lima.mp4'), findsWidgets);
   });
+
+  testWidgets('gera sugestoes de importacao e exibe resultado', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+        fullPath:
+            r'C:\Biblioteca\Capital Inicial - Primeiros Erros - 00002.mp4',
+        relativePath: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Karaokê - Pais e Filhos - Legiao Urbana.mp4',
+            fullPath: r'C:\Novas\Karaokê - Pais e Filhos - Legiao Urbana.mp4',
+            relativePath: 'Karaokê - Pais e Filhos - Legiao Urbana.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+        ),
+      ),
+    );
+
+    final selectOfficialButton = find.text('Selecionar biblioteca oficial');
+    await tester.ensureVisible(selectOfficialButton);
+    await tester.tap(selectOfficialButton);
+    await tester.pumpAndSettle();
+
+    final indexButton = find.text('Indexar biblioteca oficial');
+    await tester.ensureVisible(indexButton);
+    await tester.tap(indexButton);
+    await tester.pumpAndSettle();
+
+    final selectIncomingButton = find.text('Selecionar pasta de musicas novas');
+    await tester.ensureVisible(selectIncomingButton);
+    await tester.tap(selectIncomingButton);
+    await tester.pumpAndSettle();
+
+    final scanButton = find.text('Escanear músicas novas');
+    await tester.ensureVisible(scanButton);
+    await tester.tap(scanButton);
+    await tester.pumpAndSettle();
+
+    final cleanButton = find.text('Gerar pré-limpeza dos nomes');
+    await tester.ensureVisible(cleanButton);
+    await tester.tap(cleanButton);
+    await tester.pumpAndSettle();
+
+    final suggestButton = find.text('Gerar sugestões de importação');
+    await tester.ensureVisible(suggestButton);
+    await tester.tap(suggestButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sugestões de importação geradas.'), findsOneWidget);
+    expect(find.text('Sugestões de importação'), findsOneWidget);
+    expect(find.text('Total: 1'), findsOneWidget);
+    expect(find.text('Revisão necessária: 1'), findsOneWidget);
+    expect(
+      find.textContaining('Legiao Urbana - Pais e Filhos - 00003.mp4'),
+      findsOneWidget,
+    );
+  });
 }
