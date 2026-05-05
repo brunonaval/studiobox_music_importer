@@ -21,4 +21,21 @@ class FolderPickerService {
 
     return selectedFolder;
   }
+
+  Future<SelectedFolder?> pickIncomingSongsFolder() async {
+    final selectedPath = await FilePicker.getDirectoryPath(
+      dialogTitle: 'Selecione a pasta de musicas novas',
+    );
+
+    if (selectedPath == null || selectedPath.trim().isEmpty) {
+      return null;
+    }
+
+    final selectedFolder = SelectedFolder(path: selectedPath);
+    if (selectedFolder.isEmpty) {
+      return null;
+    }
+
+    return selectedFolder;
+  }
 }

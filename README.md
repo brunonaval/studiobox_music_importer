@@ -207,6 +207,16 @@ A previa e limitada a 100 itens e pode ser ocultada ou revelada por alternancia.
 
 Nesta fase nenhum arquivo e alterado.
 
+## Selecao da pasta de musicas novas
+
+O app agora permite selecionar a pasta onde ficam os novos .mp4 baixados.
+
+Nesta fase o app apenas exibe o caminho selecionado na Home.
+
+Ainda nao ha leitura, analise ou renomeio das musicas novas.
+
+A analise dos nomes vira em rodada futura.
+
 ## Execucao segura do reparo de arquivos invalidos
 
 Apos revisar o dry-run dos invalidos, o app pode executar o reparo real somente para itens prontos.

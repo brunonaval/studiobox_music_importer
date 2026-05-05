@@ -12,19 +12,34 @@ import 'package:studiobox_music_importer/src/features/library_repair/application
 import 'package:studiobox_music_importer/src/features/library_repair/domain/library_repair.dart';
 
 class _FakeFolderPickerService extends FolderPickerService {
-  _FakeFolderPickerService(this._responses);
+  _FakeFolderPickerService(
+    List<SelectedFolder?> officialResponses, {
+    List<SelectedFolder?> incomingResponses = const [],
+  }) : _officialResponses = officialResponses,
+       _incomingResponses = incomingResponses;
 
-  final List<SelectedFolder?> _responses;
-  int _index = 0;
+  final List<SelectedFolder?> _officialResponses;
+  final List<SelectedFolder?> _incomingResponses;
+  int _officialIndex = 0;
+  int _incomingIndex = 0;
 
   @override
   Future<SelectedFolder?> pickOfficialLibraryFolder() async {
-    if (_index >= _responses.length) {
+    if (_officialIndex >= _officialResponses.length) {
       return null;
     }
+    final response = _officialResponses[_officialIndex];
+    _officialIndex++;
+    return response;
+  }
 
-    final response = _responses[_index];
-    _index++;
+  @override
+  Future<SelectedFolder?> pickIncomingSongsFolder() async {
+    if (_incomingIndex >= _incomingResponses.length) {
+      return null;
+    }
+    final response = _incomingResponses[_incomingIndex];
+    _incomingIndex++;
     return response;
   }
 }
@@ -87,6 +102,11 @@ void main() {
     expect(find.text('Selecionar biblioteca oficial'), findsOneWidget);
     expect(find.text('Indexar biblioteca oficial'), findsOneWidget);
     expect(find.text('Nenhuma pasta selecionada.'), findsOneWidget);
+    expect(find.text('Selecionar pasta de musicas novas'), findsOneWidget);
+    expect(
+      find.text('Nenhuma pasta de musicas novas selecionada.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
@@ -970,4 +990,61 @@ void main() {
       expect(fakeInvalidExecutor.callCount, 0);
     },
   );
+
+  testWidgets('seleciona pasta de musicas novas e exibe caminho', (
+    WidgetTester tester,
+  ) async {
+    final fakeService = _FakeFolderPickerService(
+      [],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: HomeScreen(folderPickerService: fakeService)),
+    );
+
+    expect(
+      find.text('Nenhuma pasta de musicas novas selecionada.'),
+      findsOneWidget,
+    );
+
+    final buttonFinder = find.text('Selecionar pasta de musicas novas');
+    await tester.ensureVisible(buttonFinder);
+    await tester.tap(buttonFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.text('C:/Novas Musicas'), findsOneWidget);
+    expect(find.text('Pasta de musicas novas selecionada.'), findsOneWidget);
+  });
+
+  testWidgets('cancelar selecao de musicas novas mantem caminho anterior', (
+    WidgetTester tester,
+  ) async {
+    final fakeService = _FakeFolderPickerService(
+      [],
+      incomingResponses: [
+        SelectedFolder(path: 'C:/Novas Musicas'),
+        null,
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: HomeScreen(folderPickerService: fakeService)),
+    );
+
+    final buttonFinder = find.text('Selecionar pasta de musicas novas');
+
+    await tester.ensureVisible(buttonFinder);
+    await tester.tap(buttonFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.text('C:/Novas Musicas'), findsOneWidget);
+
+    await tester.ensureVisible(buttonFinder);
+    await tester.tap(buttonFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.text('C:/Novas Musicas'), findsOneWidget);
+    expect(find.text('Selecao cancelada.'), findsOneWidget);
+  });
 }

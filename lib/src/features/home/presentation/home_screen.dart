@@ -42,6 +42,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _selectingOfficialFolder = false;
   String? _folderSelectionMessage;
 
+  String? _incomingSongsFolderPath;
+  bool _selectingIncomingSongsFolder = false;
+  String? _incomingSongsFolderSelectionMessage;
+
   bool _indexingOfficialLibrary = false;
   BaseLibraryIndexResult? _officialLibraryIndexResult;
   String? _officialLibraryIndexMessage;
@@ -85,6 +89,36 @@ class _HomeScreenState extends State<HomeScreen> {
     _duplicateRepairConfirmationController.dispose();
     _invalidRepairConfirmationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectIncomingSongsFolder() async {
+    if (_selectingIncomingSongsFolder) {
+      return;
+    }
+
+    setState(() {
+      _selectingIncomingSongsFolder = true;
+    });
+
+    final selectedFolder = await widget.folderPickerService
+        .pickIncomingSongsFolder();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectingIncomingSongsFolder = false;
+
+      if (selectedFolder == null) {
+        _incomingSongsFolderSelectionMessage = 'Selecao cancelada.';
+        return;
+      }
+
+      _incomingSongsFolderPath = selectedFolder.path;
+      _incomingSongsFolderSelectionMessage =
+          'Pasta de musicas novas selecionada.';
+    });
   }
 
   Future<void> _selectOfficialLibraryFolder() async {
@@ -1450,6 +1484,41 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
+                            'Pasta de musicas novas selecionada:',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _incomingSongsFolderPath ??
+                                'Nenhuma pasta de musicas novas selecionada.',
+                          ),
+                          const SizedBox(height: 12),
+                          FilledButton(
+                            onPressed: _selectingIncomingSongsFolder
+                                ? null
+                                : _selectIncomingSongsFolder,
+                            child: Text(
+                              _selectingIncomingSongsFolder
+                                  ? 'Selecionando...'
+                                  : 'Selecionar pasta de musicas novas',
+                            ),
+                          ),
+                          if (_incomingSongsFolderSelectionMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(_incomingSongsFolderSelectionMessage!),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
                             'Motor preparado',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
@@ -1475,11 +1544,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 22 - Execucao segura do reparo de arquivos invalidos',
+                            'Round 23 - Selecao da pasta de musicas novas',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Execucao real de invalidos com confirmacao forte.',
+                            'Estado: Selecao de pasta de musicas novas sem scan.',
                           ),
                         ],
                       ),
