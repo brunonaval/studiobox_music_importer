@@ -1275,4 +1275,133 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('revisao visual organizada dos candidatos de importacao', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+        fullPath:
+            r'C:\Biblioteca\Capital Inicial - Primeiros Erros - 00002.mp4',
+        relativePath: 'Capital Inicial - Primeiros Erros - 00002.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Legiao Urbana - Musica Nova.mp4',
+            fullPath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            relativePath: 'Legiao Urbana - Musica Nova.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'Musica Ambigua - Legiao Urbana.mp4',
+            fullPath: r'C:\Novas\Musica Ambigua - Legiao Urbana.mp4',
+            relativePath: 'Musica Ambigua - Legiao Urbana.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'ArquivoSemSeparador.mp4',
+            fullPath: r'C:\Novas\ArquivoSemSeparador.mp4',
+            relativePath: 'ArquivoSemSeparador.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'Capital Inicial - Primeiros Erros.mp4',
+            fullPath: r'C:\Novas\Capital Inicial - Primeiros Erros.mp4',
+            relativePath: 'Capital Inicial - Primeiros Erros.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+        ),
+      ),
+    );
+
+    await tester.ensureVisible(find.text('Selecionar biblioteca oficial'));
+    await tester.tap(find.text('Selecionar biblioteca oficial'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Indexar biblioteca oficial'));
+    await tester.tap(find.text('Indexar biblioteca oficial'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Selecionar pasta de musicas novas'));
+    await tester.tap(find.text('Selecionar pasta de musicas novas'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Escanear músicas novas'));
+    await tester.tap(find.text('Escanear músicas novas'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Gerar pré-limpeza dos nomes'));
+    await tester.tap(find.text('Gerar pré-limpeza dos nomes'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Gerar sugestões de importação'));
+    await tester.tap(find.text('Gerar sugestões de importação'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Revisão dos candidatos'), findsOneWidget);
+    expect(find.textContaining('Prontos para importar: 1'), findsOneWidget);
+    expect(find.textContaining('Precisam de revisão: 2'), findsOneWidget);
+    expect(find.textContaining('Bloqueados: 1'), findsWidgets);
+    expect(find.text('Possíveis duplicados: 1'), findsWidgets);
+
+    expect(find.text('Pronto para importar'), findsOneWidget);
+    expect(
+      find.text(
+        'Nome oficial sugerido: Legiao Urbana - Musica Nova - 00003.mp4',
+      ),
+      findsOneWidget,
+    );
+
+    expect(find.text('Revisão necessária'), findsWidgets);
+    expect(
+      find.textContaining('Ordem Música - Autor detectada e invertida'),
+      findsOneWidget,
+    );
+
+    expect(find.text('Bloqueado'), findsOneWidget);
+
+    // toggle: ocultar prontos
+    final ocultarProntosButton = find.text('Ocultar prontos');
+    await tester.ensureVisible(ocultarProntosButton);
+    await tester.tap(ocultarProntosButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pronto para importar'), findsNothing);
+    expect(find.text('Mostrar prontos'), findsOneWidget);
+
+    // toggle: mostrar duplicados
+    final mostrarDuplicadosButton = find.text('Mostrar duplicados');
+    await tester.ensureVisible(mostrarDuplicadosButton);
+    await tester.tap(mostrarDuplicadosButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Possível duplicado'), findsOneWidget);
+    expect(
+      find.textContaining('Capital Inicial - Primeiros Erros (00002)'),
+      findsOneWidget,
+    );
+  });
 }

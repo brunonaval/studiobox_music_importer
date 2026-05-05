@@ -207,6 +207,16 @@ A previa e limitada a 100 itens e pode ser ocultada ou revelada por alternancia.
 
 Nesta fase nenhum arquivo e alterado.
 
+## Revisao dos candidatos de importacao
+
+As sugestoes de importacao sao organizadas em quatro grupos: prontos, revisao necessaria, bloqueados e possiveis duplicados.
+
+A revisao e apenas visual; nenhum arquivo e importado ou renomeado nesta fase.
+
+Cada grupo exibe contador, botao de mostrar/ocultar e lista limitada a 50 itens.
+
+Edicao manual e aprovacao individual virao em rodada futura.
+
 ## Sugestoes de importacao de musicas novas
 
 Apos a pre-limpeza, o app gera sugestoes de importacao para os arquivos novos.
