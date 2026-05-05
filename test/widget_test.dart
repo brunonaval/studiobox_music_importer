@@ -1124,4 +1124,69 @@ void main() {
     expect(find.text('C:/Novas Musicas'), findsOneWidget);
     expect(find.text('Selecao cancelada.'), findsOneWidget);
   });
+
+  testWidgets('gera pre-limpeza dos nomes e exibe resultado', (
+    WidgetTester tester,
+  ) async {
+    final fakePickerService = _FakeFolderPickerService(
+      [],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+    );
+    final fakeScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Karaokê - Chifre não é asa - Guto Lima.mp4',
+            fullPath:
+                r'C:\Novas Musicas\Karaokê - Chifre não é asa - Guto Lima.mp4',
+            relativePath: 'Karaokê - Chifre não é asa - Guto Lima.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'Chifre não é asa - Guto Lima - Karaokê.mp4',
+            fullPath:
+                r'C:\Novas Musicas\Chifre não é asa - Guto Lima - Karaokê.mp4',
+            relativePath: 'Chifre não é asa - Guto Lima - Karaokê.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'Musica Normal - Artista.mp4',
+            fullPath: r'C:\Novas Musicas\Musica Normal - Artista.mp4',
+            relativePath: 'Musica Normal - Artista.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePickerService,
+          incomingSongsScanService: fakeScanService,
+        ),
+      ),
+    );
+
+    final selectButton = find.text('Selecionar pasta de musicas novas');
+    await tester.ensureVisible(selectButton);
+    await tester.tap(selectButton);
+    await tester.pumpAndSettle();
+
+    final scanButton = find.text('Escanear músicas novas');
+    await tester.ensureVisible(scanButton);
+    await tester.tap(scanButton);
+    await tester.pumpAndSettle();
+
+    final cleanButton = find.text('Gerar pré-limpeza dos nomes');
+    await tester.ensureVisible(cleanButton);
+    await tester.tap(cleanButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pré-limpeza de nomes gerada.'), findsOneWidget);
+    expect(find.text('Pré-limpeza dos nomes'), findsOneWidget);
+    expect(find.text('Arquivos analisados: 3'), findsOneWidget);
+    expect(find.text('Nomes alterados: 2'), findsOneWidget);
+    expect(find.text('Nomes sem alteração: 1'), findsOneWidget);
+    expect(find.text('Regras aplicadas:'), findsWidgets);
+    expect(find.text('Chifre não é asa - Guto Lima.mp4'), findsWidgets);
+  });
 }

@@ -1,4 +1,9 @@
+export 'incoming_song_cleaning_preview_item.dart';
+export 'incoming_song_cleaning_preview_plan.dart';
+export 'incoming_song_cleaning_rule.dart';
+export 'incoming_song_cleaning_rule_type.dart';
 export 'incoming_song_name_analysis.dart';
+export 'incoming_song_name_cleaner.dart';
 export 'incoming_song_name_parser.dart';
 export 'incoming_song_parse_confidence.dart';
 export 'incoming_song_scanned_file.dart';

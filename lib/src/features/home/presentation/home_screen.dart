@@ -54,6 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _scanningIncomingSongsFolder = false;
   IncomingSongsScanResult? _incomingSongsScanResult;
   String? _incomingSongsScanMessage;
+  IncomingSongCleaningPreviewPlan? _incomingSongCleaningPreviewPlan;
+  bool _showIncomingSongCleaningPreview = false;
+  String? _incomingSongCleaningMessage;
 
   bool _indexingOfficialLibrary = false;
   BaseLibraryIndexResult? _officialLibraryIndexResult;
@@ -129,6 +132,9 @@ class _HomeScreenState extends State<HomeScreen> {
           'Pasta de musicas novas selecionada.';
       _incomingSongsScanResult = null;
       _incomingSongsScanMessage = null;
+      _incomingSongCleaningPreviewPlan = null;
+      _showIncomingSongCleaningPreview = false;
+      _incomingSongCleaningMessage = null;
     });
   }
 
@@ -163,6 +169,31 @@ class _HomeScreenState extends State<HomeScreen> {
       _scanningIncomingSongsFolder = false;
       _incomingSongsScanResult = result;
       _incomingSongsScanMessage = 'Pasta de músicas novas escaneada.';
+      _incomingSongCleaningPreviewPlan = null;
+      _showIncomingSongCleaningPreview = false;
+      _incomingSongCleaningMessage = null;
+    });
+  }
+
+  void _generateIncomingSongCleaningPreview() {
+    final scanResult = _incomingSongsScanResult;
+    if (scanResult == null || scanResult.totalCount == 0) {
+      setState(() {
+        _incomingSongCleaningMessage =
+            'Escaneie a pasta de músicas novas antes da pré-limpeza.';
+      });
+      return;
+    }
+
+    final plan = IncomingSongNameCleaner().buildPreview(
+      scanResult: scanResult,
+      rules: IncomingSongCleaningRule.defaultRules(),
+    );
+
+    setState(() {
+      _incomingSongCleaningPreviewPlan = plan;
+      _showIncomingSongCleaningPreview = true;
+      _incomingSongCleaningMessage = 'Pré-limpeza de nomes gerada.';
     });
   }
 
@@ -1606,6 +1637,100 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 2),
                               ],
                             ],
+                            if (_incomingSongsScanResult!.totalCount > 0) ...[
+                              const SizedBox(height: 16),
+                              FilledButton.tonal(
+                                onPressed: _generateIncomingSongCleaningPreview,
+                                child: const Text(
+                                  'Gerar pré-limpeza dos nomes',
+                                ),
+                              ),
+                            ],
+                          ],
+                          if (_incomingSongCleaningMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(_incomingSongCleaningMessage!),
+                          ],
+                          if (_incomingSongCleaningPreviewPlan != null) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _showIncomingSongCleaningPreview =
+                                      !_showIncomingSongCleaningPreview;
+                                });
+                              },
+                              child: Text(
+                                _showIncomingSongCleaningPreview
+                                    ? 'Ocultar pré-limpeza'
+                                    : 'Mostrar pré-limpeza',
+                              ),
+                            ),
+                          ],
+                          if (_incomingSongCleaningPreviewPlan != null &&
+                              _showIncomingSongCleaningPreview) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Pré-limpeza dos nomes',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Arquivos analisados: ${_incomingSongCleaningPreviewPlan!.totalCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Nomes alterados: ${_incomingSongCleaningPreviewPlan!.changedCount}',
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Nomes sem alteração: ${_incomingSongCleaningPreviewPlan!.unchangedCount}',
+                            ),
+                            if (_incomingSongCleaningPreviewPlan!
+                                .hasWarnings) ...[
+                              const SizedBox(height: 8),
+                              const Text('Avisos:'),
+                              const SizedBox(height: 4),
+                              for (final warning
+                                  in _incomingSongCleaningPreviewPlan!
+                                      .warnings) ...[
+                                Text('- $warning'),
+                                const SizedBox(height: 2),
+                              ],
+                            ],
+                            const SizedBox(height: 8),
+                            if (_incomingSongCleaningPreviewPlan!.totalCount >
+                                50)
+                              Text(
+                                'Exibindo os primeiros 50 de ${_incomingSongCleaningPreviewPlan!.totalCount} itens da pré-limpeza.',
+                              ),
+                            const SizedBox(height: 4),
+                            for (final item
+                                in _incomingSongCleaningPreviewPlan!.items.take(
+                                  50,
+                                )) ...[
+                              const Text('Arquivo:'),
+                              Text(item.displayPath),
+                              const SizedBox(height: 2),
+                              const Text('Original:'),
+                              Text(item.originalFileName),
+                              const SizedBox(height: 2),
+                              const Text('Limpo:'),
+                              Text(item.cleanedFileName),
+                              if (item.appliedRules.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                const Text('Regras aplicadas:'),
+                                for (final rule in item.appliedRules)
+                                  Text('- $rule'),
+                              ],
+                              if (item.hasWarnings) ...[
+                                const SizedBox(height: 2),
+                                const Text('Avisos:'),
+                                for (final warning in item.warnings)
+                                  Text('- $warning'),
+                              ],
+                              const SizedBox(height: 10),
+                            ],
                           ],
                         ],
                       ),
@@ -1644,11 +1769,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 24 - Scan da pasta de musicas novas',
+                            'Round 25 - Pre-limpeza dos nomes de musicas novas',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Listagem real de .mp4 da pasta de musicas novas.',
+                            'Estado: Previa de limpeza de prefixos/sufixos em memoria.',
                           ),
                         ],
                       ),

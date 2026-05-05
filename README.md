@@ -207,6 +207,18 @@ A previa e limitada a 100 itens e pode ser ocultada ou revelada por alternancia.
 
 Nesta fase nenhum arquivo e alterado.
 
+## Pre-limpeza dos nomes novos
+
+O app pode gerar uma previa de limpeza dos nomes de musicas baixadas.
+
+Remove prefixos e sufixos comuns como Karaoke, Karaoke e Playback automaticamente.
+
+Mostra o nome original e o nome limpo para cada arquivo escaneado.
+
+Nesta fase nada e renomeado.
+
+Analise inteligente e geracao de codigos virao depois.
+
 ## Scan da pasta de musicas novas
 
 O app pode listar arquivos .mp4 da pasta de musicas novas selecionada.
