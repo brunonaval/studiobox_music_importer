@@ -348,3 +348,12 @@ O app sera desenvolvido em fases.
 O MVP inicial sera para Windows.
 
 Android sera considerado depois.
+
+## Reorganizacao visual da interface
+
+A Home foi reorganizada em areas de trabalho para facilitar o uso no Windows.
+
+O fluxo visual agora destaca biblioteca oficial, musicas novas, saida/execucao, manifesto e cache local da sessao.
+
+Nao houve mudanca nas regras de dominio; esta rodada e apenas visual/UX.
+

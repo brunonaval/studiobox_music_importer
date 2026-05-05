@@ -1199,6 +1199,78 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final officialLibraryResult = _officialLibraryIndexResult;
+    final hasLibraryReady = _officialLibraryFolderPath != null;
+    final hasLibraryIndexed = officialLibraryResult != null;
+    final hasIncomingFolder = _incomingSongsFolderPath != null;
+    final hasIncomingScan = _incomingSongsScanResult != null;
+    final hasSuggestions = _importSuggestionPlan != null;
+    final hasReviewSelection = _importCandidateSelectionPlan != null;
+    final hasOutputConfig = _importOutputValidationResult != null;
+    final hasDryRun = _importOperationDryRunPlan != null;
+    final hasExecution = _importOperationExecutionResult != null;
+    final hasManifest = _importOperationManifest != null;
+
+    final workflowSteps =
+        <({String label, String state, bool warning, bool done})>[
+          (
+            label: '1 Biblioteca',
+            state: hasLibraryIndexed
+                ? 'Concluido'
+                : hasLibraryReady
+                ? 'Pronto'
+                : 'Pendente',
+            warning: false,
+            done: hasLibraryIndexed,
+          ),
+          (
+            label: '2 Novas musicas',
+            state: hasIncomingScan
+                ? 'Concluido'
+                : hasIncomingFolder
+                ? 'Pronto'
+                : 'Pendente',
+            warning: false,
+            done: hasIncomingScan,
+          ),
+          (
+            label: '3 Sugestoes',
+            state: hasSuggestions ? 'Concluido' : 'Pendente',
+            warning: false,
+            done: hasSuggestions,
+          ),
+          (
+            label: '4 Revisao',
+            state: hasReviewSelection ? 'Concluido' : 'Pendente',
+            warning: false,
+            done: hasReviewSelection,
+          ),
+          (
+            label: '5 Saida',
+            state: hasOutputConfig
+                ? (_importOutputValidationResult!.isValid
+                      ? 'Pronto'
+                      : 'Atencao')
+                : 'Pendente',
+            warning: hasOutputConfig && !_importOutputValidationResult!.isValid,
+            done: hasOutputConfig && _importOutputValidationResult!.isValid,
+          ),
+          (
+            label: '6 Execucao',
+            state: hasExecution
+                ? 'Concluido'
+                : hasDryRun
+                ? 'Pronto'
+                : 'Pendente',
+            warning: false,
+            done: hasExecution,
+          ),
+          (
+            label: '7 Manifesto',
+            state: hasManifest ? 'Concluido' : 'Pendente',
+            warning: false,
+            done: hasManifest,
+          ),
+        ];
 
     final steps = <({IconData icon, String title, String description})>[
       (
@@ -1243,23 +1315,105 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(24),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1080),
+              constraints: const BoxConstraints(maxWidth: 1360),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'StudioBox Music Importer',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  _SectionCard(
+                    title: 'StudioBox Music Importer',
+                    subtitle:
+                        'Prepare novas musicas para o padrao do Karaoke StudioBox.',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: const [
+                            Chip(
+                              label: Text(
+                                'Round 35 - Reorganizacao visual da interface',
+                              ),
+                            ),
+                            Chip(
+                              label: Text(
+                                'Revise tudo antes de executar operacoes reais.',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Interface reorganizada em areas de trabalho, mantendo o motor seguro existente.',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Prepare novas musicas para o padrao do Karaoke StudioBox.',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  const SizedBox(height: 16),
+                  _SectionCard(
+                    title: 'Etapas',
+                    subtitle: 'Visao rapida do fluxo de revisao e importacao.',
+                    child: Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        for (final step in workflowSteps)
+                          _WorkflowStepCard(
+                            label: step.label,
+                            state: step.state,
+                            warning: step.warning,
+                            done: step.done,
+                          ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  _SectionCard(
+                    title: 'Resumo da sessao',
+                    subtitle: 'Visao consolidada dos pontos principais.',
+                    child: Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _DashboardCard(
+                          title: 'Biblioteca oficial',
+                          lines: [
+                            'Pasta: ${_officialLibraryFolderPath ?? '-'}',
+                            'Musicas validas: ${officialLibraryResult?.validCount ?? 0}',
+                            'Duplicados/invalidos: ${officialLibraryResult == null ? 0 : officialLibraryResult.duplicateCodeCount + officialLibraryResult.invalidCount}',
+                          ],
+                        ),
+                        _DashboardCard(
+                          title: 'Novas musicas',
+                          lines: [
+                            'Pasta: ${_incomingSongsFolderPath ?? '-'}',
+                            'Escaneados: ${_incomingSongsScanResult?.totalCount ?? 0}',
+                            'Pre-limpeza/sugestoes: ${_incomingSongCleaningPreviewPlan != null ? 'pronto' : '-'} / ${_importSuggestionPlan != null ? 'pronto' : '-'}',
+                          ],
+                        ),
+                        _DashboardCard(
+                          title: 'Importacao',
+                          lines: [
+                            'Selecionados: ${_importCandidateSelectionPlan?.selectedCount ?? 0}',
+                            'Edicao valida/invalida: ${_importCandidateEditPlan?.validCount ?? 0} / ${_importCandidateEditPlan?.invalidCount ?? 0}',
+                            'Dry-run/execucao: ${_importOperationDryRunPlan != null ? 'pronto' : '-'} / ${_importOperationExecutionResult != null ? 'concluida' : '-'}',
+                          ],
+                        ),
+                        _DashboardCard(
+                          title: 'Sessao',
+                          lines: [
+                            'Cache: ${_lastSessionSnapshot?.isNotEmpty == true ? 'carregado' : 'vazio'}',
+                            'Manifesto: ${_importOperationManifest != null ? 'gerado' : '-'}',
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
-                    'Indexe sua biblioteca oficial, analise novos arquivos .mp4, gere codigos seguros e revise tudo antes de renomear.',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    'Fluxo de importacao',
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   if (_importCandidateSelectionPlan != null) ...[
                     const SizedBox(height: 16),
@@ -1537,6 +1691,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   if (_importCandidateSelectionPlan != null &&
                       _importCandidateEditPlan != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'Saida e execucao',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                     const SizedBox(height: 16),
                     Card(
                       child: Padding(
@@ -2124,6 +2283,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
+                  Text(
+                    'Visao geral',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 16,
                     runSpacing: 16,
@@ -2156,6 +2320,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 28),
+                  Text(
+                    'Biblioteca oficial',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 12),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -3073,6 +3242,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
+                  Text(
+                    'Musicas novas',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 28),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -3604,6 +3778,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
+                  Text(
+                    'Motor e status',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 12),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -3636,11 +3815,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 28 - Selecao/aprovacao em memoria dos candidatos de importacao',
+                            'Round 35 - Reorganizacao visual da interface',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Selecao inicial com marcacao individual, selecionar prontos e limpar selecao.',
+                            'Estado: Interface reorganizada em areas de trabalho, mantendo o motor seguro existente.',
                           ),
                         ],
                       ),
@@ -3649,6 +3828,123 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 6),
+            Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardCard extends StatelessWidget {
+  const _DashboardCard({required this.title, required this.lines});
+
+  final String title;
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 300,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              for (final line in lines) ...[
+                Text(line),
+                const SizedBox(height: 4),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkflowStepCard extends StatelessWidget {
+  const _WorkflowStepCard({
+    required this.label,
+    required this.state,
+    required this.warning,
+    required this.done,
+  });
+
+  final String label;
+  final String state;
+  final bool warning;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    Color color = Colors.blueGrey;
+    IconData icon = Icons.hourglass_empty;
+
+    if (warning) {
+      color = Colors.orange;
+      icon = Icons.warning_amber_rounded;
+    } else if (done) {
+      color = Colors.green;
+      icon = Icons.check_circle;
+    } else if (state == 'Pronto') {
+      color = Colors.blue;
+      icon = Icons.verified;
+    }
+
+    return SizedBox(
+      width: 180,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: 2),
+                    Text(state),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

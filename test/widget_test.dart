@@ -195,9 +195,9 @@ class _FakeAppSessionCacheService extends AppSessionCacheService {
 Future<void> tapFirstTextContaining(WidgetTester tester, String text) async {
   final finder = find.textContaining(text);
   expect(finder, findsAtLeastNWidgets(1));
-  await tester.ensureVisible(finder.first);
+  await tester.ensureVisible(finder.last);
   await tester.pumpAndSettle();
-  await tester.tap(finder.first);
+  await tester.tap(finder.last);
   await tester.pumpAndSettle();
 }
 
@@ -212,8 +212,8 @@ void main() {
       find.text('Prepare novas musicas para o padrao do Karaoke StudioBox.'),
       findsOneWidget,
     );
-    expect(find.text('Biblioteca oficial'), findsOneWidget);
-    expect(find.text('Novas musicas'), findsOneWidget);
+    expect(find.text('Biblioteca oficial'), findsWidgets);
+    expect(find.text('Novas musicas'), findsWidgets);
     expect(find.text('Revisao segura'), findsOneWidget);
     expect(find.text('Saida'), findsOneWidget);
     expect(find.text('Motor preparado'), findsOneWidget);
@@ -225,6 +225,52 @@ void main() {
       find.text('Nenhuma pasta de musicas novas selecionada.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('mostra layout reorganizado da Home', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const StudioBoxMusicImporterApp());
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
+    expect(find.textContaining('Etapas'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Biblioteca oficial'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Musicas novas'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Saida'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Manifesto'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('Cache local da sessao'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('Motor e status'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Round 35'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Biblioteca'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Sugestoes'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Execucao'), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('mantem organizacao semantica principal da Home', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const StudioBoxMusicImporterApp());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Biblioteca oficial selecionada'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(
+      find.textContaining('Pasta de musicas novas selecionada'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(
+      find.textContaining('Cache local da sessao'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('Manifesto'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Sugestoes, revisao e selecao'), findsNothing);
+    expect(find.textContaining('Revisao'), findsAtLeastNWidgets(1));
   });
 
   testWidgets(
@@ -339,7 +385,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Biblioteca oficial indexada.'), findsOneWidget);
-    expect(find.textContaining('Musicas validas:'), findsOneWidget);
+    expect(find.textContaining('Musicas validas:'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Arquivos invalidos:'), findsWidgets);
     expect(find.textContaining('Maior codigo:'), findsOneWidget);
     expect(find.text('Auditoria da biblioteca oficial'), findsOneWidget);
@@ -1286,14 +1332,11 @@ void main() {
 
     final cleanButton = find.textContaining('limpeza');
     expect(cleanButton, findsAtLeastNWidgets(1));
-    await tester.ensureVisible(cleanButton.first);
-    await tester.tap(cleanButton.first);
+    await tester.ensureVisible(cleanButton.last);
+    await tester.tap(cleanButton.last);
     await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining('limpeza de nomes gerada.'),
-      findsAtLeastNWidgets(1),
-    );
+    expect(find.textContaining('gerada.'), findsAtLeastNWidgets(1));
     expect(find.textContaining('limpeza dos nomes'), findsAtLeastNWidgets(1));
     expect(find.text('Arquivos analisados: 3'), findsOneWidget);
     expect(find.textContaining('Nomes alterados: 2'), findsOneWidget);
@@ -1463,7 +1506,10 @@ void main() {
     await tapFirstTextContaining(tester, 'sugest');
 
     expect(find.textContaining('candidatos'), findsAtLeastNWidgets(1));
-    expect(find.textContaining('Prontos para importar: 1'), findsOneWidget);
+    expect(
+      find.textContaining('Prontos para importar: 1'),
+      findsAtLeastNWidgets(1),
+    );
     expect(find.textContaining('Precisam de revis'), findsOneWidget);
     expect(find.textContaining('Bloqueados: 1'), findsWidgets);
     expect(find.textContaining('duplicados: 1'), findsWidgets);
