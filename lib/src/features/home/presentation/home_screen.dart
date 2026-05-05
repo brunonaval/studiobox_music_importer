@@ -21,6 +21,7 @@ class HomeScreen extends StatefulWidget {
     InvalidFileRepairExecutor? invalidFileRepairExecutor,
     IncomingSongsScanService? incomingSongsScanService,
     ImportOperationExecutor? importOperationExecutor,
+    ImportOperationManifestWriter? importOperationManifestWriter,
   }) : folderPickerService = folderPickerService ?? const FolderPickerService(),
        officialLibraryScanService =
            officialLibraryScanService ?? OfficialLibraryScanService(),
@@ -31,7 +32,9 @@ class HomeScreen extends StatefulWidget {
        incomingSongsScanService =
            incomingSongsScanService ?? IncomingSongsScanService(),
        importOperationExecutor =
-           importOperationExecutor ?? ImportOperationExecutor();
+           importOperationExecutor ?? ImportOperationExecutor(),
+       importOperationManifestWriter =
+           importOperationManifestWriter ?? ImportOperationManifestWriter();
 
   final FolderPickerService folderPickerService;
   final OfficialLibraryScanService officialLibraryScanService;
@@ -39,6 +42,7 @@ class HomeScreen extends StatefulWidget {
   final InvalidFileRepairExecutor invalidFileRepairExecutor;
   final IncomingSongsScanService incomingSongsScanService;
   final ImportOperationExecutor importOperationExecutor;
+  final ImportOperationManifestWriter importOperationManifestWriter;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -84,6 +88,12 @@ class _HomeScreenState extends State<HomeScreen> {
   String _importOperationConfirmationText = '';
   ImportOperationExecutionResult? _importOperationExecutionResult;
   String? _importOperationExecutionResultMessage;
+  ImportOperationManifest? _importOperationManifest;
+  String? _importOperationManifestMessage;
+  String? _importManifestFolderPath;
+  bool _selectingImportManifestFolder = false;
+  bool _savingImportManifest = false;
+  ImportOperationManifestWriteResult? _importOperationManifestWriteResult;
   bool _showReadyImportCandidates = true;
   bool _showReviewImportCandidates = true;
   bool _showBlockedImportCandidates = true;
@@ -276,6 +286,20 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ImportOperationDryRunItem> _dryRunItemsForDisplay() =>
       (_importOperationDryRunPlan?.items ?? []).take(100).toList();
 
+  List<ImportOperationManifestItem> _manifestItemsForDisplay() =>
+      (_importOperationManifest?.items ?? []).take(100).toList();
+
+  void _resetImportManifestState({bool clearFolder = false}) {
+    _importOperationManifest = null;
+    _importOperationManifestMessage = null;
+    _importOperationManifestWriteResult = null;
+    _savingImportManifest = false;
+    _selectingImportManifestFolder = false;
+    if (clearFolder) {
+      _importManifestFolderPath = null;
+    }
+  }
+
   void _resetImportOperationDryRun() {
     _importOperationDryRunPlan = null;
     _showImportOperationDryRun = false;
@@ -286,6 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _importOperationConfirmationController.clear();
     _importOperationExecutionResult = null;
     _importOperationExecutionResultMessage = null;
+    _resetImportManifestState();
   }
 
   void _resetImportSelection() {
@@ -299,6 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _importOutputValidationResult = null;
     _importOutputMessage = null;
     _resetImportOperationDryRun();
+    _resetImportManifestState(clearFolder: true);
   }
 
   ImportOutputConfiguration _buildImportOutputConfiguration() {
@@ -610,6 +636,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _executingImportOperation = true;
       _importOperationExecutionResultMessage = null;
+      _resetImportManifestState();
     });
 
     final result = await widget.importOperationExecutor.execute(dryRunPlan);
@@ -623,6 +650,91 @@ class _HomeScreenState extends State<HomeScreen> {
       _importOperationExecutionResult = result;
       _importOperationExecutionResultMessage =
           'Execucao da importacao concluida. Reindexe a biblioteca oficial e reescaneie as musicas novas para atualizar os resultados.';
+      _resetImportManifestState();
+    });
+  }
+
+  void _generateImportOperationManifest() {
+    final executionResult = _importOperationExecutionResult;
+    if (executionResult == null) {
+      setState(() {
+        _importOperationManifestMessage =
+            'Execute a importacao antes de gerar o manifesto.';
+      });
+      return;
+    }
+
+    final manifest = ImportOperationManifestBuilder().build(
+      configuration: _buildImportOutputConfiguration(),
+      executionResult: executionResult,
+    );
+
+    setState(() {
+      _importOperationManifest = manifest;
+      _importOperationManifestMessage = 'Manifesto da importacao gerado.';
+      _importOperationManifestWriteResult = null;
+    });
+  }
+
+  Future<void> _selectImportManifestFolder() async {
+    if (_selectingImportManifestFolder) {
+      return;
+    }
+
+    setState(() {
+      _selectingImportManifestFolder = true;
+    });
+
+    final selectedFolder = await widget.folderPickerService
+        .pickImportManifestFolder();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (selectedFolder == null) {
+      setState(() {
+        _selectingImportManifestFolder = false;
+        _importOperationManifestMessage = 'Selecao cancelada.';
+      });
+      return;
+    }
+
+    setState(() {
+      _selectingImportManifestFolder = false;
+      _importManifestFolderPath = selectedFolder.path;
+      _importOperationManifestMessage = 'Pasta do manifesto selecionada.';
+      _importOperationManifestWriteResult = null;
+    });
+  }
+
+  Future<void> _saveImportOperationManifestJson() async {
+    final manifest = _importOperationManifest;
+    final folderPath = _importManifestFolderPath;
+    if (manifest == null || folderPath == null || folderPath.trim().isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _savingImportManifest = true;
+      _importOperationManifestWriteResult = null;
+    });
+
+    final result = await widget.importOperationManifestWriter.writeJson(
+      manifest: manifest,
+      folderPath: folderPath,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _savingImportManifest = false;
+      _importOperationManifestWriteResult = result;
+      _importOperationManifestMessage = result.success
+          ? 'Manifesto JSON salvo.'
+          : 'Falha ao salvar manifesto JSON.';
     });
   }
 
@@ -1634,6 +1746,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   'Reindexe a biblioteca oficial e reescaneie as musicas novas para conferir o resultado atualizado.',
                                 ),
                                 const SizedBox(height: 8),
+                                FilledButton.tonal(
+                                  onPressed: _generateImportOperationManifest,
+                                  child: const Text(
+                                    'Gerar manifesto da importacao',
+                                  ),
+                                ),
+                                if (_importOperationManifestMessage !=
+                                    null) ...[
+                                  const SizedBox(height: 8),
+                                  Text(_importOperationManifestMessage!),
+                                ],
+                                const SizedBox(height: 8),
                                 for (final item
                                     in _importOperationExecutionResult!.items
                                         .take(100)) ...[
@@ -1669,6 +1793,148 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
+                                ],
+                                if (_importOperationManifest != null) ...[
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Manifesto da importacao',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text('ID: ${_importOperationManifest!.id}'),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Gerado em: ${_importOperationManifest!.generatedAtIso8601}',
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Modo de saida: ${_importOperationManifest!.outputMode}',
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Total: ${_importOperationManifest!.summary.totalCount}',
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Sucessos: ${_importOperationManifest!.summary.successCount}',
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Falhas: ${_importOperationManifest!.summary.failedCount}',
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Ignorados: ${_importOperationManifest!.summary.skippedCount}',
+                                  ),
+                                  if (_importOperationManifest!
+                                      .hasWarnings) ...[
+                                    const SizedBox(height: 8),
+                                    const Text('Avisos:'),
+                                    for (final warning
+                                        in _importOperationManifest!.warnings)
+                                      Text('- $warning'),
+                                  ],
+                                  const SizedBox(height: 8),
+                                  FilledButton.tonal(
+                                    onPressed: _selectingImportManifestFolder
+                                        ? null
+                                        : _selectImportManifestFolder,
+                                    child: Text(
+                                      _selectingImportManifestFolder
+                                          ? 'Selecionando...'
+                                          : 'Selecionar pasta do manifesto',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Pasta do manifesto: ${_importManifestFolderPath ?? '-'}',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  OutlinedButton(
+                                    onPressed:
+                                        _importOperationManifest != null &&
+                                            _importManifestFolderPath != null &&
+                                            _importManifestFolderPath!
+                                                .trim()
+                                                .isNotEmpty &&
+                                            !_savingImportManifest
+                                        ? _saveImportOperationManifestJson
+                                        : null,
+                                    child: Text(
+                                      _savingImportManifest
+                                          ? 'Salvando manifesto...'
+                                          : 'Salvar manifesto JSON',
+                                    ),
+                                  ),
+                                  if (_importOperationManifestWriteResult !=
+                                      null) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Resultado do salvamento do manifesto',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleSmall,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _importOperationManifestWriteResult!
+                                              .success
+                                          ? 'Sucesso'
+                                          : 'Falha',
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Caminho: ${_importOperationManifestWriteResult!.filePath ?? '-'}',
+                                    ),
+                                    if (_importOperationManifestWriteResult!
+                                        .hasMessages) ...[
+                                      const SizedBox(height: 4),
+                                      const Text('Mensagens:'),
+                                      for (final message
+                                          in _importOperationManifestWriteResult!
+                                              .messages)
+                                        Text('- $message'),
+                                    ],
+                                  ],
+                                  const SizedBox(height: 8),
+                                  for (final item
+                                      in _manifestItemsForDisplay()) ...[
+                                    Card(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Acao: ${item.action}'),
+                                            Text('Status: ${item.status}'),
+                                            Text(
+                                              'Arquivo: ${item.originalFileName}',
+                                            ),
+                                            Text(
+                                              'Nome oficial: ${item.officialFileName}',
+                                            ),
+                                            Text(
+                                              'Origem: ${item.sourcePath ?? '-'}',
+                                            ),
+                                            Text(
+                                              'Destino: ${item.destinationPath ?? '-'}',
+                                            ),
+                                            if (item.hasMessages) ...[
+                                              const SizedBox(height: 4),
+                                              const Text('Mensagens:'),
+                                              for (final message
+                                                  in item.messages)
+                                                Text('- $message'),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
                                 ],
                               ],
                             ],

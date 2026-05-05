@@ -20,16 +20,20 @@ class _FakeFolderPickerService extends FolderPickerService {
     List<SelectedFolder?> officialResponses, {
     List<SelectedFolder?> incomingResponses = const [],
     List<SelectedFolder?> outputResponses = const [],
+    List<SelectedFolder?> manifestResponses = const [],
   }) : _officialResponses = officialResponses,
        _incomingResponses = incomingResponses,
-       _outputResponses = outputResponses;
+       _outputResponses = outputResponses,
+       _manifestResponses = manifestResponses;
 
   final List<SelectedFolder?> _officialResponses;
   final List<SelectedFolder?> _incomingResponses;
   final List<SelectedFolder?> _outputResponses;
+  final List<SelectedFolder?> _manifestResponses;
   int _officialIndex = 0;
   int _incomingIndex = 0;
   int _outputIndex = 0;
+  int _manifestIndex = 0;
 
   @override
   Future<SelectedFolder?> pickOfficialLibraryFolder() async {
@@ -58,6 +62,16 @@ class _FakeFolderPickerService extends FolderPickerService {
     }
     final response = _outputResponses[_outputIndex];
     _outputIndex++;
+    return response;
+  }
+
+  @override
+  Future<SelectedFolder?> pickImportManifestFolder() async {
+    if (_manifestIndex >= _manifestResponses.length) {
+      return null;
+    }
+    final response = _manifestResponses[_manifestIndex];
+    _manifestIndex++;
     return response;
   }
 }
@@ -120,6 +134,22 @@ class _FakeImportOperationExecutor extends ImportOperationExecutor {
   Future<ImportOperationExecutionResult> execute(
     ImportOperationDryRunPlan dryRunPlan,
   ) async {
+    callCount++;
+    return result;
+  }
+}
+
+class _FakeImportOperationManifestWriter extends ImportOperationManifestWriter {
+  _FakeImportOperationManifestWriter(this.result);
+
+  final ImportOperationManifestWriteResult result;
+  int callCount = 0;
+
+  @override
+  Future<ImportOperationManifestWriteResult> writeJson({
+    required ImportOperationManifest manifest,
+    required String folderPath,
+  }) async {
     callCount++;
     return result;
   }
@@ -1897,6 +1927,222 @@ void main() {
       'Executar importacao real',
     );
     final button = tester.widget<FilledButton>(executeButton);
+    expect(button.onPressed, isNull);
+  });
+
+  testWidgets('gera e salva manifesto da importacao com writer fake', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+      manifestResponses: [SelectedFolder(path: 'C:/Manifestos')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Legiao Urbana - Musica Nova.mp4',
+            fullPath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            relativePath: 'Legiao Urbana - Musica Nova.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+    final fakeImportExecutor = _FakeImportOperationExecutor(
+      ImportOperationExecutionResult(
+        items: [
+          ImportOperationExecutionResultItem(
+            id: 'item-1',
+            action: ImportOperationAction.copy,
+            status: ImportOperationExecutionResultItemStatus.copied,
+            originalFileName: 'Legiao Urbana - Musica Nova.mp4',
+            officialFileName: 'Legiao Urbana - Musica Nova - 00002.mp4',
+            sourcePath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            destinationPath:
+                r'C:\Biblioteca\Legiao Urbana - Musica Nova - 00002.mp4',
+            messages: const ['Arquivo copiado com sucesso.'],
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+    final fakeManifestWriter = _FakeImportOperationManifestWriter(
+      const ImportOperationManifestWriteResult(
+        success: true,
+        filePath: 'C:/Manifestos/import-manifest-test.json',
+        messages: ['Manifesto JSON salvo com sucesso.'],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+          importOperationExecutor: fakeImportExecutor,
+          importOperationManifestWriter: fakeManifestWriter,
+        ),
+      ),
+    );
+
+    await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
+    await tapFirstTextContaining(tester, 'Escanear');
+    await tapFirstTextContaining(tester, 'limpeza');
+    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Validar configuracao de saida');
+    await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
+
+    final confirmCheckbox = find.byType(Checkbox).last;
+    await tester.ensureVisible(confirmCheckbox);
+    await tester.tap(confirmCheckbox, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    final confirmField = find.widgetWithText(
+      TextField,
+      'Digite IMPORTAR para liberar a execucao',
+    );
+    await tester.ensureVisible(confirmField);
+    await tester.enterText(confirmField, 'IMPORTAR');
+    await tester.pumpAndSettle();
+
+    await tapFirstTextContaining(tester, 'Executar importacao real');
+    await tester.tap(find.text('Executar importacao real').last);
+    await tester.pumpAndSettle();
+
+    await tapFirstTextContaining(tester, 'Gerar manifesto da importacao');
+
+    expect(find.textContaining('Manifesto da importacao'), findsWidgets);
+    expect(find.textContaining('ID:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Modo de saida:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Total:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Sucessos:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Falhas:'), findsAtLeastNWidgets(1));
+
+    await tapFirstTextContaining(tester, 'Selecionar pasta do manifesto');
+    await tapFirstTextContaining(tester, 'Salvar manifesto JSON');
+
+    expect(
+      find.textContaining('Manifesto JSON salvo.'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(
+      find.textContaining('Resultado do salvamento do manifesto'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(
+      find.textContaining('C:/Manifestos/import-manifest-test.json'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(fakeManifestWriter.callCount, 1);
+  });
+
+  testWidgets('botao salvar manifesto json desabilitado sem pasta', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Legiao Urbana - Musica Nova.mp4',
+            fullPath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            relativePath: 'Legiao Urbana - Musica Nova.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+          importOperationExecutor: _FakeImportOperationExecutor(
+            ImportOperationExecutionResult(
+              items: [
+                ImportOperationExecutionResultItem(
+                  id: 'item-1',
+                  action: ImportOperationAction.copy,
+                  status: ImportOperationExecutionResultItemStatus.copied,
+                  originalFileName: 'Legiao Urbana - Musica Nova.mp4',
+                  officialFileName: 'Legiao Urbana - Musica Nova - 00002.mp4',
+                  sourcePath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+                  destinationPath:
+                      r'C:\Biblioteca\Legiao Urbana - Musica Nova - 00002.mp4',
+                  messages: const ['Arquivo copiado com sucesso.'],
+                ),
+              ],
+              warnings: const [],
+            ),
+          ),
+          importOperationManifestWriter: _FakeImportOperationManifestWriter(
+            const ImportOperationManifestWriteResult(
+              success: true,
+              filePath: 'x',
+              messages: ['ok'],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
+    await tapFirstTextContaining(tester, 'Escanear');
+    await tapFirstTextContaining(tester, 'limpeza');
+    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
+
+    final confirmCheckbox = find.byType(Checkbox).last;
+    await tester.ensureVisible(confirmCheckbox);
+    await tester.tap(confirmCheckbox, warnIfMissed: false);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Digite IMPORTAR para liberar a execucao'),
+      'IMPORTAR',
+    );
+    await tester.pumpAndSettle();
+    await tapFirstTextContaining(tester, 'Executar importacao real');
+    await tester.tap(find.text('Executar importacao real').last);
+    await tester.pumpAndSettle();
+    await tapFirstTextContaining(tester, 'Gerar manifesto da importacao');
+
+    final saveButton = find.widgetWithText(
+      OutlinedButton,
+      'Salvar manifesto JSON',
+    );
+    final button = tester.widget<OutlinedButton>(saveButton);
     expect(button.onPressed, isNull);
   });
 }

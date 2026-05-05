@@ -267,6 +267,14 @@ O app nao sobrescreve arquivos existentes e nao cria diretorios.
 
 Apos executar, reindexe a biblioteca oficial e reescaneie as musicas novas.
 
+## Manifesto da importacao
+
+Apos executar a importacao, o app pode gerar manifesto com resumo e itens da execucao.
+
+O usuario pode escolher uma pasta e salvar o manifesto em JSON com botao explicito.
+
+O app nao sobrescreve manifesto existente e o manifesto nao altera arquivos de musica.
+
 ## Sugestoes de importacao de musicas novas
 
 Apos a pre-limpeza, o app gera sugestoes de importacao para os arquivos novos.
