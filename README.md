@@ -207,6 +207,16 @@ A previa e limitada a 100 itens e pode ser ocultada ou revelada por alternancia.
 
 Nesta fase nenhum arquivo e alterado.
 
+## Scan da pasta de musicas novas
+
+O app pode listar arquivos .mp4 da pasta de musicas novas selecionada.
+
+O scan preserva nome do arquivo, caminho completo e caminho relativo para cada .mp4 encontrado.
+
+Nesta fase ainda nao ha analise de nomes, geracao de codigos ou renomeio.
+
+A analise inteligente dos nomes vira em rodada futura.
+
 ## Selecao da pasta de musicas novas
 
 O app agora permite selecionar a pasta onde ficam os novos .mp4 baixados.

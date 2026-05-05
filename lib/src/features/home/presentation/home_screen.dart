@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../base_library/application/official_library_scan_service.dart';
 import '../../base_library/domain/base_library.dart';
 import '../../folder_selection/application/folder_picker_service.dart';
+import '../../incoming_songs/application/incoming_songs_scan_service.dart';
+import '../../incoming_songs/domain/incoming_songs.dart';
 import '../../library_repair/application/duplicate_code_repair_executor.dart';
 import '../../library_repair/application/invalid_file_repair_executor.dart';
 import '../../library_repair/domain/library_repair.dart';
@@ -14,18 +16,22 @@ class HomeScreen extends StatefulWidget {
     OfficialLibraryScanService? officialLibraryScanService,
     DuplicateCodeRepairExecutor? duplicateCodeRepairExecutor,
     InvalidFileRepairExecutor? invalidFileRepairExecutor,
+    IncomingSongsScanService? incomingSongsScanService,
   }) : folderPickerService = folderPickerService ?? const FolderPickerService(),
        officialLibraryScanService =
            officialLibraryScanService ?? OfficialLibraryScanService(),
        duplicateCodeRepairExecutor =
            duplicateCodeRepairExecutor ?? DuplicateCodeRepairExecutor(),
        invalidFileRepairExecutor =
-           invalidFileRepairExecutor ?? InvalidFileRepairExecutor();
+           invalidFileRepairExecutor ?? InvalidFileRepairExecutor(),
+       incomingSongsScanService =
+           incomingSongsScanService ?? IncomingSongsScanService();
 
   final FolderPickerService folderPickerService;
   final OfficialLibraryScanService officialLibraryScanService;
   final DuplicateCodeRepairExecutor duplicateCodeRepairExecutor;
   final InvalidFileRepairExecutor invalidFileRepairExecutor;
+  final IncomingSongsScanService incomingSongsScanService;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -45,6 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _incomingSongsFolderPath;
   bool _selectingIncomingSongsFolder = false;
   String? _incomingSongsFolderSelectionMessage;
+  bool _scanningIncomingSongsFolder = false;
+  IncomingSongsScanResult? _incomingSongsScanResult;
+  String? _incomingSongsScanMessage;
 
   bool _indexingOfficialLibrary = false;
   BaseLibraryIndexResult? _officialLibraryIndexResult;
@@ -118,6 +127,42 @@ class _HomeScreenState extends State<HomeScreen> {
       _incomingSongsFolderPath = selectedFolder.path;
       _incomingSongsFolderSelectionMessage =
           'Pasta de musicas novas selecionada.';
+      _incomingSongsScanResult = null;
+      _incomingSongsScanMessage = null;
+    });
+  }
+
+  Future<void> _scanIncomingSongsFolder() async {
+    if (_scanningIncomingSongsFolder) {
+      return;
+    }
+
+    if (_incomingSongsFolderPath == null ||
+        _incomingSongsFolderPath!.trim().isEmpty) {
+      setState(() {
+        _incomingSongsScanMessage =
+            'Selecione a pasta de músicas novas antes de escanear.';
+      });
+      return;
+    }
+
+    setState(() {
+      _scanningIncomingSongsFolder = true;
+      _incomingSongsScanMessage = null;
+    });
+
+    final result = await widget.incomingSongsScanService.scanFolder(
+      _incomingSongsFolderPath!,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _scanningIncomingSongsFolder = false;
+      _incomingSongsScanResult = result;
+      _incomingSongsScanMessage = 'Pasta de músicas novas escaneada.';
     });
   }
 
@@ -1507,6 +1552,61 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 8),
                             Text(_incomingSongsFolderSelectionMessage!),
                           ],
+                          if (_incomingSongsFolderPath != null) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton(
+                              onPressed: _scanningIncomingSongsFolder
+                                  ? null
+                                  : _scanIncomingSongsFolder,
+                              child: Text(
+                                _scanningIncomingSongsFolder
+                                    ? 'Escaneando...'
+                                    : 'Escanear músicas novas',
+                              ),
+                            ),
+                          ],
+                          if (_incomingSongsScanMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(_incomingSongsScanMessage!),
+                          ],
+                          if (_incomingSongsScanResult != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Músicas novas encontradas: ${_incomingSongsScanResult!.totalCount}',
+                            ),
+                            if (_incomingSongsScanResult!.hasWarnings) ...[
+                              const SizedBox(height: 8),
+                              const Text('Avisos do scan:'),
+                              const SizedBox(height: 4),
+                              for (final warning
+                                  in _incomingSongsScanResult!.warnings) ...[
+                                Text('- $warning'),
+                                const SizedBox(height: 2),
+                              ],
+                            ],
+                            if (_incomingSongsScanResult!.totalCount == 0) ...[
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Nenhum .mp4 encontrado na pasta de músicas novas.',
+                              ),
+                            ] else ...[
+                              const SizedBox(height: 12),
+                              const Text('Amostra de arquivos:'),
+                              const SizedBox(height: 4),
+                              if (_incomingSongsScanResult!.totalCount > 20)
+                                Text(
+                                  'Exibindo os primeiros 20 de ${_incomingSongsScanResult!.totalCount} arquivos encontrados.',
+                                ),
+                              const SizedBox(height: 4),
+                              for (final file
+                                  in _incomingSongsScanResult!.files.take(
+                                    20,
+                                  )) ...[
+                                Text(file.displayPath),
+                                const SizedBox(height: 2),
+                              ],
+                            ],
+                          ],
                         ],
                       ),
                     ),
@@ -1544,11 +1644,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Round 23 - Selecao da pasta de musicas novas',
+                            'Round 24 - Scan da pasta de musicas novas',
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Estado: Selecao de pasta de musicas novas sem scan.',
+                            'Estado: Listagem real de .mp4 da pasta de musicas novas.',
                           ),
                         ],
                       ),

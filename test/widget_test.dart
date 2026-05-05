@@ -7,6 +7,8 @@ import 'package:studiobox_music_importer/src/features/base_library/domain/base_l
 import 'package:studiobox_music_importer/src/features/folder_selection/application/folder_picker_service.dart';
 import 'package:studiobox_music_importer/src/features/folder_selection/domain/selected_folder.dart';
 import 'package:studiobox_music_importer/src/features/home/presentation/home_screen.dart';
+import 'package:studiobox_music_importer/src/features/incoming_songs/application/incoming_songs_scan_service.dart';
+import 'package:studiobox_music_importer/src/features/incoming_songs/domain/incoming_songs.dart';
 import 'package:studiobox_music_importer/src/features/library_repair/application/duplicate_code_repair_executor.dart';
 import 'package:studiobox_music_importer/src/features/library_repair/application/invalid_file_repair_executor.dart';
 import 'package:studiobox_music_importer/src/features/library_repair/domain/library_repair.dart';
@@ -66,6 +68,15 @@ class _FakeInvalidFileRepairExecutor extends InvalidFileRepairExecutor {
     callCount++;
     return result;
   }
+}
+
+class _FakeIncomingSongsScanService extends IncomingSongsScanService {
+  _FakeIncomingSongsScanService(this.result);
+
+  final IncomingSongsScanResult result;
+
+  @override
+  Future<IncomingSongsScanResult> scanFolder(String folderPath) async => result;
 }
 
 class _FakeDuplicateCodeRepairExecutor extends DuplicateCodeRepairExecutor {
@@ -1016,6 +1027,72 @@ void main() {
     expect(find.text('C:/Novas Musicas'), findsOneWidget);
     expect(find.text('Pasta de musicas novas selecionada.'), findsOneWidget);
   });
+
+  testWidgets('escaneia pasta de musicas novas e exibe resultado', (
+    WidgetTester tester,
+  ) async {
+    final fakeService = _FakeFolderPickerService(
+      [],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+    );
+    final fakeScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Artista A - Musica A.mp4',
+            fullPath: r'C:\Novas Musicas\Artista A - Musica A.mp4',
+            relativePath: 'Artista A - Musica A.mp4',
+          ),
+          IncomingSongScannedFile(
+            fileName: 'Artista B - Musica B.mp4',
+            fullPath: r'C:\Novas Musicas\Artista B - Musica B.mp4',
+            relativePath: 'Artista B - Musica B.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakeService,
+          incomingSongsScanService: fakeScanService,
+        ),
+      ),
+    );
+
+    final selectButton = find.text('Selecionar pasta de musicas novas');
+    await tester.ensureVisible(selectButton);
+    await tester.tap(selectButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('C:/Novas Musicas'), findsOneWidget);
+
+    final scanButton = find.text('Escanear músicas novas');
+    await tester.ensureVisible(scanButton);
+    await tester.tap(scanButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pasta de músicas novas escaneada.'), findsOneWidget);
+    expect(find.text('Músicas novas encontradas: 2'), findsOneWidget);
+    expect(find.text('Amostra de arquivos:'), findsOneWidget);
+    expect(find.text('Artista A - Musica A.mp4'), findsOneWidget);
+    expect(find.text('Artista B - Musica B.mp4'), findsOneWidget);
+  });
+
+  testWidgets(
+    'botao escanear nao aparece sem pasta de musicas novas selecionada',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(home: HomeScreen()));
+
+      expect(
+        find.text('Nenhuma pasta de musicas novas selecionada.'),
+        findsOneWidget,
+      );
+      expect(find.text('Escanear músicas novas'), findsNothing);
+    },
+  );
 
   testWidgets('cancelar selecao de musicas novas mantem caminho anterior', (
     WidgetTester tester,
