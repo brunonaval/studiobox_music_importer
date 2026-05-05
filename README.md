@@ -249,6 +249,14 @@ Nesta fase nada e copiado, movido ou renomeado.
 
 A operacao real sera adicionada em rodada futura.
 
+## Dry-run da importacao
+
+O app gera uma previa das operacoes futuras em memoria com acao, origem e destino.
+
+Tambem destaca bloqueios e destinos duplicados antes de qualquer execucao real.
+
+Nesta fase nenhum arquivo e alterado.
+
 ## Sugestoes de importacao de musicas novas
 
 Apos a pre-limpeza, o app gera sugestoes de importacao para os arquivos novos.

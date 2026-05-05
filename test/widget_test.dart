@@ -1635,4 +1635,79 @@ void main() {
       findsAtLeastNWidgets(1),
     );
   });
+
+  testWidgets('gera dry-run da importacao com destino customizado', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+      outputResponses: [SelectedFolder(path: 'C:/Saida Importacao')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Legiao Urbana - Musica Nova.mp4',
+            fullPath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            relativePath: 'Legiao Urbana - Musica Nova.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+        ),
+      ),
+    );
+
+    await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
+    await tapFirstTextContaining(tester, 'Escanear');
+    await tapFirstTextContaining(tester, 'limpeza');
+    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Selecionar todos os prontos');
+
+    final modeDropdown = find.byType(DropdownButtonFormField<ImportOutputMode>);
+    await tester.ensureVisible(modeDropdown);
+    await tester.tap(modeDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Copiar para pasta de saida').last);
+    await tester.pumpAndSettle();
+
+    await tapFirstTextContaining(tester, 'Selecionar pasta de saida');
+    await tapFirstTextContaining(tester, 'Validar configuracao de saida');
+    await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
+
+    expect(
+      find.textContaining('Dry-run da operacao de importacao'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('Total de operacoes:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Prontas:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Bloqueadas:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Acao:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Origem:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Destino:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Nome oficial:'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('C:/Saida Importacao'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Dry-run da importacao gerado.'), findsWidgets);
+  });
 }

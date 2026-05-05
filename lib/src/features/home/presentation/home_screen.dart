@@ -71,6 +71,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _selectingImportOutputFolder = false;
   ImportOutputConfigurationValidationResult? _importOutputValidationResult;
   String? _importOutputMessage;
+  ImportOperationDryRunPlan? _importOperationDryRunPlan;
+  bool _showImportOperationDryRun = false;
+  String? _importOperationDryRunMessage;
   bool _showReadyImportCandidates = true;
   bool _showReviewImportCandidates = true;
   bool _showBlockedImportCandidates = true;
@@ -257,6 +260,15 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ImportCandidateEditItem> _editItemsForDisplay() =>
       (_importCandidateEditPlan?.items ?? []).take(50).toList();
 
+  List<ImportOperationDryRunItem> _dryRunItemsForDisplay() =>
+      (_importOperationDryRunPlan?.items ?? []).take(100).toList();
+
+  void _resetImportOperationDryRun() {
+    _importOperationDryRunPlan = null;
+    _showImportOperationDryRun = false;
+    _importOperationDryRunMessage = null;
+  }
+
   void _resetImportSelection() {
     _importCandidateSelectionPlan = null;
     _importCandidateSelectionMessage = null;
@@ -267,6 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _selectingImportOutputFolder = false;
     _importOutputValidationResult = null;
     _importOutputMessage = null;
+    _resetImportOperationDryRun();
   }
 
   ImportOutputConfiguration _buildImportOutputConfiguration() {
@@ -296,6 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (setSuccessMessage) {
         _importOutputMessage = 'Configuracao de saida validada.';
       }
+      _resetImportOperationDryRun();
     });
   }
 
@@ -319,6 +333,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _selectingImportOutputFolder = false;
         _importOutputMessage = 'Selecao cancelada.';
+        _resetImportOperationDryRun();
       });
       return;
     }
@@ -327,6 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectingImportOutputFolder = false;
       _customImportOutputFolderPath = selectedFolder.path;
       _importOutputMessage = 'Pasta de saida selecionada.';
+      _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
   }
@@ -341,6 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _importCandidateSelectionPlan = plan.selectAllReady();
       _importCandidateSelectionMessage =
           'Selecionados todos os candidatos prontos.';
+      _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
   }
@@ -354,6 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _importCandidateSelectionPlan = plan.clearSelection();
       _importCandidateSelectionMessage = 'Selecao de candidatos limpa.';
+      _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
   }
@@ -364,6 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
         id: id,
         artist: value,
       );
+      _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
   }
@@ -374,6 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
         id: id,
         title: value,
       );
+      _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
   }
@@ -384,6 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
         id: id,
         code: value,
       );
+      _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
   }
@@ -461,6 +482,38 @@ class _HomeScreenState extends State<HomeScreen> {
       _showReviewImportCandidates = true;
       _showBlockedImportCandidates = true;
       _showDuplicateImportCandidates = false;
+    });
+  }
+
+  void _generateImportOperationDryRun() {
+    final selectionPlan = _importCandidateSelectionPlan;
+    final editPlan = _importCandidateEditPlan;
+    final cleaningPlan = _incomingSongCleaningPreviewPlan;
+    if (selectionPlan == null || editPlan == null || cleaningPlan == null) {
+      setState(() {
+        _importOperationDryRunMessage =
+            'Prepare selecao, edicao e pre-limpeza antes do dry-run.';
+      });
+      return;
+    }
+
+    final outputValidation = ImportOutputConfigurationValidator().validate(
+      configuration: _buildImportOutputConfiguration(),
+      selectionPlan: selectionPlan,
+      editPlan: editPlan,
+    );
+    final dryRunPlan = ImportOperationDryRunPlanner().buildDryRun(
+      outputValidationResult: outputValidation,
+      selectionPlan: selectionPlan,
+      editPlan: editPlan,
+      cleaningPlan: cleaningPlan,
+    );
+
+    setState(() {
+      _importOutputValidationResult = outputValidation;
+      _importOperationDryRunPlan = dryRunPlan;
+      _showImportOperationDryRun = true;
+      _importOperationDryRunMessage = 'Dry-run da importacao gerado.';
     });
   }
 
@@ -1181,6 +1234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 }
                                 setState(() {
                                   _importOutputMode = value;
+                                  _resetImportOperationDryRun();
                                 });
                                 _validateImportOutputConfiguration();
                               },
@@ -1247,6 +1301,121 @@ class _HomeScreenState extends State<HomeScreen> {
                                 'Validar configuracao de saida',
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (_importCandidateSelectionPlan != null &&
+                      _importCandidateEditPlan != null &&
+                      _incomingSongCleaningPreviewPlan != null) ...[
+                    const SizedBox(height: 16),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                FilledButton.tonal(
+                                  onPressed: _generateImportOperationDryRun,
+                                  child: const Text(
+                                    'Gerar dry-run da importacao',
+                                  ),
+                                ),
+                                OutlinedButton(
+                                  onPressed: _importOperationDryRunPlan == null
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            _showImportOperationDryRun =
+                                                !_showImportOperationDryRun;
+                                          });
+                                        },
+                                  child: Text(
+                                    _showImportOperationDryRun
+                                        ? 'Ocultar dry-run da importacao'
+                                        : 'Mostrar dry-run da importacao',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_importOperationDryRunMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Text(_importOperationDryRunMessage!),
+                            ],
+                            if (_showImportOperationDryRun &&
+                                _importOperationDryRunPlan != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'Dry-run da operacao de importacao',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Total de operacoes: ${_importOperationDryRunPlan!.totalCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Prontas: ${_importOperationDryRunPlan!.readyCount}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Bloqueadas: ${_importOperationDryRunPlan!.blockedCount}',
+                              ),
+                              if (_importOperationDryRunPlan!.hasWarnings) ...[
+                                const SizedBox(height: 8),
+                                const Text('Avisos:'),
+                                for (final warning
+                                    in _importOperationDryRunPlan!.warnings)
+                                  Text('- $warning'),
+                              ],
+                              if (_importOperationDryRunPlan!.totalCount >
+                                  100) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Exibindo os primeiros 100 de ${_importOperationDryRunPlan!.totalCount} operacoes.',
+                                ),
+                              ],
+                              const SizedBox(height: 8),
+                              for (final item in _dryRunItemsForDisplay()) ...[
+                                Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Status: ${item.status.label}'),
+                                        Text('Acao: ${item.action.label}'),
+                                        Text(
+                                          'Arquivo: ${item.originalFileName}',
+                                        ),
+                                        Text(
+                                          'Nome oficial: ${item.officialFileName}',
+                                        ),
+                                        Text(
+                                          'Origem: ${item.sourcePathPreview ?? '-'}',
+                                        ),
+                                        Text(
+                                          'Destino: ${item.destinationPathPreview ?? '-'}',
+                                        ),
+                                        if (item.hasWarnings) ...[
+                                          const SizedBox(height: 4),
+                                          const Text('Avisos:'),
+                                          for (final warning in item.warnings)
+                                            Text('- $warning'),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                            ],
                           ],
                         ),
                       ),
