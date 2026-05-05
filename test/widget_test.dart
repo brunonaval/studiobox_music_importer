@@ -257,6 +257,24 @@ void main() {
     expect(find.textContaining('Status do projeto'), findsAtLeastNWidgets(1));
   });
 
+  testWidgets('mostra fundacao visual do dashboard', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const StudioBoxMusicImporterApp());
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
+    expect(find.textContaining('Round 35'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Fluxo seguro'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Dashboard'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Biblioteca'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Novas musicas'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Revisao'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Saida'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Execucao'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Manifesto'), findsAtLeastNWidgets(1));
+  });
+
   testWidgets(
     'updates selected official folder path and preserves it on cancel',
     (WidgetTester tester) async {

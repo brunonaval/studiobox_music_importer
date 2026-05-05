@@ -349,13 +349,11 @@ O MVP inicial sera para Windows.
 
 Android sera considerado depois.
 
-## Dashboard visual premium
+## Fundacao visual do dashboard
 
-A Home foi reorganizada em dashboard desktop de duas colunas.
+Foi criada a base visual dark/neon da Home com sidebar, header, stepper e componentes reutilizaveis.
 
-Os cards principais do fluxo ficaram na coluna principal, com foco em leitura e acao.
+Os fluxos reais continuam os mesmos e serao migrados por blocos nos proximos rounds.
 
-Resumo da sessao, cache local, motor e status do projeto ficaram na coluna lateral.
-
-Nenhuma regra de negocio foi alterada nesta rodada.
+Nenhuma regra de negocio foi alterada.
 
