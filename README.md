@@ -275,6 +275,16 @@ O usuario pode escolher uma pasta e salvar o manifesto em JSON com botao explici
 
 O app nao sobrescreve manifesto existente e o manifesto nao altera arquivos de musica.
 
+## Cache local da sessao
+
+O app salva caminhos e modo de saida da ultima sessao.
+
+Ao abrir, restaura somente caminhos e configuracao simples.
+
+O app nao restaura scans, candidatos, dry-run ou resultados.
+
+O cache pode ser limpo pela Home.
+
 ## Sugestoes de importacao de musicas novas
 
 Apos a pre-limpeza, o app gera sugestoes de importacao para os arquivos novos.

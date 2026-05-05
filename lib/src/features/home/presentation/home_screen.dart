@@ -11,6 +11,8 @@ import '../../library_repair/application/invalid_file_repair_executor.dart';
 import '../../library_repair/domain/library_repair.dart';
 import '../../output_plan/application/output_plan_application.dart';
 import '../../output_plan/domain/output_plan.dart';
+import '../../session_cache/application/session_cache_application.dart';
+import '../../session_cache/domain/session_cache.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({
@@ -22,6 +24,7 @@ class HomeScreen extends StatefulWidget {
     IncomingSongsScanService? incomingSongsScanService,
     ImportOperationExecutor? importOperationExecutor,
     ImportOperationManifestWriter? importOperationManifestWriter,
+    AppSessionCacheService? sessionCacheService,
   }) : folderPickerService = folderPickerService ?? const FolderPickerService(),
        officialLibraryScanService =
            officialLibraryScanService ?? OfficialLibraryScanService(),
@@ -34,7 +37,9 @@ class HomeScreen extends StatefulWidget {
        importOperationExecutor =
            importOperationExecutor ?? ImportOperationExecutor(),
        importOperationManifestWriter =
-           importOperationManifestWriter ?? ImportOperationManifestWriter();
+           importOperationManifestWriter ?? ImportOperationManifestWriter(),
+       sessionCacheService =
+           sessionCacheService ?? const AppSessionCacheService();
 
   final FolderPickerService folderPickerService;
   final OfficialLibraryScanService officialLibraryScanService;
@@ -43,6 +48,7 @@ class HomeScreen extends StatefulWidget {
   final IncomingSongsScanService incomingSongsScanService;
   final ImportOperationExecutor importOperationExecutor;
   final ImportOperationManifestWriter importOperationManifestWriter;
+  final AppSessionCacheService sessionCacheService;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -94,6 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _selectingImportManifestFolder = false;
   bool _savingImportManifest = false;
   ImportOperationManifestWriteResult? _importOperationManifestWriteResult;
+  bool _loadingSessionCache = false;
+  bool _savingSessionCache = false;
+  String? _sessionCacheMessage;
+  AppSessionSnapshot? _lastSessionSnapshot;
   bool _showReadyImportCandidates = true;
   bool _showReviewImportCandidates = true;
   bool _showBlockedImportCandidates = true;
@@ -137,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _duplicateRepairConfirmationController = TextEditingController();
     _invalidRepairConfirmationController = TextEditingController();
     _importOperationConfirmationController = TextEditingController();
+    _loadSessionCache();
   }
 
   @override
@@ -158,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final selectedFolder = await widget.folderPickerService
         .pickIncomingSongsFolder();
+    final shouldSaveCache = selectedFolder != null;
 
     if (!mounted) {
       return;
@@ -184,6 +196,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _importSuggestionMessage = null;
       _resetImportSelection();
     });
+
+    if (shouldSaveCache) {
+      _saveSessionCache();
+    }
   }
 
   Future<void> _scanIncomingSongsFolder() async {
@@ -289,6 +305,97 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ImportOperationManifestItem> _manifestItemsForDisplay() =>
       (_importOperationManifest?.items ?? []).take(100).toList();
 
+  AppSessionSnapshot _buildCurrentSessionSnapshot() {
+    return AppSessionSnapshot(
+      officialLibraryFolderPath: _officialLibraryFolderPath,
+      incomingSongsFolderPath: _incomingSongsFolderPath,
+      customImportOutputFolderPath: _customImportOutputFolderPath,
+      importManifestFolderPath: _importManifestFolderPath,
+      importOutputModeName: _importOutputMode.name,
+      savedAtIso8601: null,
+    );
+  }
+
+  ImportOutputMode _importOutputModeFromName(String? name) {
+    if (name == null || name.trim().isEmpty) {
+      return ImportOutputMode.renameInIncomingFolder;
+    }
+    for (final mode in ImportOutputMode.values) {
+      if (mode.name == name.trim()) {
+        return mode;
+      }
+    }
+    return ImportOutputMode.renameInIncomingFolder;
+  }
+
+  Future<void> _loadSessionCache() async {
+    setState(() {
+      _loadingSessionCache = true;
+      _sessionCacheMessage = 'Carregando cache...';
+    });
+
+    final snapshot = await widget.sessionCacheService.loadSnapshot();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _loadingSessionCache = false;
+      _officialLibraryFolderPath = snapshot.officialLibraryFolderPath;
+      _incomingSongsFolderPath = snapshot.incomingSongsFolderPath;
+      _customImportOutputFolderPath = snapshot.customImportOutputFolderPath;
+      _importManifestFolderPath = snapshot.importManifestFolderPath;
+      _importOutputMode = _importOutputModeFromName(
+        snapshot.importOutputModeName,
+      );
+      _lastSessionSnapshot = snapshot;
+      _sessionCacheMessage = snapshot.isEmpty
+          ? 'Nenhum cache local encontrado.'
+          : 'Cache local da sessao carregado.';
+    });
+  }
+
+  Future<void> _saveSessionCache() async {
+    setState(() {
+      _savingSessionCache = true;
+      _sessionCacheMessage = 'Salvando cache...';
+    });
+
+    final snapshot = _buildCurrentSessionSnapshot();
+    await widget.sessionCacheService.saveSnapshot(snapshot);
+    final savedSnapshot = await widget.sessionCacheService.loadSnapshot();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _savingSessionCache = false;
+      _lastSessionSnapshot = savedSnapshot;
+      _sessionCacheMessage = 'Cache local da sessao salvo.';
+    });
+  }
+
+  Future<void> _clearSessionCache() async {
+    setState(() {
+      _savingSessionCache = true;
+      _sessionCacheMessage = 'Salvando cache...';
+    });
+
+    await widget.sessionCacheService.clearSnapshot();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _savingSessionCache = false;
+      _lastSessionSnapshot = null;
+      _sessionCacheMessage = 'Cache local da sessao limpo.';
+    });
+  }
+
   void _resetImportManifestState({bool clearFolder = false}) {
     _importOperationManifest = null;
     _importOperationManifestMessage = null;
@@ -390,6 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
+    _saveSessionCache();
   }
 
   void _selectAllReadyCandidates() {
@@ -706,6 +814,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _importOperationManifestMessage = 'Pasta do manifesto selecionada.';
       _importOperationManifestWriteResult = null;
     });
+    _saveSessionCache();
   }
 
   Future<void> _saveImportOperationManifestJson() async {
@@ -749,6 +858,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final selectedFolder = await widget.folderPickerService
         .pickOfficialLibraryFolder();
+    final shouldSaveCache = selectedFolder != null;
 
     if (!mounted) {
       return;
@@ -765,6 +875,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _officialLibraryFolderPath = selectedFolder.path;
       _folderSelectionMessage = 'Biblioteca oficial selecionada.';
     });
+    if (shouldSaveCache) {
+      _saveSessionCache();
+    }
   }
 
   Future<void> _indexOfficialLibrary() async {
@@ -1458,6 +1571,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   _resetImportOperationDryRun();
                                 });
                                 _validateImportOutputConfiguration();
+                                _saveSessionCache();
                               },
                             ),
                             if (_importOutputMode.targetsCustomFolder) ...[
@@ -1943,6 +2057,72 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ],
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Cache local da sessao',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          if (_loadingSessionCache)
+                            const Text('Carregando cache...'),
+                          if (_savingSessionCache)
+                            const Text('Salvando cache...'),
+                          if (_sessionCacheMessage != null) ...[
+                            Text(_sessionCacheMessage!),
+                            const SizedBox(height: 8),
+                          ],
+                          Text(
+                            'Ultimo cache salvo em: ${_lastSessionSnapshot?.savedAtIso8601 ?? '-'}',
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Biblioteca oficial salva: ${_lastSessionSnapshot?.officialLibraryFolderPath ?? '-'}',
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Pasta de musicas novas salva: ${_lastSessionSnapshot?.incomingSongsFolderPath ?? '-'}',
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Pasta de saida salva: ${_lastSessionSnapshot?.customImportOutputFolderPath ?? '-'}',
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Pasta do manifesto salva: ${_lastSessionSnapshot?.importManifestFolderPath ?? '-'}',
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Modo de saida salvo: ${_lastSessionSnapshot?.importOutputModeName ?? '-'}',
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              OutlinedButton(
+                                onPressed: _savingSessionCache
+                                    ? null
+                                    : _saveSessionCache,
+                                child: const Text('Salvar sessao agora'),
+                              ),
+                              OutlinedButton(
+                                onPressed: _savingSessionCache
+                                    ? null
+                                    : _clearSessionCache,
+                                child: const Text('Limpar cache local'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 28),
                   Wrap(
                     spacing: 16,

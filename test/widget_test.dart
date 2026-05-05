@@ -14,6 +14,8 @@ import 'package:studiobox_music_importer/src/features/library_repair/application
 import 'package:studiobox_music_importer/src/features/library_repair/domain/library_repair.dart';
 import 'package:studiobox_music_importer/src/features/output_plan/application/output_plan_application.dart';
 import 'package:studiobox_music_importer/src/features/output_plan/domain/output_plan.dart';
+import 'package:studiobox_music_importer/src/features/session_cache/application/session_cache_application.dart';
+import 'package:studiobox_music_importer/src/features/session_cache/domain/session_cache.dart';
 
 class _FakeFolderPickerService extends FolderPickerService {
   _FakeFolderPickerService(
@@ -152,6 +154,41 @@ class _FakeImportOperationManifestWriter extends ImportOperationManifestWriter {
   }) async {
     callCount++;
     return result;
+  }
+}
+
+class _FakeAppSessionCacheService extends AppSessionCacheService {
+  _FakeAppSessionCacheService({required AppSessionSnapshot initialSnapshot})
+    : _snapshot = initialSnapshot;
+
+  AppSessionSnapshot _snapshot;
+  int saveCount = 0;
+  int clearCount = 0;
+  AppSessionSnapshot? lastSavedSnapshot;
+
+  @override
+  Future<AppSessionSnapshot> loadSnapshot() async => _snapshot;
+
+  @override
+  Future<void> saveSnapshot(AppSessionSnapshot snapshot) async {
+    saveCount++;
+    lastSavedSnapshot = snapshot;
+    _snapshot = snapshot.copyWith(
+      savedAtIso8601: snapshot.savedAtIso8601 ?? '2026-05-05T12:00:00.000Z',
+    );
+  }
+
+  @override
+  Future<void> clearSnapshot() async {
+    clearCount++;
+    _snapshot = AppSessionSnapshot(
+      officialLibraryFolderPath: null,
+      incomingSongsFolderPath: null,
+      customImportOutputFolderPath: null,
+      importManifestFolderPath: null,
+      importOutputModeName: null,
+      savedAtIso8601: null,
+    );
   }
 }
 
@@ -2144,5 +2181,91 @@ void main() {
     );
     final button = tester.widget<OutlinedButton>(saveButton);
     expect(button.onPressed, isNull);
+  });
+
+  testWidgets('restaura cache local da sessao ao abrir home', (
+    WidgetTester tester,
+  ) async {
+    final fakeCache = _FakeAppSessionCacheService(
+      initialSnapshot: AppSessionSnapshot(
+        officialLibraryFolderPath: 'C:/Biblioteca Oficial',
+        incomingSongsFolderPath: 'C:/Novas Musicas',
+        customImportOutputFolderPath: 'C:/Saida Importacao',
+        importManifestFolderPath: 'C:/Manifestos',
+        importOutputModeName: 'copyToCustomFolder',
+        savedAtIso8601: '2026-05-05T12:00:00.000Z',
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: HomeScreen(sessionCacheService: fakeCache)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Cache local da sessao carregado.'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('C:/Biblioteca Oficial'), findsWidgets);
+    expect(find.textContaining('C:/Novas Musicas'), findsWidgets);
+    expect(find.textContaining('C:/Saida Importacao'), findsWidgets);
+    expect(find.textContaining('C:/Manifestos'), findsWidgets);
+  });
+
+  testWidgets('salvar sessao agora chama servico e mostra mensagem', (
+    WidgetTester tester,
+  ) async {
+    final fakeCache = _FakeAppSessionCacheService(
+      initialSnapshot: AppSessionSnapshot(
+        officialLibraryFolderPath: null,
+        incomingSongsFolderPath: null,
+        customImportOutputFolderPath: null,
+        importManifestFolderPath: null,
+        importOutputModeName: null,
+        savedAtIso8601: null,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: HomeScreen(sessionCacheService: fakeCache)),
+    );
+    await tester.pumpAndSettle();
+
+    await tapFirstTextContaining(tester, 'Salvar sessao agora');
+
+    expect(fakeCache.saveCount, greaterThanOrEqualTo(1));
+    expect(fakeCache.lastSavedSnapshot, isNotNull);
+    expect(
+      find.textContaining('Cache local da sessao salvo.'),
+      findsAtLeastNWidgets(1),
+    );
+  });
+
+  testWidgets('limpar cache local chama servico e mostra mensagem', (
+    WidgetTester tester,
+  ) async {
+    final fakeCache = _FakeAppSessionCacheService(
+      initialSnapshot: AppSessionSnapshot(
+        officialLibraryFolderPath: 'C:/Biblioteca Oficial',
+        incomingSongsFolderPath: null,
+        customImportOutputFolderPath: null,
+        importManifestFolderPath: null,
+        importOutputModeName: null,
+        savedAtIso8601: '2026-05-05T12:00:00.000Z',
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: HomeScreen(sessionCacheService: fakeCache)),
+    );
+    await tester.pumpAndSettle();
+
+    await tapFirstTextContaining(tester, 'Limpar cache local');
+
+    expect(fakeCache.clearCount, 1);
+    expect(
+      find.textContaining('Cache local da sessao limpo.'),
+      findsAtLeastNWidgets(1),
+    );
   });
 }
