@@ -257,6 +257,16 @@ Tambem destaca bloqueios e destinos duplicados antes de qualquer execucao real.
 
 Nesta fase nenhum arquivo e alterado.
 
+## Execucao segura da importacao
+
+Apos o dry-run, o app pode executar somente as operacoes prontas.
+
+A execucao exige checkbox de confirmacao, texto IMPORTAR e dialogo final.
+
+O app nao sobrescreve arquivos existentes e nao cria diretorios.
+
+Apos executar, reindexe a biblioteca oficial e reescaneie as musicas novas.
+
 ## Sugestoes de importacao de musicas novas
 
 Apos a pre-limpeza, o app gera sugestoes de importacao para os arquivos novos.

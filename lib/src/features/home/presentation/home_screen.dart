@@ -9,6 +9,7 @@ import '../../incoming_songs/domain/incoming_songs.dart';
 import '../../library_repair/application/duplicate_code_repair_executor.dart';
 import '../../library_repair/application/invalid_file_repair_executor.dart';
 import '../../library_repair/domain/library_repair.dart';
+import '../../output_plan/application/output_plan_application.dart';
 import '../../output_plan/domain/output_plan.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class HomeScreen extends StatefulWidget {
     DuplicateCodeRepairExecutor? duplicateCodeRepairExecutor,
     InvalidFileRepairExecutor? invalidFileRepairExecutor,
     IncomingSongsScanService? incomingSongsScanService,
+    ImportOperationExecutor? importOperationExecutor,
   }) : folderPickerService = folderPickerService ?? const FolderPickerService(),
        officialLibraryScanService =
            officialLibraryScanService ?? OfficialLibraryScanService(),
@@ -27,13 +29,16 @@ class HomeScreen extends StatefulWidget {
        invalidFileRepairExecutor =
            invalidFileRepairExecutor ?? InvalidFileRepairExecutor(),
        incomingSongsScanService =
-           incomingSongsScanService ?? IncomingSongsScanService();
+           incomingSongsScanService ?? IncomingSongsScanService(),
+       importOperationExecutor =
+           importOperationExecutor ?? ImportOperationExecutor();
 
   final FolderPickerService folderPickerService;
   final OfficialLibraryScanService officialLibraryScanService;
   final DuplicateCodeRepairExecutor duplicateCodeRepairExecutor;
   final InvalidFileRepairExecutor invalidFileRepairExecutor;
   final IncomingSongsScanService incomingSongsScanService;
+  final ImportOperationExecutor importOperationExecutor;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -74,6 +79,11 @@ class _HomeScreenState extends State<HomeScreen> {
   ImportOperationDryRunPlan? _importOperationDryRunPlan;
   bool _showImportOperationDryRun = false;
   String? _importOperationDryRunMessage;
+  bool _confirmImportOperationExecution = false;
+  bool _executingImportOperation = false;
+  String _importOperationConfirmationText = '';
+  ImportOperationExecutionResult? _importOperationExecutionResult;
+  String? _importOperationExecutionResultMessage;
   bool _showReadyImportCandidates = true;
   bool _showReviewImportCandidates = true;
   bool _showBlockedImportCandidates = true;
@@ -109,18 +119,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late final TextEditingController _duplicateRepairConfirmationController;
   late final TextEditingController _invalidRepairConfirmationController;
+  late final TextEditingController _importOperationConfirmationController;
 
   @override
   void initState() {
     super.initState();
     _duplicateRepairConfirmationController = TextEditingController();
     _invalidRepairConfirmationController = TextEditingController();
+    _importOperationConfirmationController = TextEditingController();
   }
 
   @override
   void dispose() {
     _duplicateRepairConfirmationController.dispose();
     _invalidRepairConfirmationController.dispose();
+    _importOperationConfirmationController.dispose();
     super.dispose();
   }
 
@@ -267,6 +280,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _importOperationDryRunPlan = null;
     _showImportOperationDryRun = false;
     _importOperationDryRunMessage = null;
+    _confirmImportOperationExecution = false;
+    _executingImportOperation = false;
+    _importOperationConfirmationText = '';
+    _importOperationConfirmationController.clear();
+    _importOperationExecutionResult = null;
+    _importOperationExecutionResultMessage = null;
   }
 
   void _resetImportSelection() {
@@ -514,6 +533,96 @@ class _HomeScreenState extends State<HomeScreen> {
       _importOperationDryRunPlan = dryRunPlan;
       _showImportOperationDryRun = true;
       _importOperationDryRunMessage = 'Dry-run da importacao gerado.';
+      _confirmImportOperationExecution = false;
+      _executingImportOperation = false;
+      _importOperationConfirmationText = '';
+      _importOperationConfirmationController.clear();
+      _importOperationExecutionResult = null;
+      _importOperationExecutionResultMessage = null;
+    });
+  }
+
+  bool get _canExecuteImportOperation {
+    final dryRunPlan = _importOperationDryRunPlan;
+    if (dryRunPlan == null) {
+      return false;
+    }
+    if (!dryRunPlan.hasReadyItems) {
+      return false;
+    }
+    if (!_confirmImportOperationExecution) {
+      return false;
+    }
+    if (_importOperationConfirmationText.trim().toUpperCase() != 'IMPORTAR') {
+      return false;
+    }
+    return !_executingImportOperation;
+  }
+
+  Future<void> _executeImportOperation() async {
+    final dryRunPlan = _importOperationDryRunPlan;
+    if (dryRunPlan == null || !dryRunPlan.hasReadyItems) {
+      return;
+    }
+
+    if (!_canExecuteImportOperation) {
+      setState(() {
+        _importOperationExecutionResultMessage =
+            'Confirme a revisao do dry-run antes de executar.';
+      });
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Confirmar importacao real'),
+          content: Text(
+            'Voce esta prestes a executar ${dryRunPlan.readyCount} operacao(oes) real(is).\n\nEsta acao pode renomear, copiar ou mover arquivos reais e nao possui desfazer automatico nesta fase.\n\nDeseja continuar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Executar importacao real'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (confirmed != true) {
+      setState(() {
+        _importOperationExecutionResultMessage =
+            'Execucao da importacao cancelada.';
+      });
+      return;
+    }
+
+    setState(() {
+      _executingImportOperation = true;
+      _importOperationExecutionResultMessage = null;
+    });
+
+    final result = await widget.importOperationExecutor.execute(dryRunPlan);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _executingImportOperation = false;
+      _importOperationExecutionResult = result;
+      _importOperationExecutionResultMessage =
+          'Execucao da importacao concluida. Reindexe a biblioteca oficial e reescaneie as musicas novas para atualizar os resultados.';
     });
   }
 
@@ -1414,6 +1523,153 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 8),
+                              ],
+                              if (_importOperationDryRunPlan!
+                                  .hasReadyItems) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Confirmacao obrigatoria para executar importacao real',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Esta acao ira alterar arquivos reais conforme o dry-run da importacao.',
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Operacoes prontas para executar: ${_importOperationDryRunPlan!.readyCount}',
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Modo de saida atual: ${_importOutputMode.label}',
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Esta acao nao possui desfazer automatico nesta fase.',
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Recomendado: teste primeiro em uma copia da pasta de musicas novas.',
+                                ),
+                                const SizedBox(height: 8),
+                                CheckboxListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  value: _confirmImportOperationExecution,
+                                  onChanged: _executingImportOperation
+                                      ? null
+                                      : (value) {
+                                          setState(() {
+                                            _confirmImportOperationExecution =
+                                                value ?? false;
+                                          });
+                                        },
+                                  title: const Text(
+                                    'Revisei o dry-run da importacao e confirmo que desejo executar as operacoes prontas.',
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                TextField(
+                                  controller:
+                                      _importOperationConfirmationController,
+                                  enabled: !_executingImportOperation,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _importOperationConfirmationText = value;
+                                    });
+                                  },
+                                  decoration: const InputDecoration(
+                                    labelText:
+                                        'Digite IMPORTAR para liberar a execucao',
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                FilledButton(
+                                  onPressed: _canExecuteImportOperation
+                                      ? _executeImportOperation
+                                      : null,
+                                  child: Text(
+                                    _executingImportOperation
+                                        ? 'Executando importacao...'
+                                        : 'Executar importacao real',
+                                  ),
+                                ),
+                              ],
+                              if (_importOperationExecutionResultMessage !=
+                                  null) ...[
+                                const SizedBox(height: 8),
+                                Text(_importOperationExecutionResultMessage!),
+                              ],
+                              if (_importOperationExecutionResult != null) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Resultado da execucao da importacao',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Renomeados: ${_importOperationExecutionResult!.renamedCount}',
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Copiados: ${_importOperationExecutionResult!.copiedCount}',
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Movidos: ${_importOperationExecutionResult!.movedCount}',
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Ignorados: ${_importOperationExecutionResult!.skippedCount}',
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Falhas: ${_importOperationExecutionResult!.failedCount}',
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Reindexe a biblioteca oficial e reescaneie as musicas novas para conferir o resultado atualizado.',
+                                ),
+                                const SizedBox(height: 8),
+                                for (final item
+                                    in _importOperationExecutionResult!.items
+                                        .take(100)) ...[
+                                  Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Status: ${item.status.label}'),
+                                          Text('Acao: ${item.action.label}'),
+                                          Text(
+                                            'Arquivo: ${item.originalFileName}',
+                                          ),
+                                          Text(
+                                            'Nome oficial: ${item.officialFileName}',
+                                          ),
+                                          Text(
+                                            'Origem: ${item.sourcePath ?? '-'}',
+                                          ),
+                                          Text(
+                                            'Destino: ${item.destinationPath ?? '-'}',
+                                          ),
+                                          if (item.hasMessages) ...[
+                                            const SizedBox(height: 4),
+                                            const Text('Mensagens:'),
+                                            for (final message in item.messages)
+                                              Text('- $message'),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
                               ],
                             ],
                           ],

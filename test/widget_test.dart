@@ -12,6 +12,7 @@ import 'package:studiobox_music_importer/src/features/incoming_songs/domain/inco
 import 'package:studiobox_music_importer/src/features/library_repair/application/duplicate_code_repair_executor.dart';
 import 'package:studiobox_music_importer/src/features/library_repair/application/invalid_file_repair_executor.dart';
 import 'package:studiobox_music_importer/src/features/library_repair/domain/library_repair.dart';
+import 'package:studiobox_music_importer/src/features/output_plan/application/output_plan_application.dart';
 import 'package:studiobox_music_importer/src/features/output_plan/domain/output_plan.dart';
 
 class _FakeFolderPickerService extends FolderPickerService {
@@ -103,6 +104,21 @@ class _FakeDuplicateCodeRepairExecutor extends DuplicateCodeRepairExecutor {
   @override
   Future<DuplicateCodeRepairExecutionResult> execute(
     DuplicateCodeRepairExecutionPlan executionPlan,
+  ) async {
+    callCount++;
+    return result;
+  }
+}
+
+class _FakeImportOperationExecutor extends ImportOperationExecutor {
+  _FakeImportOperationExecutor(this.result);
+
+  final ImportOperationExecutionResult result;
+  int callCount = 0;
+
+  @override
+  Future<ImportOperationExecutionResult> execute(
+    ImportOperationDryRunPlan dryRunPlan,
   ) async {
     callCount++;
     return result;
@@ -1709,5 +1725,178 @@ void main() {
     expect(find.textContaining('Nome oficial:'), findsAtLeastNWidgets(1));
     expect(find.textContaining('C:/Saida Importacao'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Dry-run da importacao gerado.'), findsWidgets);
+  });
+
+  testWidgets('executa importacao real com confirmacao forte', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+      outputResponses: [SelectedFolder(path: 'C:/Saida Importacao')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Legiao Urbana - Musica Nova.mp4',
+            fullPath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            relativePath: 'Legiao Urbana - Musica Nova.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+    final fakeImportExecutor = _FakeImportOperationExecutor(
+      ImportOperationExecutionResult(
+        items: [
+          ImportOperationExecutionResultItem(
+            id: 'item-1',
+            action: ImportOperationAction.copy,
+            status: ImportOperationExecutionResultItemStatus.copied,
+            originalFileName: 'Legiao Urbana - Musica Nova.mp4',
+            officialFileName: 'Legiao Urbana - Musica Nova - 00002.mp4',
+            sourcePath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            destinationPath:
+                'C:/Saida Importacao/Legiao Urbana - Musica Nova - 00002.mp4',
+            messages: const ['Arquivo copiado com sucesso.'],
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+          importOperationExecutor: fakeImportExecutor,
+        ),
+      ),
+    );
+
+    await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
+    await tapFirstTextContaining(tester, 'Escanear');
+    await tapFirstTextContaining(tester, 'limpeza');
+    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Selecionar todos os prontos');
+    await tapFirstTextContaining(tester, 'Validar configuracao de saida');
+    await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
+
+    expect(
+      find.textContaining(
+        'Confirmacao obrigatoria para executar importacao real',
+      ),
+      findsAtLeastNWidgets(1),
+    );
+
+    final confirmCheckbox = find.byType(Checkbox).last;
+    await tester.ensureVisible(confirmCheckbox);
+    await tester.tap(confirmCheckbox, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    final confirmField = find.widgetWithText(
+      TextField,
+      'Digite IMPORTAR para liberar a execucao',
+    );
+    await tester.ensureVisible(confirmField);
+    await tester.enterText(confirmField, 'IMPORTAR');
+    await tester.pumpAndSettle();
+
+    await tapFirstTextContaining(tester, 'Executar importacao real');
+    expect(find.textContaining('Confirmar importacao real'), findsOneWidget);
+    await tester.tap(find.text('Executar importacao real').last);
+    await tester.pumpAndSettle();
+
+    expect(fakeImportExecutor.callCount, 1);
+    expect(
+      find.textContaining('Resultado da execucao da importacao'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('Copiados: 1'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Falhas: 0'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('Reindexe a biblioteca oficial'),
+      findsAtLeastNWidgets(1),
+    );
+  });
+
+  testWidgets('sem IMPORTAR botao de execucao fica desabilitado', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+        relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Legiao Urbana - Musica Nova.mp4',
+            fullPath: r'C:\Novas\Legiao Urbana - Musica Nova.mp4',
+            relativePath: 'Legiao Urbana - Musica Nova.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+          importOperationExecutor: _FakeImportOperationExecutor(
+            const ImportOperationExecutionResult(items: [], warnings: []),
+          ),
+        ),
+      ),
+    );
+
+    await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
+    await tapFirstTextContaining(tester, 'Escanear');
+    await tapFirstTextContaining(tester, 'limpeza');
+    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Selecionar todos os prontos');
+    await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
+
+    final confirmCheckbox = find.byType(Checkbox).last;
+    await tester.ensureVisible(confirmCheckbox);
+    await tester.tap(confirmCheckbox, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    final executeButton = find.widgetWithText(
+      FilledButton,
+      'Executar importacao real',
+    );
+    final button = tester.widget<FilledButton>(executeButton);
+    expect(button.onPressed, isNull);
   });
 }
