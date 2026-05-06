@@ -248,6 +248,33 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _changeImportOutputMode(ImportOutputMode value) {
+    setState(() {
+      _importOutputMode = value;
+      _resetImportOperationDryRun();
+    });
+    _validateImportOutputConfiguration();
+    _saveSessionCache();
+  }
+
+  void _toggleImportOperationDryRunVisibility() {
+    setState(() {
+      _showImportOperationDryRun = !_showImportOperationDryRun;
+    });
+  }
+
+  void _setImportOperationExecutionConfirmation(bool value) {
+    setState(() {
+      _confirmImportOperationExecution = value;
+    });
+  }
+
+  void _setImportOperationConfirmationText(String value) {
+    setState(() {
+      _importOperationConfirmationText = value;
+    });
+  }
+
   Future<void> _selectIncomingSongsFolder() async {
     if (_selectingIncomingSongsFolder) {
       return;
@@ -1526,6 +1553,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildIncomingSongsDashboardCard(context),
                 const SizedBox(height: 20),
                 _buildSuggestionsReviewDashboardCard(context),
+                const SizedBox(height: 20),
+                _buildOutputExecutionDashboardCard(context),
               ];
 
               if (constraints.maxWidth >= 1180) {
@@ -1550,504 +1579,6 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          if (_importCandidateSelectionPlan != null &&
-              _importCandidateEditPlan != null) ...[
-            const SizedBox(height: 16),
-            KeyedSubtree(
-              key: _outputKey,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '4. Saida e execucao',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Modo de saida da importacao',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<ImportOutputMode>(
-                        initialValue: _importOutputMode,
-                        decoration: const InputDecoration(
-                          labelText: 'Modo de saida',
-                        ),
-                        items: ImportOutputMode.values
-                            .map(
-                              (mode) => DropdownMenuItem(
-                                value: mode,
-                                child: Text(mode.label),
-                              ),
-                            )
-                            .toList(growable: false),
-                        onChanged: (value) {
-                          if (value == null) {
-                            return;
-                          }
-                          setState(() {
-                            _importOutputMode = value;
-                            _resetImportOperationDryRun();
-                          });
-                          _validateImportOutputConfiguration();
-                          _saveSessionCache();
-                        },
-                      ),
-                      if (_importOutputMode.targetsCustomFolder) ...[
-                        const SizedBox(height: 8),
-                        FilledButton.tonal(
-                          onPressed: _selectingImportOutputFolder
-                              ? null
-                              : _selectImportOutputFolder,
-                          child: Text(
-                            _selectingImportOutputFolder
-                                ? 'Selecionando...'
-                                : 'Selecionar pasta de saida',
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      Text(
-                        'Pasta de musicas novas: ${_incomingSongsFolderPath ?? '-'}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Biblioteca oficial: ${_officialLibraryFolderPath ?? '-'}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Pasta de saida: ${_customImportOutputFolderPath ?? '-'}',
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        (_importOutputValidationResult?.isValid ?? false)
-                            ? 'Configuracao de saida valida.'
-                            : 'Configuracao de saida invalida.',
-                      ),
-                      if (_importOutputValidationResult?.hasErrors ??
-                          false) ...[
-                        const SizedBox(height: 8),
-                        const Text('Erros:'),
-                        for (final error
-                            in _importOutputValidationResult!.errors)
-                          Text('- $error'),
-                      ],
-                      if (_importOutputValidationResult?.hasWarnings ??
-                          false) ...[
-                        const SizedBox(height: 8),
-                        const Text('Avisos:'),
-                        for (final warning
-                            in _importOutputValidationResult!.warnings)
-                          Text('- $warning'),
-                      ],
-                      if (_importOutputMessage != null) ...[
-                        const SizedBox(height: 8),
-                        Text(_importOutputMessage!),
-                      ],
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        onPressed: () {
-                          _validateImportOutputConfiguration(
-                            setSuccessMessage: true,
-                          );
-                        },
-                        child: const Text('Validar configuracao de saida'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-          if (_importCandidateSelectionPlan != null &&
-              _importCandidateEditPlan != null &&
-              _incomingSongCleaningPreviewPlan != null) ...[
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        FilledButton.tonal(
-                          onPressed: _generateImportOperationDryRun,
-                          child: const Text('Gerar dry-run da importacao'),
-                        ),
-                        OutlinedButton(
-                          onPressed: _importOperationDryRunPlan == null
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _showImportOperationDryRun =
-                                        !_showImportOperationDryRun;
-                                  });
-                                },
-                          child: Text(
-                            _showImportOperationDryRun
-                                ? 'Ocultar dry-run da importacao'
-                                : 'Mostrar dry-run da importacao',
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_importOperationDryRunMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(_importOperationDryRunMessage!),
-                    ],
-                    if (_showImportOperationDryRun &&
-                        _importOperationDryRunPlan != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'Dry-run da operacao de importacao',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Total de operacoes: ${_importOperationDryRunPlan!.totalCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Prontas: ${_importOperationDryRunPlan!.readyCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Bloqueadas: ${_importOperationDryRunPlan!.blockedCount}',
-                      ),
-                      if (_importOperationDryRunPlan!.hasWarnings) ...[
-                        const SizedBox(height: 8),
-                        const Text('Avisos:'),
-                        for (final warning
-                            in _importOperationDryRunPlan!.warnings)
-                          Text('- $warning'),
-                      ],
-                      if (_importOperationDryRunPlan!.totalCount > 100) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Exibindo os primeiros 100 de ${_importOperationDryRunPlan!.totalCount} operacoes.',
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      for (final item in _dryRunItemsForDisplay()) ...[
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Status: ${item.status.label}'),
-                                Text('Acao: ${item.action.label}'),
-                                Text('Arquivo: ${item.originalFileName}'),
-                                Text('Nome oficial: ${item.officialFileName}'),
-                                Text(
-                                  'Origem: ${item.sourcePathPreview ?? '-'}',
-                                ),
-                                Text(
-                                  'Destino: ${item.destinationPathPreview ?? '-'}',
-                                ),
-                                if (item.hasWarnings) ...[
-                                  const SizedBox(height: 4),
-                                  const Text('Avisos:'),
-                                  for (final warning in item.warnings)
-                                    Text('- $warning'),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      if (_importOperationDryRunPlan!.hasReadyItems) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Confirmacao obrigatoria para executar importacao real',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Esta acao ira alterar arquivos reais conforme o dry-run da importacao.',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Operacoes prontas para executar: ${_importOperationDryRunPlan!.readyCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text('Modo de saida atual: ${_importOutputMode.label}'),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Esta acao nao possui desfazer automatico nesta fase.',
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Recomendado: teste primeiro em uma copia da pasta de musicas novas.',
-                        ),
-                        const SizedBox(height: 8),
-                        CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          value: _confirmImportOperationExecution,
-                          onChanged: _executingImportOperation
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    _confirmImportOperationExecution =
-                                        value ?? false;
-                                  });
-                                },
-                          title: const Text(
-                            'Revisei o dry-run da importacao e confirmo que desejo executar as operacoes prontas.',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _importOperationConfirmationController,
-                          enabled: !_executingImportOperation,
-                          onChanged: (value) {
-                            setState(() {
-                              _importOperationConfirmationText = value;
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            labelText:
-                                'Digite IMPORTAR para liberar a execucao',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        FilledButton(
-                          onPressed: _canExecuteImportOperation
-                              ? _executeImportOperation
-                              : null,
-                          child: Text(
-                            _executingImportOperation
-                                ? 'Executando importacao...'
-                                : 'Executar importacao real',
-                          ),
-                        ),
-                      ],
-                      if (_importOperationExecutionResultMessage != null) ...[
-                        const SizedBox(height: 8),
-                        Text(_importOperationExecutionResultMessage!),
-                      ],
-                      if (_importOperationExecutionResult != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Resultado da execucao da importacao',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Renomeados: ${_importOperationExecutionResult!.renamedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Copiados: ${_importOperationExecutionResult!.copiedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Movidos: ${_importOperationExecutionResult!.movedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Ignorados: ${_importOperationExecutionResult!.skippedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Falhas: ${_importOperationExecutionResult!.failedCount}',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Reindexe a biblioteca oficial e reescaneie as musicas novas para conferir o resultado atualizado.',
-                        ),
-                        const SizedBox(height: 8),
-                        FilledButton.tonal(
-                          onPressed: _generateImportOperationManifest,
-                          child: const Text('Gerar manifesto da importacao'),
-                        ),
-                        if (_importOperationManifestMessage != null) ...[
-                          const SizedBox(height: 8),
-                          Text(_importOperationManifestMessage!),
-                        ],
-                        const SizedBox(height: 8),
-                        for (final item
-                            in _importOperationExecutionResult!.items.take(
-                              100,
-                            )) ...[
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Status: ${item.status.label}'),
-                                  Text('Acao: ${item.action.label}'),
-                                  Text('Arquivo: ${item.originalFileName}'),
-                                  Text(
-                                    'Nome oficial: ${item.officialFileName}',
-                                  ),
-                                  Text('Origem: ${item.sourcePath ?? '-'}'),
-                                  Text(
-                                    'Destino: ${item.destinationPath ?? '-'}',
-                                  ),
-                                  if (item.hasMessages) ...[
-                                    const SizedBox(height: 4),
-                                    const Text('Mensagens:'),
-                                    for (final message in item.messages)
-                                      Text('- $message'),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                        if (_importOperationManifest != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            '5. Manifesto',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          KeyedSubtree(
-                            key: _manifestKey,
-                            child: Text(
-                              'Manifesto da importacao',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text('ID: ${_importOperationManifest!.id}'),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Gerado em: ${_importOperationManifest!.generatedAtIso8601}',
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Modo de saida: ${_importOperationManifest!.outputMode}',
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Total: ${_importOperationManifest!.summary.totalCount}',
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Sucessos: ${_importOperationManifest!.summary.successCount}',
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Falhas: ${_importOperationManifest!.summary.failedCount}',
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Ignorados: ${_importOperationManifest!.summary.skippedCount}',
-                          ),
-                          if (_importOperationManifest!.hasWarnings) ...[
-                            const SizedBox(height: 8),
-                            const Text('Avisos:'),
-                            for (final warning
-                                in _importOperationManifest!.warnings)
-                              Text('- $warning'),
-                          ],
-                          const SizedBox(height: 8),
-                          FilledButton.tonal(
-                            onPressed: _selectingImportManifestFolder
-                                ? null
-                                : _selectImportManifestFolder,
-                            child: Text(
-                              _selectingImportManifestFolder
-                                  ? 'Selecionando...'
-                                  : 'Selecionar pasta do manifesto',
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Pasta do manifesto: ${_importManifestFolderPath ?? '-'}',
-                          ),
-                          const SizedBox(height: 8),
-                          OutlinedButton(
-                            onPressed:
-                                _importOperationManifest != null &&
-                                    _importManifestFolderPath != null &&
-                                    _importManifestFolderPath!
-                                        .trim()
-                                        .isNotEmpty &&
-                                    !_savingImportManifest
-                                ? _saveImportOperationManifestJson
-                                : null,
-                            child: Text(
-                              _savingImportManifest
-                                  ? 'Salvando manifesto...'
-                                  : 'Salvar manifesto JSON',
-                            ),
-                          ),
-                          if (_importOperationManifestWriteResult != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'Resultado do salvamento do manifesto',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _importOperationManifestWriteResult!.success
-                                  ? 'Sucesso'
-                                  : 'Falha',
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Caminho: ${_importOperationManifestWriteResult!.filePath ?? '-'}',
-                            ),
-                            if (_importOperationManifestWriteResult!
-                                .hasMessages) ...[
-                              const SizedBox(height: 4),
-                              const Text('Mensagens:'),
-                              for (final message
-                                  in _importOperationManifestWriteResult!
-                                      .messages)
-                                Text('- $message'),
-                            ],
-                          ],
-                          const SizedBox(height: 8),
-                          for (final item in _manifestItemsForDisplay()) ...[
-                            Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Acao: ${item.action}'),
-                                    Text('Status: ${item.status}'),
-                                    Text('Arquivo: ${item.originalFileName}'),
-                                    Text(
-                                      'Nome oficial: ${item.officialFileName}',
-                                    ),
-                                    Text('Origem: ${item.sourcePath ?? '-'}'),
-                                    Text(
-                                      'Destino: ${item.destinationPath ?? '-'}',
-                                    ),
-                                    if (item.hasMessages) ...[
-                                      const SizedBox(height: 4),
-                                      const Text('Mensagens:'),
-                                      for (final message in item.messages)
-                                        Text('- $message'),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                        ],
-                      ],
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
           const SizedBox(height: 28),
         ],
       ),
@@ -2056,6 +1587,460 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 extension on _HomeScreenState {
+  Widget _buildOutputExecutionDashboardCard(BuildContext context) {
+    final statusLabel = _importOperationExecutionResult != null
+        ? 'Concluida'
+        : _importOperationDryRunPlan != null
+        ? 'Dry-run gerado'
+        : _importOutputValidationResult?.isValid == true
+        ? 'Configurada'
+        : (_importCandidateSelectionPlan != null &&
+              _importCandidateEditPlan != null)
+        ? 'Pendente'
+        : 'Aguardando revisao';
+    final statusColor = _importOperationExecutionResult != null
+        ? HomeDashboardTheme.success
+        : _importOperationDryRunPlan != null
+        ? HomeDashboardTheme.cyan
+        : _importOutputValidationResult?.isValid == true
+        ? HomeDashboardTheme.warning
+        : HomeDashboardTheme.textSecondary;
+
+    return KeyedSubtree(
+      key: _outputKey,
+      child: HomeDashboardCard(
+        title: '4. Saida e execucao',
+        subtitle:
+            'Configure o modo de saida, valide o dry-run e execute com confirmacao forte.',
+        icon: Icons.playlist_add_check_circle_outlined,
+        statusLabel: statusLabel,
+        statusColor: statusColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_importCandidateSelectionPlan != null &&
+                _importCandidateEditPlan != null) ...[
+              Text(
+                'Modo de saida da importacao',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<ImportOutputMode>(
+                initialValue: _importOutputMode,
+                decoration: const InputDecoration(labelText: 'Modo de saida'),
+                items: ImportOutputMode.values
+                    .map(
+                      (mode) => DropdownMenuItem(
+                        value: mode,
+                        child: Text(mode.label),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  _changeImportOutputMode(value);
+                },
+              ),
+              if (_importOutputMode.targetsCustomFolder) ...[
+                const SizedBox(height: 8),
+                FilledButton.tonal(
+                  onPressed: _selectingImportOutputFolder
+                      ? null
+                      : _selectImportOutputFolder,
+                  child: Text(
+                    _selectingImportOutputFolder
+                        ? 'Selecionando...'
+                        : 'Selecionar pasta de saida',
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                'Pasta de musicas novas: ${_incomingSongsFolderPath ?? '-'}',
+              ),
+              const SizedBox(height: 4),
+              Text('Biblioteca oficial: ${_officialLibraryFolderPath ?? '-'}'),
+              const SizedBox(height: 4),
+              Text('Pasta de saida: ${_customImportOutputFolderPath ?? '-'}'),
+              const SizedBox(height: 8),
+              Text(
+                (_importOutputValidationResult?.isValid ?? false)
+                    ? 'Configuracao de saida valida.'
+                    : 'Configuracao de saida invalida.',
+              ),
+              if (_importOutputValidationResult?.hasErrors ?? false) ...[
+                const SizedBox(height: 8),
+                const Text('Erros:'),
+                for (final error in _importOutputValidationResult!.errors)
+                  Text('- $error'),
+              ],
+              if (_importOutputValidationResult?.hasWarnings ?? false) ...[
+                const SizedBox(height: 8),
+                const Text('Avisos:'),
+                for (final warning in _importOutputValidationResult!.warnings)
+                  Text('- $warning'),
+              ],
+              if (_importOutputMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(_importOutputMessage!),
+              ],
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () {
+                  _validateImportOutputConfiguration(setSuccessMessage: true);
+                },
+                child: const Text('Validar configuracao de saida'),
+              ),
+            ],
+            if (_importCandidateSelectionPlan != null &&
+                _importCandidateEditPlan != null &&
+                _incomingSongCleaningPreviewPlan != null) ...[
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton.tonal(
+                    onPressed: _generateImportOperationDryRun,
+                    child: const Text('Gerar dry-run da importacao'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _importOperationDryRunPlan == null
+                        ? null
+                        : _toggleImportOperationDryRunVisibility,
+                    child: Text(
+                      _showImportOperationDryRun
+                          ? 'Ocultar dry-run da importacao'
+                          : 'Mostrar dry-run da importacao',
+                    ),
+                  ),
+                ],
+              ),
+              if (_importOperationDryRunMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(_importOperationDryRunMessage!),
+              ],
+              if (_showImportOperationDryRun &&
+                  _importOperationDryRunPlan != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Dry-run da operacao de importacao',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Total de operacoes: ${_importOperationDryRunPlan!.totalCount}',
+                ),
+                const SizedBox(height: 4),
+                Text('Prontas: ${_importOperationDryRunPlan!.readyCount}'),
+                const SizedBox(height: 4),
+                Text('Bloqueadas: ${_importOperationDryRunPlan!.blockedCount}'),
+                if (_importOperationDryRunPlan!.hasWarnings) ...[
+                  const SizedBox(height: 8),
+                  const Text('Avisos:'),
+                  for (final warning in _importOperationDryRunPlan!.warnings)
+                    Text('- $warning'),
+                ],
+                if (_importOperationDryRunPlan!.totalCount > 100) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Exibindo os primeiros 100 de ${_importOperationDryRunPlan!.totalCount} operacoes.',
+                  ),
+                ],
+                const SizedBox(height: 8),
+                for (final item in _dryRunItemsForDisplay()) ...[
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Status: ${item.status.label}'),
+                          Text('Acao: ${item.action.label}'),
+                          Text('Arquivo: ${item.originalFileName}'),
+                          Text('Nome oficial: ${item.officialFileName}'),
+                          Text('Origem: ${item.sourcePathPreview ?? '-'}'),
+                          Text(
+                            'Destino: ${item.destinationPathPreview ?? '-'}',
+                          ),
+                          if (item.hasWarnings) ...[
+                            const SizedBox(height: 4),
+                            const Text('Avisos:'),
+                            for (final warning in item.warnings)
+                              Text('- $warning'),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                if (_importOperationDryRunPlan!.hasReadyItems) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Confirmacao obrigatoria para executar importacao real',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Esta acao ira alterar arquivos reais conforme o dry-run da importacao.',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Operacoes prontas para executar: ${_importOperationDryRunPlan!.readyCount}',
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Modo de saida atual: ${_importOutputMode.label}'),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Esta acao nao possui desfazer automatico nesta fase.',
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Recomendado: teste primeiro em uma copia da pasta de musicas novas.',
+                  ),
+                  const SizedBox(height: 8),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _confirmImportOperationExecution,
+                    onChanged: _executingImportOperation
+                        ? null
+                        : (value) => _setImportOperationExecutionConfirmation(
+                            value ?? false,
+                          ),
+                    title: const Text(
+                      'Revisei o dry-run da importacao e confirmo que desejo executar as operacoes prontas.',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _importOperationConfirmationController,
+                    enabled: !_executingImportOperation,
+                    onChanged: _setImportOperationConfirmationText,
+                    decoration: const InputDecoration(
+                      labelText: 'Digite IMPORTAR para liberar a execucao',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton(
+                    onPressed: _canExecuteImportOperation
+                        ? _executeImportOperation
+                        : null,
+                    child: Text(
+                      _executingImportOperation
+                          ? 'Executando importacao...'
+                          : 'Executar importacao real',
+                    ),
+                  ),
+                ],
+                if (_importOperationExecutionResultMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Text(_importOperationExecutionResultMessage!),
+                ],
+                if (_importOperationExecutionResult != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Resultado da execucao da importacao',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Renomeados: ${_importOperationExecutionResult!.renamedCount}',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Copiados: ${_importOperationExecutionResult!.copiedCount}',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Movidos: ${_importOperationExecutionResult!.movedCount}',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Ignorados: ${_importOperationExecutionResult!.skippedCount}',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Falhas: ${_importOperationExecutionResult!.failedCount}',
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Reindexe a biblioteca oficial e reescaneie as musicas novas para conferir o resultado atualizado.',
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton.tonal(
+                    onPressed: _generateImportOperationManifest,
+                    child: const Text('Gerar manifesto da importacao'),
+                  ),
+                  if (_importOperationManifestMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(_importOperationManifestMessage!),
+                  ],
+                  const SizedBox(height: 8),
+                  for (final item
+                      in _importOperationExecutionResult!.items.take(100)) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Status: ${item.status.label}'),
+                            Text('Acao: ${item.action.label}'),
+                            Text('Arquivo: ${item.originalFileName}'),
+                            Text('Nome oficial: ${item.officialFileName}'),
+                            Text('Origem: ${item.sourcePath ?? '-'}'),
+                            Text('Destino: ${item.destinationPath ?? '-'}'),
+                            if (item.hasMessages) ...[
+                              const SizedBox(height: 4),
+                              const Text('Mensagens:'),
+                              for (final message in item.messages)
+                                Text('- $message'),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (_importOperationManifest != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      '5. Manifesto',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    KeyedSubtree(
+                      key: _manifestKey,
+                      child: Text(
+                        'Manifesto da importacao',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('ID: ${_importOperationManifest!.id}'),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Gerado em: ${_importOperationManifest!.generatedAtIso8601}',
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Modo de saida: ${_importOperationManifest!.outputMode}',
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Total: ${_importOperationManifest!.summary.totalCount}',
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Sucessos: ${_importOperationManifest!.summary.successCount}',
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Falhas: ${_importOperationManifest!.summary.failedCount}',
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Ignorados: ${_importOperationManifest!.summary.skippedCount}',
+                    ),
+                    if (_importOperationManifest!.hasWarnings) ...[
+                      const SizedBox(height: 8),
+                      const Text('Avisos:'),
+                      for (final warning in _importOperationManifest!.warnings)
+                        Text('- $warning'),
+                    ],
+                    const SizedBox(height: 8),
+                    FilledButton.tonal(
+                      onPressed: _selectingImportManifestFolder
+                          ? null
+                          : _selectImportManifestFolder,
+                      child: Text(
+                        _selectingImportManifestFolder
+                            ? 'Selecionando...'
+                            : 'Selecionar pasta do manifesto',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pasta do manifesto: ${_importManifestFolderPath ?? '-'}',
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed:
+                          _importOperationManifest != null &&
+                              _importManifestFolderPath != null &&
+                              _importManifestFolderPath!.trim().isNotEmpty &&
+                              !_savingImportManifest
+                          ? _saveImportOperationManifestJson
+                          : null,
+                      child: Text(
+                        _savingImportManifest
+                            ? 'Salvando manifesto...'
+                            : 'Salvar manifesto JSON',
+                      ),
+                    ),
+                    if (_importOperationManifestWriteResult != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Resultado do salvamento do manifesto',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _importOperationManifestWriteResult!.success
+                            ? 'Sucesso'
+                            : 'Falha',
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Caminho: ${_importOperationManifestWriteResult!.filePath ?? '-'}',
+                      ),
+                      if (_importOperationManifestWriteResult!.hasMessages) ...[
+                        const SizedBox(height: 4),
+                        const Text('Mensagens:'),
+                        for (final message
+                            in _importOperationManifestWriteResult!.messages)
+                          Text('- $message'),
+                      ],
+                    ],
+                    const SizedBox(height: 8),
+                    for (final item in _manifestItemsForDisplay()) ...[
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Acao: ${item.action}'),
+                              Text('Status: ${item.status}'),
+                              Text('Arquivo: ${item.originalFileName}'),
+                              Text('Nome oficial: ${item.officialFileName}'),
+                              Text('Origem: ${item.sourcePath ?? '-'}'),
+                              Text('Destino: ${item.destinationPath ?? '-'}'),
+                              if (item.hasMessages) ...[
+                                const SizedBox(height: 4),
+                                const Text('Mensagens:'),
+                                for (final message in item.messages)
+                                  Text('- $message'),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ],
+                ],
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSuggestionsReviewDashboardCard(BuildContext context) {
     final statusLabel = _importCandidateSelectionPlan != null
         ? 'Em revisao'
@@ -3828,10 +3813,10 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D4 - Sugestoes e revisao premium'),
+            const Text('Round 35D5 - Saida e execucao premium'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Sugestoes e revisao redesenhadas como card principal largo, mantendo os cards anteriores e a lateral preservados.',
+              'Estado: Saida e execucao redesenhadas como card principal largo, mantendo os cards anteriores e a lateral preservados.',
             ),
           ],
         ),
