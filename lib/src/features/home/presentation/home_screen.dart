@@ -359,6 +359,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _toggleIncomingSongCleaningPreview() {
+    setState(() {
+      _showIncomingSongCleaningPreview = !_showIncomingSongCleaningPreview;
+    });
+  }
+
   List<ImportSuggestionCandidate> _readyImportCandidates() =>
       (_importSuggestionPlan?.candidates ?? [])
           .where(
@@ -1478,6 +1484,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   officialLibraryResult,
                 ),
+                const SizedBox(height: 20),
+                _buildIncomingSongsDashboardCard(context),
               ];
 
               if (constraints.maxWidth >= 1180) {
@@ -2260,519 +2268,342 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           const SizedBox(height: 28),
-          KeyedSubtree(
-            key: _incomingSongsKey,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_incomingSongsScanResult != null &&
+                      _incomingSongsScanResult!.totalCount > 0) ...[
+                    const SizedBox(height: 16),
                     Text(
-                      '2. Musicas novas',
+                      '3. Sugestoes e revisao',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
+                    const SizedBox(height: 16),
+                    FilledButton.tonal(
+                      onPressed: _generateImportSuggestions,
+                      child: const Text('Gerar sugestoes de importacao'),
+                    ),
+                  ],
+                  if (_importSuggestionMessage != null) ...[
                     const SizedBox(height: 8),
+                    Text(_importSuggestionMessage!),
+                  ],
+                  if (_importSuggestionPlan != null) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _showImportSuggestionPlan =
+                              !_showImportSuggestionPlan;
+                        });
+                      },
+                      child: Text(
+                        _showImportSuggestionPlan
+                            ? 'Ocultar sugestoes de importacao'
+                            : 'Mostrar sugestoes de importacao',
+                      ),
+                    ),
+                  ],
+                  if (_importSuggestionPlan != null &&
+                      _showImportSuggestionPlan) ...[
+                    const SizedBox(height: 12),
                     Text(
-                      'Pasta de musicas novas selecionada:',
+                      'sugestoes de importacao',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
+                    Text('Total: ${_importSuggestionPlan!.totalCount}'),
+                    const SizedBox(height: 4),
+                    Text('Prontos: ${_readyImportCandidates().length}'),
+                    const SizedBox(height: 4),
                     Text(
-                      _incomingSongsFolderPath ??
-                          'Nenhuma pasta de musicas novas selecionada.',
+                      'Revisao necessaria: ${_importSuggestionPlan!.needsReviewCount}',
                     ),
+                    const SizedBox(height: 4),
+                    Text('Bloqueados: ${_importSuggestionPlan!.blockedCount}'),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Possiveis duplicados: ${_duplicateImportCandidates().length}',
+                    ),
+                    if (_importSuggestionPlan!.hasWarnings) ...[
+                      const SizedBox(height: 8),
+                      const Text('Avisos:'),
+                      const SizedBox(height: 4),
+                      for (final warning
+                          in _importSuggestionPlan!.warnings) ...[
+                        Text('- $warning'),
+                        const SizedBox(height: 2),
+                      ],
+                    ],
+                    const SizedBox(height: 16),
+                    Text(
+                      'Revisao dos candidatos',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    // --- prontos ---
                     const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: _selectingIncomingSongsFolder
-                          ? null
-                          : _selectIncomingSongsFolder,
-                      child: Text(
-                        _selectingIncomingSongsFolder
-                            ? 'Selecionando...'
-                            : 'Selecionar pasta de musicas novas',
-                      ),
-                    ),
-                    if (_incomingSongsFolderSelectionMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(_incomingSongsFolderSelectionMessage!),
-                    ],
-                    if (_incomingSongsFolderPath != null) ...[
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: _scanningIncomingSongsFolder
-                            ? null
-                            : _scanIncomingSongsFolder,
-                        child: Text(
-                          _scanningIncomingSongsFolder
-                              ? 'Escaneando...'
-                              : 'Escanear musicas novas',
-                        ),
-                      ),
-                    ],
-                    if (_incomingSongsScanMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(_incomingSongsScanMessage!),
-                    ],
-                    if (_incomingSongsScanResult != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'musicas novas encontradas: ${_incomingSongsScanResult!.totalCount}',
-                      ),
-                      if (_incomingSongsScanResult!.hasWarnings) ...[
-                        const SizedBox(height: 8),
-                        const Text('Avisos do scan:'),
-                        const SizedBox(height: 4),
-                        for (final warning
-                            in _incomingSongsScanResult!.warnings) ...[
-                          Text('- $warning'),
-                          const SizedBox(height: 2),
-                        ],
-                      ],
-                      if (_incomingSongsScanResult!.totalCount == 0) ...[
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Nenhum .mp4 encontrado na pasta de musicas novas.',
-                        ),
-                      ] else ...[
-                        const SizedBox(height: 12),
-                        const Text('Amostra de arquivos:'),
-                        const SizedBox(height: 4),
-                        if (_incomingSongsScanResult!.totalCount > 20)
-                          Text(
-                            'Exibindo os primeiros 20 de ${_incomingSongsScanResult!.totalCount} arquivos encontrados.',
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Prontos para importar: ${_readyImportCandidates().length}',
+                            style: Theme.of(context).textTheme.titleSmall,
                           ),
-                        const SizedBox(height: 4),
-                        for (final file in _incomingSongsScanResult!.files.take(
-                          20,
-                        )) ...[
-                          Text(file.displayPath),
-                          const SizedBox(height: 2),
-                        ],
-                      ],
-                      if (_incomingSongsScanResult!.totalCount > 0) ...[
-                        const SizedBox(height: 16),
-                        FilledButton.tonal(
-                          onPressed: _generateIncomingSongCleaningPreview,
-                          child: const Text('Gerar pre-limpeza dos nomes'),
+                        ),
+                        OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              _showReadyImportCandidates =
+                                  !_showReadyImportCandidates;
+                            });
+                          },
+                          child: Text(
+                            _showReadyImportCandidates
+                                ? 'Ocultar prontos'
+                                : 'Mostrar prontos',
+                          ),
                         ),
                       ],
-                    ],
-                    if (_incomingSongCleaningMessage != null) ...[
+                    ),
+                    if (_showReadyImportCandidates) ...[
                       const SizedBox(height: 8),
-                      Text(_incomingSongCleaningMessage!),
-                    ],
-                    if (_incomingSongCleaningPreviewPlan != null) ...[
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            _showIncomingSongCleaningPreview =
-                                !_showIncomingSongCleaningPreview;
-                          });
-                        },
-                        child: Text(
-                          _showIncomingSongCleaningPreview
-                              ? 'Ocultar pre-limpeza'
-                              : 'Mostrar pre-limpeza',
-                        ),
-                      ),
-                    ],
-                    if (_incomingSongCleaningPreviewPlan != null &&
-                        _showIncomingSongCleaningPreview) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'pre-limpeza dos nomes',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Arquivos analisados: ${_incomingSongCleaningPreviewPlan!.totalCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Nomes alterados: ${_incomingSongCleaningPreviewPlan!.changedCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Nomes sem alteracao: ${_incomingSongCleaningPreviewPlan!.unchangedCount}',
-                      ),
-                      if (_incomingSongCleaningPreviewPlan!.hasWarnings) ...[
-                        const SizedBox(height: 8),
-                        const Text('Avisos:'),
-                        const SizedBox(height: 4),
-                        for (final warning
-                            in _incomingSongCleaningPreviewPlan!.warnings) ...[
-                          Text('- $warning'),
-                          const SizedBox(height: 2),
-                        ],
-                      ],
-                      const SizedBox(height: 8),
-                      if (_incomingSongCleaningPreviewPlan!.totalCount > 50)
+                      if (_readyImportCandidates().isEmpty)
+                        const Text('Nenhum candidato pronto.'),
+                      if (_readyImportCandidates().length > 50)
                         Text(
-                          'Exibindo os primeiros 50 de ${_incomingSongCleaningPreviewPlan!.totalCount} itens da pre-limpeza.',
+                          'Exibindo os primeiros 50 de ${_readyImportCandidates().length} candidatos.',
                         ),
-                      const SizedBox(height: 4),
-                      for (final item
-                          in _incomingSongCleaningPreviewPlan!.items.take(
-                            50,
-                          )) ...[
+                      for (final candidate in _readyImportCandidates().take(
+                        50,
+                      )) ...[
+                        const Text('Pronto para importar'),
+                        const SizedBox(height: 2),
                         const Text('Arquivo:'),
-                        Text(item.displayPath),
+                        Text(candidate.originalFileName),
                         const SizedBox(height: 2),
                         const Text('Original:'),
-                        Text(item.originalFileName),
+                        Text(candidate.analysis.originalFileName),
                         const SizedBox(height: 2),
-                        const Text('Limpo:'),
-                        Text(item.cleanedFileName),
-                        if (item.appliedRules.isNotEmpty) ...[
+                        const Text('Nome limpo:'),
+                        Text(candidate.analysis.cleanedName),
+                        if (candidate.analysis.detectedArtist != null) ...[
                           const SizedBox(height: 2),
-                          const Text('Regras aplicadas:'),
-                          for (final rule in item.appliedRules) Text('- $rule'),
+                          Text('Artista: ${candidate.analysis.detectedArtist}'),
                         ],
-                        if (item.hasWarnings) ...[
+                        if (candidate.analysis.detectedTitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text('Musica: ${candidate.analysis.detectedTitle}'),
+                        ],
+                        if (candidate.hasSuggestedCode) ...[
+                          const SizedBox(height: 2),
+                          Text('Codigo sugerido: ${candidate.suggestedCode}'),
+                        ],
+                        if (candidate.suggestedOfficialFileName != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Nome oficial sugerido: ${candidate.suggestedOfficialFileName}',
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                    // --- revisao ---
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Precisam de revisao: ${_reviewImportCandidates().length}',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                        OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              _showReviewImportCandidates =
+                                  !_showReviewImportCandidates;
+                            });
+                          },
+                          child: Text(
+                            _showReviewImportCandidates
+                                ? 'Ocultar revisao'
+                                : 'Mostrar revisao',
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_showReviewImportCandidates) ...[
+                      const SizedBox(height: 8),
+                      if (_reviewImportCandidates().isEmpty)
+                        const Text('Nenhum candidato para revisao.'),
+                      if (_reviewImportCandidates().length > 50)
+                        Text(
+                          'Exibindo os primeiros 50 de ${_reviewImportCandidates().length} candidatos.',
+                        ),
+                      for (final candidate in _reviewImportCandidates().take(
+                        50,
+                      )) ...[
+                        const Text('Revisao necessaria'),
+                        const SizedBox(height: 2),
+                        const Text('Arquivo:'),
+                        Text(candidate.originalFileName),
+                        const SizedBox(height: 2),
+                        const Text('Original:'),
+                        Text(candidate.analysis.originalFileName),
+                        const SizedBox(height: 2),
+                        const Text('Nome limpo:'),
+                        Text(candidate.analysis.cleanedName),
+                        if (candidate.analysis.detectedArtist != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Artista detectado: ${candidate.analysis.detectedArtist}',
+                          ),
+                        ],
+                        if (candidate.analysis.detectedTitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Musica detectada: ${candidate.analysis.detectedTitle}',
+                          ),
+                        ],
+                        const SizedBox(height: 2),
+                        Text(
+                          'Confianca: ${candidate.analysis.confidence.label}',
+                        ),
+                        if (candidate.suggestedOfficialFileName != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Nome oficial sugerido: ${candidate.suggestedOfficialFileName}',
+                          ),
+                        ],
+                        if (candidate.warnings.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           const Text('Avisos:'),
-                          for (final warning in item.warnings)
+                          for (final warning in candidate.warnings)
                             Text('- $warning'),
                         ],
                         const SizedBox(height: 10),
                       ],
                     ],
-                    if (_incomingSongsScanResult != null &&
-                        _incomingSongsScanResult!.totalCount > 0) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        '3. Sugestoes e revisao',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton.tonal(
-                        onPressed: _generateImportSuggestions,
-                        child: const Text('Gerar sugestoes de importacao'),
-                      ),
-                    ],
-                    if (_importSuggestionMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(_importSuggestionMessage!),
-                    ],
-                    if (_importSuggestionPlan != null) ...[
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            _showImportSuggestionPlan =
-                                !_showImportSuggestionPlan;
-                          });
-                        },
-                        child: Text(
-                          _showImportSuggestionPlan
-                              ? 'Ocultar sugestoes de importacao'
-                              : 'Mostrar sugestoes de importacao',
+                    // --- bloqueados ---
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Bloqueados: ${_blockedImportCandidates().length}',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
                         ),
-                      ),
-                    ],
-                    if (_importSuggestionPlan != null &&
-                        _showImportSuggestionPlan) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'sugestoes de importacao',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                        OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              _showBlockedImportCandidates =
+                                  !_showBlockedImportCandidates;
+                            });
+                          },
+                          child: Text(
+                            _showBlockedImportCandidates
+                                ? 'Ocultar bloqueados'
+                                : 'Mostrar bloqueados',
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_showBlockedImportCandidates) ...[
                       const SizedBox(height: 8),
-                      Text('Total: ${_importSuggestionPlan!.totalCount}'),
-                      const SizedBox(height: 4),
-                      Text('Prontos: ${_readyImportCandidates().length}'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Revisao necessaria: ${_importSuggestionPlan!.needsReviewCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Bloqueados: ${_importSuggestionPlan!.blockedCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Possiveis duplicados: ${_duplicateImportCandidates().length}',
-                      ),
-                      if (_importSuggestionPlan!.hasWarnings) ...[
-                        const SizedBox(height: 8),
-                        const Text('Avisos:'),
-                        const SizedBox(height: 4),
-                        for (final warning
-                            in _importSuggestionPlan!.warnings) ...[
-                          Text('- $warning'),
+                      if (_blockedImportCandidates().isEmpty)
+                        const Text('Nenhum candidato bloqueado.'),
+                      if (_blockedImportCandidates().length > 50)
+                        Text(
+                          'Exibindo os primeiros 50 de ${_blockedImportCandidates().length} candidatos.',
+                        ),
+                      for (final candidate in _blockedImportCandidates().take(
+                        50,
+                      )) ...[
+                        const Text('Bloqueado'),
+                        const SizedBox(height: 2),
+                        const Text('Arquivo:'),
+                        Text(candidate.originalFileName),
+                        const SizedBox(height: 2),
+                        const Text('Original:'),
+                        Text(candidate.analysis.originalFileName),
+                        const SizedBox(height: 2),
+                        const Text('Nome limpo:'),
+                        Text(candidate.analysis.cleanedName),
+                        if (candidate.warnings.isNotEmpty) ...[
                           const SizedBox(height: 2),
+                          const Text('Avisos:'),
+                          for (final warning in candidate.warnings)
+                            Text('- $warning'),
                         ],
+                        const SizedBox(height: 10),
                       ],
-                      const SizedBox(height: 16),
-                      Text(
-                        'Revisao dos candidatos',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      // --- prontos ---
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Prontos para importar: ${_readyImportCandidates().length}',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
+                    ],
+                    // --- duplicados ---
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Possiveis duplicados: ${_duplicateImportCandidates().length}',
+                            style: Theme.of(context).textTheme.titleSmall,
                           ),
-                          OutlinedButton(
-                            onPressed: () {
-                              setState(() {
-                                _showReadyImportCandidates =
-                                    !_showReadyImportCandidates;
-                              });
-                            },
-                            child: Text(
-                              _showReadyImportCandidates
-                                  ? 'Ocultar prontos'
-                                  : 'Mostrar prontos',
-                            ),
+                        ),
+                        OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              _showDuplicateImportCandidates =
+                                  !_showDuplicateImportCandidates;
+                            });
+                          },
+                          child: Text(
+                            _showDuplicateImportCandidates
+                                ? 'Ocultar duplicados'
+                                : 'Mostrar duplicados',
                           ),
-                        ],
-                      ),
-                      if (_showReadyImportCandidates) ...[
-                        const SizedBox(height: 8),
-                        if (_readyImportCandidates().isEmpty)
-                          const Text('Nenhum candidato pronto.'),
-                        if (_readyImportCandidates().length > 50)
-                          Text(
-                            'Exibindo os primeiros 50 de ${_readyImportCandidates().length} candidatos.',
-                          ),
-                        for (final candidate in _readyImportCandidates().take(
-                          50,
-                        )) ...[
-                          const Text('Pronto para importar'),
-                          const SizedBox(height: 2),
-                          const Text('Arquivo:'),
-                          Text(candidate.originalFileName),
-                          const SizedBox(height: 2),
-                          const Text('Original:'),
-                          Text(candidate.analysis.originalFileName),
-                          const SizedBox(height: 2),
-                          const Text('Nome limpo:'),
-                          Text(candidate.analysis.cleanedName),
-                          if (candidate.analysis.detectedArtist != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Artista: ${candidate.analysis.detectedArtist}',
-                            ),
-                          ],
-                          if (candidate.analysis.detectedTitle != null) ...[
-                            const SizedBox(height: 2),
-                            Text('Musica: ${candidate.analysis.detectedTitle}'),
-                          ],
-                          if (candidate.hasSuggestedCode) ...[
-                            const SizedBox(height: 2),
-                            Text('Codigo sugerido: ${candidate.suggestedCode}'),
-                          ],
-                          if (candidate.suggestedOfficialFileName != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Nome oficial sugerido: ${candidate.suggestedOfficialFileName}',
-                            ),
-                          ],
-                          const SizedBox(height: 10),
-                        ],
+                        ),
                       ],
-                      // --- revisao ---
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Precisam de revisao: ${_reviewImportCandidates().length}',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ),
-                          OutlinedButton(
-                            onPressed: () {
-                              setState(() {
-                                _showReviewImportCandidates =
-                                    !_showReviewImportCandidates;
-                              });
-                            },
-                            child: Text(
-                              _showReviewImportCandidates
-                                  ? 'Ocultar revisao'
-                                  : 'Mostrar revisao',
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_showReviewImportCandidates) ...[
-                        const SizedBox(height: 8),
-                        if (_reviewImportCandidates().isEmpty)
-                          const Text('Nenhum candidato para revisao.'),
-                        if (_reviewImportCandidates().length > 50)
-                          Text(
-                            'Exibindo os primeiros 50 de ${_reviewImportCandidates().length} candidatos.',
-                          ),
-                        for (final candidate in _reviewImportCandidates().take(
-                          50,
-                        )) ...[
-                          const Text('Revisao necessaria'),
-                          const SizedBox(height: 2),
-                          const Text('Arquivo:'),
-                          Text(candidate.originalFileName),
-                          const SizedBox(height: 2),
-                          const Text('Original:'),
-                          Text(candidate.analysis.originalFileName),
-                          const SizedBox(height: 2),
-                          const Text('Nome limpo:'),
-                          Text(candidate.analysis.cleanedName),
-                          if (candidate.analysis.detectedArtist != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Artista detectado: ${candidate.analysis.detectedArtist}',
-                            ),
-                          ],
-                          if (candidate.analysis.detectedTitle != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Musica detectada: ${candidate.analysis.detectedTitle}',
-                            ),
-                          ],
+                    ),
+                    if (_showDuplicateImportCandidates) ...[
+                      const SizedBox(height: 8),
+                      if (_duplicateImportCandidates().isEmpty)
+                        const Text('Nenhum possivel duplicado encontrado.'),
+                      if (_duplicateImportCandidates().length > 50)
+                        Text(
+                          'Exibindo os primeiros 50 de ${_duplicateImportCandidates().length} Possiveis duplicados.',
+                        ),
+                      for (final candidate in _duplicateImportCandidates().take(
+                        50,
+                      )) ...[
+                        const Text('possivel duplicado'),
+                        const SizedBox(height: 2),
+                        const Text('Arquivo:'),
+                        Text(candidate.originalFileName),
+                        if (candidate.suggestedOfficialFileName != null) ...[
                           const SizedBox(height: 2),
                           Text(
-                            'Confianca: ${candidate.analysis.confidence.label}',
-                          ),
-                          if (candidate.suggestedOfficialFileName != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Nome oficial sugerido: ${candidate.suggestedOfficialFileName}',
-                            ),
-                          ],
-                          if (candidate.warnings.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            const Text('Avisos:'),
-                            for (final warning in candidate.warnings)
-                              Text('- $warning'),
-                          ],
-                          const SizedBox(height: 10),
-                        ],
-                      ],
-                      // --- bloqueados ---
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Bloqueados: ${_blockedImportCandidates().length}',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ),
-                          OutlinedButton(
-                            onPressed: () {
-                              setState(() {
-                                _showBlockedImportCandidates =
-                                    !_showBlockedImportCandidates;
-                              });
-                            },
-                            child: Text(
-                              _showBlockedImportCandidates
-                                  ? 'Ocultar bloqueados'
-                                  : 'Mostrar bloqueados',
-                            ),
+                            'Nome oficial sugerido: ${candidate.suggestedOfficialFileName}',
                           ),
                         ],
-                      ),
-                      if (_showBlockedImportCandidates) ...[
-                        const SizedBox(height: 8),
-                        if (_blockedImportCandidates().isEmpty)
-                          const Text('Nenhum candidato bloqueado.'),
-                        if (_blockedImportCandidates().length > 50)
-                          Text(
-                            'Exibindo os primeiros 50 de ${_blockedImportCandidates().length} candidatos.',
-                          ),
-                        for (final candidate in _blockedImportCandidates().take(
-                          50,
-                        )) ...[
-                          const Text('Bloqueado'),
+                        const SizedBox(height: 2),
+                        const Text('Dados do duplicado:'),
+                        Text(
+                          '- ${candidate.duplicateMatch!.existingArtist} - ${candidate.duplicateMatch!.existingTitle} (${candidate.duplicateMatch!.existingCode})',
+                        ),
+                        if (candidate.warnings.isNotEmpty) ...[
                           const SizedBox(height: 2),
-                          const Text('Arquivo:'),
-                          Text(candidate.originalFileName),
-                          const SizedBox(height: 2),
-                          const Text('Original:'),
-                          Text(candidate.analysis.originalFileName),
-                          const SizedBox(height: 2),
-                          const Text('Nome limpo:'),
-                          Text(candidate.analysis.cleanedName),
-                          if (candidate.warnings.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            const Text('Avisos:'),
-                            for (final warning in candidate.warnings)
-                              Text('- $warning'),
-                          ],
-                          const SizedBox(height: 10),
+                          const Text('Avisos:'),
+                          for (final warning in candidate.warnings)
+                            Text('- $warning'),
                         ],
-                      ],
-                      // --- duplicados ---
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Possiveis duplicados: ${_duplicateImportCandidates().length}',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ),
-                          OutlinedButton(
-                            onPressed: () {
-                              setState(() {
-                                _showDuplicateImportCandidates =
-                                    !_showDuplicateImportCandidates;
-                              });
-                            },
-                            child: Text(
-                              _showDuplicateImportCandidates
-                                  ? 'Ocultar duplicados'
-                                  : 'Mostrar duplicados',
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_showDuplicateImportCandidates) ...[
-                        const SizedBox(height: 8),
-                        if (_duplicateImportCandidates().isEmpty)
-                          const Text('Nenhum possivel duplicado encontrado.'),
-                        if (_duplicateImportCandidates().length > 50)
-                          Text(
-                            'Exibindo os primeiros 50 de ${_duplicateImportCandidates().length} Possiveis duplicados.',
-                          ),
-                        for (final candidate
-                            in _duplicateImportCandidates().take(50)) ...[
-                          const Text('possivel duplicado'),
-                          const SizedBox(height: 2),
-                          const Text('Arquivo:'),
-                          Text(candidate.originalFileName),
-                          if (candidate.suggestedOfficialFileName != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Nome oficial sugerido: ${candidate.suggestedOfficialFileName}',
-                            ),
-                          ],
-                          const SizedBox(height: 2),
-                          const Text('Dados do duplicado:'),
-                          Text(
-                            '- ${candidate.duplicateMatch!.existingArtist} - ${candidate.duplicateMatch!.existingTitle} (${candidate.duplicateMatch!.existingCode})',
-                          ),
-                          if (candidate.warnings.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            const Text('Avisos:'),
-                            for (final warning in candidate.warnings)
-                              Text('- $warning'),
-                          ],
-                          const SizedBox(height: 10),
-                        ],
+                        const SizedBox(height: 10),
                       ],
                     ],
                   ],
-                ),
+                ],
               ),
             ),
           ),
@@ -2784,6 +2615,261 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 extension on _HomeScreenState {
+  Widget _buildIncomingSongsDashboardCard(BuildContext context) {
+    final statusLabel =
+        _incomingSongCleaningPreviewPlan != null ||
+            _importSuggestionPlan != null
+        ? 'Pronta'
+        : _incomingSongsScanResult != null
+        ? 'Escaneada'
+        : _incomingSongsFolderPath != null
+        ? 'Selecionada'
+        : 'Pendente';
+    final statusColor =
+        _incomingSongCleaningPreviewPlan != null ||
+            _importSuggestionPlan != null
+        ? HomeDashboardTheme.success
+        : _incomingSongsScanResult != null
+        ? HomeDashboardTheme.cyan
+        : _incomingSongsFolderPath != null
+        ? HomeDashboardTheme.warning
+        : HomeDashboardTheme.textSecondary;
+
+    final metrics = [
+      ('Arquivos escaneados', '${_incomingSongsScanResult?.totalCount ?? 0}'),
+      ('Avisos', '${_incomingSongsScanResult?.warnings.length ?? 0}'),
+      (
+        'Pre-limpeza',
+        _incomingSongCleaningPreviewPlan == null
+            ? '-'
+            : '${_incomingSongCleaningPreviewPlan!.totalCount}',
+      ),
+      (
+        'Sugestoes',
+        _importSuggestionPlan == null
+            ? '-'
+            : '${_importSuggestionPlan!.totalCount}',
+      ),
+    ];
+
+    return KeyedSubtree(
+      key: _incomingSongsKey,
+      child: HomeDashboardCard(
+        title: '2. Musicas novas',
+        subtitle:
+            'Selecione, escaneie e prepare os arquivos novos antes da importacao.',
+        icon: Icons.library_music_outlined,
+        statusLabel: statusLabel,
+        statusColor: statusColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: HomeDashboardTheme.surfaceElevated,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: HomeDashboardTheme.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pasta de musicas novas selecionada:',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _incomingSongsFolderPath ??
+                        'Nenhuma pasta de musicas novas selecionada.',
+                    style: const TextStyle(
+                      color: HomeDashboardTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                HomeDashboardButton.primary(
+                  label: _selectingIncomingSongsFolder
+                      ? 'Selecionando...'
+                      : 'Selecionar pasta de musicas novas',
+                  onPressed: _selectingIncomingSongsFolder
+                      ? null
+                      : _selectIncomingSongsFolder,
+                ),
+                if (_incomingSongsFolderPath != null)
+                  HomeDashboardButton.secondary(
+                    label: _scanningIncomingSongsFolder
+                        ? 'Escaneando...'
+                        : 'Escanear musicas novas',
+                    onPressed: _scanningIncomingSongsFolder
+                        ? null
+                        : _scanIncomingSongsFolder,
+                  ),
+              ],
+            ),
+            if (_incomingSongsFolderPath == null) ...[
+              const SizedBox(height: 8),
+              const Text('Selecione a pasta para habilitar o scan.'),
+            ],
+            if (_incomingSongsFolderSelectionMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(_incomingSongsFolderSelectionMessage!),
+            ],
+            if (_incomingSongsScanMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(_incomingSongsScanMessage!),
+            ],
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final metric in metrics)
+                  Container(
+                    width: 170,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: HomeDashboardTheme.surfaceElevated,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: HomeDashboardTheme.border),
+                    ),
+                    child: HomeDashboardMetric(
+                      label: metric.$1,
+                      value: metric.$2,
+                    ),
+                  ),
+              ],
+            ),
+            if (_incomingSongsScanResult != null) ...[
+              const SizedBox(height: 20),
+              Divider(color: HomeDashboardTheme.border),
+              const SizedBox(height: 16),
+              Text(
+                'musicas novas encontradas: ${_incomingSongsScanResult!.totalCount}',
+              ),
+              if (_incomingSongsScanResult!.hasWarnings) ...[
+                const SizedBox(height: 8),
+                const Text('Avisos do scan:'),
+                const SizedBox(height: 4),
+                for (final warning in _incomingSongsScanResult!.warnings) ...[
+                  Text('- $warning'),
+                  const SizedBox(height: 2),
+                ],
+              ],
+              if (_incomingSongsScanResult!.totalCount == 0) ...[
+                const SizedBox(height: 8),
+                const Text('Nenhum .mp4 encontrado na pasta de musicas novas.'),
+              ] else ...[
+                const SizedBox(height: 12),
+                const Text('Amostra de arquivos:'),
+                const SizedBox(height: 4),
+                if (_incomingSongsScanResult!.totalCount > 20)
+                  Text(
+                    'Exibindo os primeiros 20 de ${_incomingSongsScanResult!.totalCount} arquivos encontrados.',
+                  ),
+                const SizedBox(height: 4),
+                for (final file in _incomingSongsScanResult!.files.take(
+                  20,
+                )) ...[Text(file.displayPath), const SizedBox(height: 2)],
+              ],
+              if (_incomingSongsScanResult!.totalCount > 0) ...[
+                const SizedBox(height: 16),
+                FilledButton.tonal(
+                  onPressed: _generateIncomingSongCleaningPreview,
+                  child: const Text('Gerar pre-limpeza dos nomes'),
+                ),
+              ],
+            ],
+            if (_incomingSongCleaningMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(_incomingSongCleaningMessage!),
+            ],
+            if (_incomingSongCleaningPreviewPlan != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _toggleIncomingSongCleaningPreview,
+                child: Text(
+                  _showIncomingSongCleaningPreview
+                      ? 'Ocultar pre-limpeza'
+                      : 'Mostrar pre-limpeza',
+                ),
+              ),
+            ],
+            if (_incomingSongCleaningPreviewPlan != null &&
+                _showIncomingSongCleaningPreview) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: HomeDashboardTheme.surfaceElevated,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: HomeDashboardTheme.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pre-limpeza dos nomes',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Arquivos analisados: ${_incomingSongCleaningPreviewPlan!.totalCount}',
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Alterados: ${_incomingSongCleaningPreviewPlan!.changedCount}',
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Sem alteracao: ${_incomingSongCleaningPreviewPlan!.unchangedCount}',
+                    ),
+                    if (_incomingSongCleaningPreviewPlan!.hasWarnings) ...[
+                      const SizedBox(height: 8),
+                      const Text('Avisos:'),
+                      for (final warning
+                          in _incomingSongCleaningPreviewPlan!.warnings)
+                        Text('- $warning'),
+                    ],
+                    const SizedBox(height: 12),
+                    if (_incomingSongCleaningPreviewPlan!.items.length > 20)
+                      Text(
+                        'Exibindo os primeiros 20 de ${_incomingSongCleaningPreviewPlan!.items.length} arquivos.',
+                      ),
+                    for (final item
+                        in _incomingSongCleaningPreviewPlan!.items.take(
+                          20,
+                        )) ...[
+                      const SizedBox(height: 8),
+                      Text('Arquivo original: ${item.originalFileName}'),
+                      Text('Nome limpo: ${item.cleanedFileName}'),
+                      if (item.appliedRules.isNotEmpty)
+                        Text('Regras aplicadas: ${item.appliedRules.length}'),
+                      if (item.hasWarnings) ...[
+                        const Text('Avisos do item:'),
+                        for (final warning in item.warnings) Text('- $warning'),
+                      ],
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildOfficialLibraryDashboardCard(
     BuildContext context,
     BaseLibraryIndexResult? officialLibraryResult,
@@ -3762,10 +3848,10 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D2B - Biblioteca oficial premium'),
+            const Text('Round 35D3 - Musicas novas premium'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Biblioteca oficial redesenhada como card principal largo, mantendo o workspace em duas colunas.',
+              'Estado: Musicas novas redesenhada como card principal largo, mantendo o workspace em duas colunas.',
             ),
           ],
         ),

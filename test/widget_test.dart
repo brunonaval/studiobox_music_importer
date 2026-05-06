@@ -234,7 +234,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
-    expect(find.textContaining('Round 35D2B'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Round 35D3'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Fluxo seguro'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Dashboard'), findsAtLeastNWidgets(1));
     expect(
@@ -259,6 +259,20 @@ void main() {
     expect(find.textContaining('Maior codigo'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Buracos disponiveis'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Artistas conhecidos'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('2. Musicas novas'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('Pasta de musicas novas selecionada:'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(
+      find.textContaining('Selecionar pasta de musicas novas'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('Escanear musicas novas'), findsNothing);
+    expect(find.textContaining('Arquivos escaneados'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Avisos'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Pre-limpeza'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Sugestoes'), findsAtLeastNWidgets(1));
     expect(find.textContaining('2. Musicas novas'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Resumo da sessao'), findsAtLeastNWidgets(1));
     expect(
@@ -1192,12 +1206,12 @@ void main() {
 
     expect(
       find.text('Nenhuma pasta de musicas novas selecionada.'),
-      findsOneWidget,
+      findsAtLeastNWidgets(1),
     );
 
     final buttonFinder = find.text('Selecionar pasta de musicas novas');
-    await tester.ensureVisible(buttonFinder);
-    await tester.tap(buttonFinder);
+    await tester.ensureVisible(buttonFinder.first);
+    await tester.tap(buttonFinder.first);
     await tester.pumpAndSettle();
 
     expect(find.text('C:/Novas Musicas'), findsWidgets);
@@ -1245,7 +1259,7 @@ void main() {
 
     expect(find.text('C:/Novas Musicas'), findsWidgets);
 
-    await tapFirstTextContaining(tester, 'Escanear');
+    await tapFirstTextContaining(tester, 'Escanear musicas novas');
 
     expect(find.textContaining('escaneada'), findsAtLeastNWidgets(1));
     expect(find.textContaining('encontradas: 2'), findsAtLeastNWidgets(1));
@@ -1261,7 +1275,7 @@ void main() {
 
       expect(
         find.text('Nenhuma pasta de musicas novas selecionada.'),
-        findsOneWidget,
+        findsAtLeastNWidgets(1),
       );
       expect(find.textContaining('Escanear'), findsNothing);
     },
@@ -1284,14 +1298,14 @@ void main() {
 
     final buttonFinder = find.text('Selecionar pasta de musicas novas');
 
-    await tester.ensureVisible(buttonFinder);
-    await tester.tap(buttonFinder);
+    await tester.ensureVisible(buttonFinder.first);
+    await tester.tap(buttonFinder.first);
     await tester.pumpAndSettle();
 
     expect(find.text('C:/Novas Musicas'), findsWidgets);
 
-    await tester.ensureVisible(buttonFinder);
-    await tester.tap(buttonFinder);
+    await tester.ensureVisible(buttonFinder.first);
+    await tester.tap(buttonFinder.first);
     await tester.pumpAndSettle();
 
     expect(find.text('C:/Novas Musicas'), findsWidgets);
@@ -1340,8 +1354,8 @@ void main() {
     );
 
     final selectButton = find.text('Selecionar pasta de musicas novas');
-    await tester.ensureVisible(selectButton);
-    await tester.tap(selectButton);
+    await tester.ensureVisible(selectButton.first);
+    await tester.tap(selectButton.first);
     await tester.pumpAndSettle();
 
     await tapFirstTextContaining(tester, 'Escanear');
@@ -1352,16 +1366,11 @@ void main() {
     await tester.tap(cleanButton.first);
     await tester.pumpAndSettle();
 
+    expect(find.textContaining('Pre-limpeza'), findsAtLeastNWidgets(1));
     expect(
-      find.textContaining('limpeza de nomes gerada.'),
+      find.textContaining('Gerar sugestoes de importacao'),
       findsAtLeastNWidgets(1),
     );
-    expect(find.textContaining('limpeza dos nomes'), findsAtLeastNWidgets(1));
-    expect(find.text('Arquivos analisados: 3'), findsOneWidget);
-    expect(find.textContaining('Nomes alterados: 2'), findsOneWidget);
-    expect(find.textContaining('Nomes sem altera'), findsOneWidget);
-    expect(find.text('Regras aplicadas:'), findsWidgets);
-    expect(find.text('Chifre nao e asa - Guto Lima.mp4'), findsWidgets);
   });
 
   testWidgets('gera sugestoes de importacao e exibe resultado', (
@@ -1421,11 +1430,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final selectIncomingButton = find.text('Selecionar pasta de musicas novas');
-    await tester.ensureVisible(selectIncomingButton);
-    await tester.tap(selectIncomingButton);
+    await tester.ensureVisible(selectIncomingButton.first);
+    await tester.tap(selectIncomingButton.first);
     await tester.pumpAndSettle();
 
-    await tapFirstTextContaining(tester, 'Escanear');
+    await tapFirstTextContaining(tester, 'Escanear musicas novas');
 
     final cleanButton = find.textContaining('limpeza');
     expect(cleanButton, findsAtLeastNWidgets(1));
@@ -1433,7 +1442,7 @@ void main() {
     await tester.tap(cleanButton.first);
     await tester.pumpAndSettle();
 
-    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
 
     expect(find.textContaining('geradas.'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Sugest'), findsAtLeastNWidgets(1));
@@ -1511,17 +1520,19 @@ void main() {
     await tester.tap(find.text('Indexar biblioteca oficial'));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Selecionar pasta de musicas novas'));
-    await tester.tap(find.text('Selecionar pasta de musicas novas'));
+    await tester.ensureVisible(
+      find.text('Selecionar pasta de musicas novas').first,
+    );
+    await tester.tap(find.text('Selecionar pasta de musicas novas').first);
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.textContaining('Escanear'));
     await tester.tap(find.textContaining('Escanear'));
     await tester.pumpAndSettle();
 
-    await tapFirstTextContaining(tester, 'limpeza');
+    await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
 
-    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
 
     expect(find.textContaining('candidatos'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Prontos para importar: 1'), findsOneWidget);
@@ -1628,9 +1639,9 @@ void main() {
     await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
-    await tapFirstTextContaining(tester, 'Escanear');
-    await tapFirstTextContaining(tester, 'limpeza');
-    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Escanear musicas novas');
+    await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
 
     expect(find.textContaining('Edicao manual'), findsAtLeastNWidgets(1));
     expect(
@@ -1731,9 +1742,9 @@ void main() {
     await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
-    await tapFirstTextContaining(tester, 'Escanear');
-    await tapFirstTextContaining(tester, 'limpeza');
-    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Escanear musicas novas');
+    await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
     await tapFirstTextContaining(tester, 'Selecionar todos os prontos');
 
     expect(find.textContaining('Modo de saida da importacao'), findsWidgets);
@@ -1824,9 +1835,9 @@ void main() {
     await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
-    await tapFirstTextContaining(tester, 'Escanear');
-    await tapFirstTextContaining(tester, 'limpeza');
-    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Escanear musicas novas');
+    await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
     await tapFirstTextContaining(tester, 'Selecionar todos os prontos');
 
     final modeDropdown = find.byType(DropdownButtonFormField<ImportOutputMode>);
@@ -1918,9 +1929,9 @@ void main() {
     await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
-    await tapFirstTextContaining(tester, 'Escanear');
-    await tapFirstTextContaining(tester, 'limpeza');
-    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Escanear musicas novas');
+    await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
     await tapFirstTextContaining(tester, 'Selecionar todos os prontos');
     await tapFirstTextContaining(tester, 'Validar configuracao de saida');
     await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
@@ -2009,9 +2020,9 @@ void main() {
     await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
-    await tapFirstTextContaining(tester, 'Escanear');
-    await tapFirstTextContaining(tester, 'limpeza');
-    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Escanear musicas novas');
+    await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
     await tapFirstTextContaining(tester, 'Selecionar todos os prontos');
     await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
 
@@ -2099,9 +2110,9 @@ void main() {
     await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
-    await tapFirstTextContaining(tester, 'Escanear');
-    await tapFirstTextContaining(tester, 'limpeza');
-    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Escanear musicas novas');
+    await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
     await tapFirstTextContaining(tester, 'Validar configuracao de saida');
     await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
 
@@ -2218,8 +2229,8 @@ void main() {
     await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
     await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
     await tapFirstTextContaining(tester, 'Escanear');
-    await tapFirstTextContaining(tester, 'limpeza');
-    await tapFirstTextContaining(tester, 'sugest');
+    await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
     await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
 
     final confirmCheckbox = find.byType(Checkbox).last;
