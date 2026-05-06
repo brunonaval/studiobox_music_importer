@@ -1392,26 +1392,45 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Card(
-            color: const Color(0xFF171B24),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: const [
-                  Text('1 Biblioteca oficial'),
-                  Text('2 Musicas novas'),
-                  Text('3 Sugestoes e revisao'),
-                  Text('4 Saida e execucao'),
-                  Text('5 Manifesto'),
-                  Text('Resumo da sessao'),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final lateral = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildSessionSummaryPanel(context),
+                  const SizedBox(height: 16),
+                  _buildSessionCachePanel(context),
+                  const SizedBox(height: 16),
+                  _buildEngineStatusPanel(context, engineItems),
+                  const SizedBox(height: 16),
+                  _buildProjectStatusPanel(context),
                 ],
-              ),
-            ),
+              );
+
+              final mainStart = <Widget>[const SizedBox(height: 4)];
+
+              if (constraints.maxWidth >= 1180) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: mainStart,
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    SizedBox(width: 400, child: lateral),
+                  ],
+                );
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [...mainStart, const SizedBox(height: 24), lateral],
+              );
+            },
           ),
-          const SizedBox(height: 16),
-          const SizedBox(height: 4),
           if (_importCandidateSelectionPlan != null) ...[
             const SizedBox(height: 16),
             KeyedSubtree(
@@ -2169,78 +2188,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 16),
-          Text(
-            'Motor e status',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 12),
-          KeyedSubtree(
-            key: _cacheKey,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Cache local da sessao',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    if (_loadingSessionCache) const Text('Carregando cache...'),
-                    if (_savingSessionCache) const Text('Salvando cache...'),
-                    if (_sessionCacheMessage != null) ...[
-                      Text(_sessionCacheMessage!),
-                      const SizedBox(height: 8),
-                    ],
-                    Text(
-                      'Ultimo cache salvo em: ${_lastSessionSnapshot?.savedAtIso8601 ?? '-'}',
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Biblioteca oficial salva: ${_lastSessionSnapshot?.officialLibraryFolderPath ?? '-'}',
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Pasta de musicas novas salva: ${_lastSessionSnapshot?.incomingSongsFolderPath ?? '-'}',
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Pasta de saida salva: ${_lastSessionSnapshot?.customImportOutputFolderPath ?? '-'}',
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Pasta do manifesto salva: ${_lastSessionSnapshot?.importManifestFolderPath ?? '-'}',
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Modo de saida salvo: ${_lastSessionSnapshot?.importOutputModeName == null ? '-' : _importOutputModeLabelFromName(_lastSessionSnapshot?.importOutputModeName)}',
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton(
-                          onPressed: _savingSessionCache
-                              ? null
-                              : _saveSessionCache,
-                          child: const Text('Salvar sessao agora'),
-                        ),
-                        OutlinedButton(
-                          onPressed: _savingSessionCache
-                              ? null
-                              : _clearSessionCache,
-                          child: const Text('Limpar cache local'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
           const SizedBox(height: 28),
           KeyedSubtree(
             key: _libraryKey,
@@ -3627,50 +3574,161 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 28),
-          KeyedSubtree(
-            key: _statusKey,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Motor preparado',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    for (final item in engineItems) ...[
-                      Text('- $item'),
-                      const SizedBox(height: 4),
-                    ],
-                  ],
-                ),
-              ),
+        ],
+      ),
+    );
+  }
+}
+
+extension on _HomeScreenState {
+  Widget _buildSessionSummaryPanel(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Resumo da sessao',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-          ),
-          const SizedBox(height: 28),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 8),
+            Text(
+              'Biblioteca oficial: ${_officialLibraryFolderPath == null ? 'Pendente' : 'Pronta'}',
+            ),
+            Text(
+              'Novas musicas: ${_incomingSongsFolderPath == null ? 'Pendente' : 'Pronta'}',
+            ),
+            Text(
+              'Sugestoes: ${_importSuggestionPlan == null ? 'Pendente' : 'Geradas'}',
+            ),
+            Text(
+              'Revisao: ${_importCandidateSelectionPlan == null ? 'Pendente' : 'Disponivel'}',
+            ),
+            Text(
+              'Saida: ${_importOutputValidationResult?.isValid == true ? 'Valida' : 'Pendente'}',
+            ),
+            Text(
+              'Execucao: ${_importOperationExecutionResult == null ? 'Pendente' : 'Concluida'}',
+            ),
+            Text(
+              'Manifesto: ${_importOperationManifest == null ? 'Pendente' : 'Gerado'}',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSessionCachePanel(BuildContext context) {
+    return KeyedSubtree(
+      key: _cacheKey,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Cache local da sessao',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              if (_loadingSessionCache) const Text('Carregando cache...'),
+              if (_savingSessionCache) const Text('Salvando cache...'),
+              if (_sessionCacheMessage != null) ...[
+                Text(_sessionCacheMessage!),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                'Ultimo cache salvo em: ${_lastSessionSnapshot?.savedAtIso8601 ?? '-'}',
+              ),
+              Text(
+                'Biblioteca oficial salva: ${_lastSessionSnapshot?.officialLibraryFolderPath ?? '-'}',
+              ),
+              Text(
+                'Pasta de musicas novas salva: ${_lastSessionSnapshot?.incomingSongsFolderPath ?? '-'}',
+              ),
+              Text(
+                'Pasta de saida salva: ${_lastSessionSnapshot?.customImportOutputFolderPath ?? '-'}',
+              ),
+              Text(
+                'Pasta do manifesto salva: ${_lastSessionSnapshot?.importManifestFolderPath ?? '-'}',
+              ),
+              Text(
+                'Modo de saida salvo: ${_lastSessionSnapshot?.importOutputModeName == null ? '-' : _importOutputModeLabelFromName(_lastSessionSnapshot?.importOutputModeName)}',
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Text(
-                    'Status do projeto:',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  OutlinedButton(
+                    onPressed: _savingSessionCache ? null : _saveSessionCache,
+                    child: const Text('Salvar sessao agora'),
                   ),
-                  const SizedBox(height: 8),
-                  const Text('Round 35C - Dashboard visual premium'),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Estado: Layout desktop em duas colunas, com cards principais largos e coluna lateral organizada.',
+                  OutlinedButton(
+                    onPressed: _savingSessionCache ? null : _clearSessionCache,
+                    child: const Text('Limpar cache local'),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEngineStatusPanel(
+    BuildContext context,
+    List<String> engineItems,
+  ) {
+    return KeyedSubtree(
+      key: _statusKey,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Motor e status',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              const Text('Motor preparado'),
+              const SizedBox(height: 8),
+              for (final item in engineItems) ...[
+                Text('- $item'),
+                const SizedBox(height: 2),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProjectStatusPanel(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Status do projeto',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            const Text('Round 35D2A - Workspace em duas colunas'),
+            const SizedBox(height: 4),
+            const Text(
+              'Estado: Blocos principais organizados em coluna principal e paineis auxiliares na lateral.',
+            ),
+          ],
+        ),
       ),
     );
   }

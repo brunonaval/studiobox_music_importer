@@ -234,20 +234,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
-    expect(find.textContaining('Round 35'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Round 35D2A'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Fluxo seguro'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Dashboard'), findsAtLeastNWidgets(1));
     expect(
-      find.textContaining('1 Biblioteca oficial'),
+      find.textContaining('1. Biblioteca oficial'),
       findsAtLeastNWidgets(1),
     );
-    expect(find.textContaining('2 Musicas novas'), findsAtLeastNWidgets(1));
-    expect(
-      find.textContaining('3 Sugestoes e revisao'),
-      findsAtLeastNWidgets(1),
-    );
-    expect(find.textContaining('4 Saida e execucao'), findsAtLeastNWidgets(1));
-    expect(find.textContaining('5 Manifesto'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('2. Musicas novas'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Resumo da sessao'), findsAtLeastNWidgets(1));
     expect(
       find.textContaining('Cache local da sessao'),
@@ -255,6 +249,15 @@ void main() {
     );
     expect(find.textContaining('Motor e status'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Status do projeto'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('1. Biblioteca oficial'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('2. Musicas novas'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('1 Biblioteca oficial 2 Musicas novas'),
+      findsNothing,
+    );
   });
 
   testWidgets('mostra fundacao visual do dashboard', (
