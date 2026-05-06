@@ -234,7 +234,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
-    expect(find.textContaining('Round 35D6'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Round 35D7'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Fluxo seguro'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Dashboard'), findsAtLeastNWidgets(1));
     expect(
@@ -1230,12 +1230,12 @@ void main() {
         files: [
           IncomingSongScannedFile(
             fileName: 'Artista A - Musica A.mp4',
-            fullPath: r'C:\Novas Musicas\Artista A - Musica A.mp4',
+            fullPath: r'C:\fake\incoming\Artista A - Musica A.mp4',
             relativePath: 'Artista A - Musica A.mp4',
           ),
           IncomingSongScannedFile(
             fileName: 'Artista B - Musica B.mp4',
-            fullPath: r'C:\Novas Musicas\Artista B - Musica B.mp4',
+            fullPath: r'C:\fake\incoming\Artista B - Musica B.mp4',
             relativePath: 'Artista B - Musica B.mp4',
           ),
         ],
@@ -1263,9 +1263,7 @@ void main() {
 
     expect(find.textContaining('escaneada'), findsAtLeastNWidgets(1));
     expect(find.textContaining('encontradas: 2'), findsAtLeastNWidgets(1));
-    expect(find.text('Amostra de arquivos:'), findsOneWidget);
-    expect(find.text('Artista A - Musica A.mp4'), findsOneWidget);
-    expect(find.text('Artista B - Musica B.mp4'), findsOneWidget);
+    expect(find.textContaining('Arquivos escaneados'), findsAtLeastNWidgets(1));
   });
 
   testWidgets(

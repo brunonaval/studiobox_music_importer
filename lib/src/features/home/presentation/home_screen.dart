@@ -2871,18 +2871,6 @@ extension on _HomeScreenState {
               if (_incomingSongsScanResult!.totalCount == 0) ...[
                 const SizedBox(height: 8),
                 const Text('Nenhum .mp4 encontrado na pasta de musicas novas.'),
-              ] else ...[
-                const SizedBox(height: 12),
-                const Text('Amostra de arquivos:'),
-                const SizedBox(height: 4),
-                if (_incomingSongsScanResult!.totalCount > 20)
-                  Text(
-                    'Exibindo os primeiros 20 de ${_incomingSongsScanResult!.totalCount} arquivos encontrados.',
-                  ),
-                const SizedBox(height: 4),
-                for (final file in _incomingSongsScanResult!.files.take(
-                  20,
-                )) ...[Text(file.displayPath), const SizedBox(height: 2)],
               ],
               if (_incomingSongsScanResult!.totalCount > 0) ...[
                 const SizedBox(height: 16),
@@ -2945,24 +2933,65 @@ extension on _HomeScreenState {
                         Text('- $warning'),
                     ],
                     const SizedBox(height: 12),
-                    if (_incomingSongCleaningPreviewPlan!.items.length > 20)
+                    if (_incomingSongCleaningPreviewPlan!.items.length > 30)
                       Text(
-                        'Exibindo os primeiros 20 de ${_incomingSongCleaningPreviewPlan!.items.length} arquivos.',
+                        'Exibindo os primeiros 30 de ${_incomingSongCleaningPreviewPlan!.items.length} arquivos.',
                       ),
-                    for (final item
-                        in _incomingSongCleaningPreviewPlan!.items.take(
-                          20,
-                        )) ...[
-                      const SizedBox(height: 8),
-                      Text('Arquivo original: ${item.originalFileName}'),
-                      Text('Nome limpo: ${item.cleanedFileName}'),
-                      if (item.appliedRules.isNotEmpty)
-                        Text('Regras aplicadas: ${item.appliedRules.length}'),
-                      if (item.hasWarnings) ...[
-                        const Text('Avisos do item:'),
-                        for (final warning in item.warnings) Text('- $warning'),
+                    const SizedBox(height: 8),
+                    Table(
+                      border: TableBorder.all(color: HomeDashboardTheme.border),
+                      columnWidths: const {
+                        0: FlexColumnWidth(3),
+                        1: FlexColumnWidth(3),
+                        2: FlexColumnWidth(2),
+                      },
+                      children: [
+                        const TableRow(
+                          decoration: BoxDecoration(
+                            color: HomeDashboardTheme.surface,
+                          ),
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text('Original'),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text('Nome limpo'),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text('Status'),
+                            ),
+                          ],
+                        ),
+                        for (final item
+                            in _incomingSongCleaningPreviewPlan!.items.take(30))
+                          TableRow(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Text(item.originalFileName),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Text(item.cleanedFileName),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Text(
+                                  item.hasWarnings
+                                      ? 'Aviso'
+                                      : (item.originalFileName !=
+                                            item.cleanedFileName)
+                                      ? 'Alterado'
+                                      : 'Sem alteracao',
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
-                    ],
+                    ),
                   ],
                 ),
               ),
@@ -3951,10 +3980,10 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D6 - Manifesto premium'),
+            const Text('Round 35D7 - Preview de renomeacao estilo PowerRename'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Manifesto redesenhado como card principal largo e separado da execucao.',
+              'Estado: Pre-limpeza exibida em tabela compacta Original/Nome limpo/Status, reduzindo poluicao visual.',
             ),
           ],
         ),
