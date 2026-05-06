@@ -234,13 +234,31 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
-    expect(find.textContaining('Round 35D2A'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Round 35D2B'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Fluxo seguro'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Dashboard'), findsAtLeastNWidgets(1));
     expect(
       find.textContaining('1. Biblioteca oficial'),
       findsAtLeastNWidgets(1),
     );
+    expect(
+      find.textContaining('Biblioteca oficial selecionada:'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(
+      find.textContaining('Selecionar biblioteca oficial'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(
+      find.textContaining('Indexar biblioteca oficial'),
+      findsAtLeastNWidgets(1),
+    );
+    expect(find.textContaining('Musicas validas'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Arquivos invalidos'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Duplicados'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Maior codigo'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Buracos disponiveis'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Artistas conhecidos'), findsAtLeastNWidgets(1));
     expect(find.textContaining('2. Musicas novas'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Resumo da sessao'), findsAtLeastNWidgets(1));
     expect(
@@ -390,9 +408,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Biblioteca oficial indexada.'), findsOneWidget);
-    expect(find.textContaining('Musicas validas:'), findsOneWidget);
-    expect(find.textContaining('Arquivos invalidos:'), findsWidgets);
-    expect(find.textContaining('Maior codigo:'), findsOneWidget);
+    expect(find.textContaining('Musicas validas'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Arquivos invalidos'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Maior codigo'), findsAtLeastNWidgets(1));
     expect(find.text('Auditoria da biblioteca oficial'), findsOneWidget);
     expect(find.text('Arquivos invalidos: 1'), findsWidgets);
     expect(find.text('Codigos duplicados: 1'), findsWidgets);

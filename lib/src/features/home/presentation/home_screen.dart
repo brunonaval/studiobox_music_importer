@@ -13,10 +13,15 @@ import '../../output_plan/application/output_plan_application.dart';
 import '../../output_plan/domain/output_plan.dart';
 import '../../session_cache/application/session_cache_application.dart';
 import '../../session_cache/domain/session_cache.dart';
+import 'widgets/home_dashboard_badge.dart';
+import 'widgets/home_dashboard_button.dart';
+import 'widgets/home_dashboard_card.dart';
 import 'widgets/home_dashboard_header.dart';
+import 'widgets/home_dashboard_metric.dart';
 import 'widgets/home_dashboard_shell.dart';
 import 'widgets/home_dashboard_sidebar.dart';
 import 'widgets/home_dashboard_stepper.dart';
+import 'widgets/home_dashboard_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({
@@ -180,6 +185,67 @@ class _HomeScreenState extends State<HomeScreen> {
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeOutCubic,
     );
+  }
+
+  void _toggleInvalidFilesVisibility() {
+    setState(() {
+      _showInvalidFiles = !_showInvalidFiles;
+    });
+  }
+
+  void _toggleDuplicateCodesVisibility() {
+    setState(() {
+      _showDuplicateCodes = !_showDuplicateCodes;
+    });
+  }
+
+  void _toggleDuplicateRepairPlanVisibility() {
+    setState(() {
+      _showDuplicateRepairPlan = !_showDuplicateRepairPlan;
+    });
+  }
+
+  void _toggleDuplicateRepairExecutionPlanVisibility() {
+    setState(() {
+      _showDuplicateRepairExecutionPlan = !_showDuplicateRepairExecutionPlan;
+    });
+  }
+
+  void _toggleInvalidFileRepairPlanVisibility() {
+    setState(() {
+      _showInvalidFileRepairPlan = !_showInvalidFileRepairPlan;
+    });
+  }
+
+  void _toggleInvalidFileRepairExecutionPlanVisibility() {
+    setState(() {
+      _showInvalidFileRepairExecutionPlan =
+          !_showInvalidFileRepairExecutionPlan;
+    });
+  }
+
+  void _setDuplicateRepairExecutionConfirmation(bool value) {
+    setState(() {
+      _confirmDuplicateRepairExecution = value;
+    });
+  }
+
+  void _setInvalidRepairExecutionConfirmation(bool value) {
+    setState(() {
+      _confirmInvalidRepairExecution = value;
+    });
+  }
+
+  void _setDuplicateRepairConfirmationText(String value) {
+    setState(() {
+      _duplicateRepairConfirmationText = value;
+    });
+  }
+
+  void _setInvalidRepairConfirmationText(String value) {
+    setState(() {
+      _invalidRepairConfirmationText = value;
+    });
   }
 
   Future<void> _selectIncomingSongsFolder() async {
@@ -1407,7 +1473,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               );
 
-              final mainStart = <Widget>[const SizedBox(height: 4)];
+              final mainStart = <Widget>[
+                _buildOfficialLibraryDashboardCard(
+                  context,
+                  officialLibraryResult,
+                ),
+              ];
 
               if (constraints.maxWidth >= 1180) {
                 return Row(
@@ -2190,874 +2261,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
           const SizedBox(height: 28),
           KeyedSubtree(
-            key: _libraryKey,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '1. Biblioteca oficial',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Biblioteca oficial selecionada:',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _officialLibraryFolderPath ??
-                          'Nenhuma pasta selecionada.',
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: _selectingOfficialFolder
-                          ? null
-                          : _selectOfficialLibraryFolder,
-                      child: Text(
-                        _selectingOfficialFolder
-                            ? 'Selecionando...'
-                            : 'Selecionar biblioteca oficial',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed:
-                          (_indexingOfficialLibrary ||
-                              _officialLibraryFolderPath == null)
-                          ? null
-                          : _indexOfficialLibrary,
-                      child: Text(
-                        _indexingOfficialLibrary
-                            ? 'Indexando...'
-                            : 'Indexar biblioteca oficial',
-                      ),
-                    ),
-                    if (_folderSelectionMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(_folderSelectionMessage!),
-                    ],
-                    if (_officialLibraryIndexMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(_officialLibraryIndexMessage!),
-                    ],
-                    if (officialLibraryResult != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'Musicas validas: ${officialLibraryResult.validCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Arquivos invalidos: ${officialLibraryResult.invalidCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Codigos duplicados: ${officialLibraryResult.duplicateCodeCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Maior codigo: ${officialLibraryResult.maxCodeNumber?.toString().padLeft(5, '0') ?? '-'}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Buracos disponiveis: ${officialLibraryResult.availableCodeGaps.length}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Artistas conhecidos: ${officialLibraryResult.knownArtists.length}',
-                      ),
-                      if (officialLibraryResult.hasInvalidFiles ||
-                          officialLibraryResult.hasDuplicates) ...[
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Atencao: revise os problemas encontrados na auditoria.',
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      Text(
-                        'Auditoria da biblioteca oficial',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Arquivos invalidos: ${officialLibraryResult.invalidCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Codigos duplicados: ${officialLibraryResult.duplicateCodeCount}',
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton(
-                            onPressed: () {
-                              setState(() {
-                                _showInvalidFiles = !_showInvalidFiles;
-                              });
-                            },
-                            child: Text(
-                              _showInvalidFiles
-                                  ? 'Ocultar arquivos invalidos'
-                                  : 'Mostrar arquivos invalidos',
-                            ),
-                          ),
-                          OutlinedButton(
-                            onPressed: () {
-                              setState(() {
-                                _showDuplicateCodes = !_showDuplicateCodes;
-                              });
-                            },
-                            child: Text(
-                              _showDuplicateCodes
-                                  ? 'Ocultar codigos duplicados'
-                                  : 'Mostrar codigos duplicados',
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_showInvalidFiles) ...[
-                        const SizedBox(height: 12),
-                        if (officialLibraryResult.invalidFiles.isEmpty)
-                          const Text('Nenhum arquivo invalido encontrado.')
-                        else ...[
-                          if (officialLibraryResult.invalidFiles.length >
-                              _auditListLimit)
-                            Text(
-                              'Exibindo os primeiros $_auditListLimit de ${officialLibraryResult.invalidFiles.length} arquivos invalidos.',
-                            ),
-                          const SizedBox(height: 8),
-                          for (final invalidFile
-                              in officialLibraryResult.invalidFiles.take(
-                                _auditListLimit,
-                              )) ...[
-                            const Text('Arquivo:'),
-                            Text(invalidFile.displayPath),
-                            const SizedBox(height: 2),
-                            const Text('Motivo:'),
-                            Text(invalidFile.reason),
-                            const SizedBox(height: 10),
-                          ],
-                        ],
-                      ],
-                      if (_showDuplicateCodes) ...[
-                        const SizedBox(height: 12),
-                        if (officialLibraryResult.duplicateCodes.isEmpty)
-                          const Text('Nenhum codigo duplicado encontrado.')
-                        else ...[
-                          if (officialLibraryResult.duplicateCodes.length >
-                              _auditListLimit)
-                            Text(
-                              'Exibindo os primeiros $_auditListLimit de ${officialLibraryResult.duplicateCodes.length} codigos duplicados.',
-                            ),
-                          const SizedBox(height: 8),
-                          for (final duplicate
-                              in officialLibraryResult.duplicateCodes.take(
-                                _auditListLimit,
-                              )) ...[
-                            Text('Codigo duplicado: ${duplicate.code}'),
-                            const SizedBox(height: 4),
-                            for (final entry in duplicate.entries) ...[
-                              Text(
-                                '- ${entry.song.artist} - ${entry.song.title}',
-                              ),
-                              Text('  Arquivo: ${entry.displayPath}'),
-                              const SizedBox(height: 4),
-                            ],
-                            const SizedBox(height: 8),
-                          ],
-                        ],
-                      ],
-                      if (officialLibraryResult.duplicateCodes.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        FilledButton.tonal(
-                          onPressed: _generateDuplicateRepairPlan,
-                          child: const Text(
-                            'Gerar plano de reparo de duplicados',
-                          ),
-                        ),
-                      ],
-                      if (_duplicateRepairMessage != null) ...[
-                        const SizedBox(height: 8),
-                        Text(_duplicateRepairMessage!),
-                      ],
-                      if (_duplicateCodeRepairPlan != null) ...[
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: () {
-                            setState(() {
-                              _showDuplicateRepairPlan =
-                                  !_showDuplicateRepairPlan;
-                            });
-                          },
-                          child: Text(
-                            _showDuplicateRepairPlan
-                                ? 'Ocultar plano de reparo'
-                                : 'Mostrar plano de reparo',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        FilledButton.tonal(
-                          onPressed: _generateDuplicateRepairExecutionDryRun,
-                          child: const Text('Validar execucao do reparo'),
-                        ),
-                      ],
-                      if (_duplicateRepairExecutionMessage != null) ...[
-                        const SizedBox(height: 8),
-                        Text(_duplicateRepairExecutionMessage!),
-                      ],
-                      if (_duplicateCodeRepairPlan != null &&
-                          _showDuplicateRepairPlan) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Plano de reparo de duplicados',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Grupos duplicados: ${_duplicateCodeRepairPlan!.totalGroups}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Itens que manterao codigo original: ${_duplicateCodeRepairPlan!.totalKeepOriginal}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Itens que receberao novo codigo: ${_duplicateCodeRepairPlan!.totalAssignNewCode}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Itens bloqueados: ${_duplicateCodeRepairPlan!.totalBlocked}',
-                        ),
-                        if (_duplicateCodeRepairPlan!.hasWarnings) ...[
-                          const SizedBox(height: 8),
-                          const Text('Avisos do plano:'),
-                          const SizedBox(height: 4),
-                          for (final warning
-                              in _duplicateCodeRepairPlan!.warnings) ...[
-                            Text('- $warning'),
-                            const SizedBox(height: 2),
-                          ],
-                        ],
-                        const SizedBox(height: 8),
-                        if (_duplicateCodeRepairPlan!.groups.length >
-                            _repairGroupLimit)
-                          Text(
-                            'Exibindo os primeiros $_repairGroupLimit de ${_duplicateCodeRepairPlan!.groups.length} grupos de reparo.',
-                          ),
-                        const SizedBox(height: 6),
-                        for (final group
-                            in _duplicateCodeRepairPlan!.groups.take(
-                              _repairGroupLimit,
-                            )) ...[
-                          Text('Codigo duplicado: ${group.duplicatedCode}'),
-                          const SizedBox(height: 4),
-                          if (group.items.length > _repairItemsPerGroupLimit)
-                            Text(
-                              'Exibindo os primeiros $_repairItemsPerGroupLimit de ${group.items.length} itens deste grupo.',
-                            ),
-                          const SizedBox(height: 4),
-                          for (final item in group.items.take(
-                            _repairItemsPerGroupLimit,
-                          )) ...[
-                            if (item.keepsOriginalCode) ...[
-                              const Text('Manter codigo original:'),
-                              Text('${item.artist} - ${item.title}'),
-                              Text('Arquivo: ${item.displayPath}'),
-                              Text('Codigo mantido: ${item.originalCode}'),
-                            ] else if (item.assignsNewCode) ...[
-                              const Text('Atribuir novo codigo:'),
-                              Text('${item.artist} - ${item.title}'),
-                              Text('Arquivo atual: ${item.displayPath}'),
-                              Text('Novo codigo: ${item.suggestedCode}'),
-                              Text(
-                                'Novo nome sugerido: ${item.suggestedFileName}',
-                              ),
-                            ] else ...[
-                              const Text('Bloqueado:'),
-                              Text('${item.artist} - ${item.title}'),
-                              Text('Arquivo: ${item.displayPath}'),
-                              const Text('Avisos:'),
-                              for (final warning in item.warnings)
-                                Text('- $warning'),
-                            ],
-                            const SizedBox(height: 8),
-                          ],
-                          const SizedBox(height: 8),
-                        ],
-                      ],
-                      if (_duplicateRepairExecutionPlan != null) ...[
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: () {
-                            setState(() {
-                              _showDuplicateRepairExecutionPlan =
-                                  !_showDuplicateRepairExecutionPlan;
-                            });
-                          },
-                          child: Text(
-                            _showDuplicateRepairExecutionPlan
-                                ? 'Ocultar dry-run'
-                                : 'Mostrar dry-run',
-                          ),
-                        ),
-                      ],
-                      if (_duplicateRepairExecutionPlan != null &&
-                          _showDuplicateRepairExecutionPlan) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Dry-run da execucao',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Prontos para renomear: ${_duplicateRepairExecutionPlan!.readyToRenameCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Ignorados: ${_duplicateRepairExecutionPlan!.skippedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Bloqueados: ${_duplicateRepairExecutionPlan!.blockedCount}',
-                        ),
-                        if (_duplicateRepairExecutionPlan!.hasWarnings) ...[
-                          const SizedBox(height: 8),
-                          const Text('Avisos do dry-run:'),
-                          const SizedBox(height: 4),
-                          for (final warning
-                              in _duplicateRepairExecutionPlan!.warnings) ...[
-                            Text('- $warning'),
-                            const SizedBox(height: 2),
-                          ],
-                        ],
-                        const SizedBox(height: 8),
-                        if (_duplicateRepairExecutionPlan!.items.length >
-                            _executionItemsLimit)
-                          Text(
-                            'Exibindo os primeiros $_executionItemsLimit de ${_duplicateRepairExecutionPlan!.items.length} itens do dry-run.',
-                          ),
-                        const SizedBox(height: 6),
-                        for (final item
-                            in _duplicateRepairExecutionPlan!.items.take(
-                              _executionItemsLimit,
-                            )) ...[
-                          if (item.isReadyToRename) ...[
-                            const Text('Pronto para renomear:'),
-                            Text('${item.artist} - ${item.title}'),
-                            Text('Origem: ${item.sourcePathPreview}'),
-                            Text('Destino: ${item.destinationPathPreview}'),
-                          ] else if (item.isSkipped) ...[
-                            const Text('Ignorado: mantem codigo original'),
-                            Text('${item.artist} - ${item.title}'),
-                            Text('Origem: ${item.sourcePathPreview}'),
-                          ] else ...[
-                            const Text('Bloqueado:'),
-                            Text('${item.artist} - ${item.title}'),
-                            Text('Origem: ${item.sourcePathPreview}'),
-                            const Text('Avisos:'),
-                            for (final warning in item.warnings)
-                              Text('- $warning'),
-                          ],
-                          const SizedBox(height: 8),
-                        ],
-                      ],
-                      if (_duplicateRepairExecutionPlan != null &&
-                          _duplicateRepairExecutionPlan!.hasReadyItems) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Confirmacao obrigatoria para renomear arquivos reais',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Esta acao ira renomear arquivos reais na biblioteca oficial selecionada.',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text('Pasta que sera alterada:'),
-                        Text(_officialLibraryFolderPath ?? '-'),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Arquivos prontos para renomear: ${_duplicateRepairExecutionPlan!.readyToRenameCount}',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Esta acao nao possui desfazer automatico nesta fase.',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Recomendado: teste primeiro em uma copia da biblioteca antes de executar na pasta oficial.',
-                        ),
-                        CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text(
-                            'Revisei o dry-run e confirmo que desejo renomear os arquivos prontos.',
-                          ),
-                          value: _confirmDuplicateRepairExecution,
-                          onChanged: _executingDuplicateRepair
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    _confirmDuplicateRepairExecution =
-                                        value ?? false;
-                                  });
-                                },
-                        ),
-                        TextField(
-                          controller: _duplicateRepairConfirmationController,
-                          enabled: !_executingDuplicateRepair,
-                          decoration: const InputDecoration(
-                            labelText:
-                                'Digite RENOMEAR para liberar a execucao',
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _duplicateRepairConfirmationText = value;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed:
-                              _executingDuplicateRepair ||
-                                  !_confirmDuplicateRepairExecution ||
-                                  _duplicateRepairConfirmationText
-                                          .trim()
-                                          .toUpperCase() !=
-                                      'RENOMEAR'
-                              ? null
-                              : _executeDuplicateRepair,
-                          child: Text(
-                            _executingDuplicateRepair
-                                ? 'Executando...'
-                                : 'Renomear arquivos reais nesta pasta',
-                          ),
-                        ),
-                      ],
-                      if (_duplicateRepairExecutionResultMessage != null) ...[
-                        const SizedBox(height: 8),
-                        Text(_duplicateRepairExecutionResultMessage!),
-                      ],
-                      if (_duplicateRepairExecutionResult != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Resultado da execucao',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Renomeados: ${_duplicateRepairExecutionResult!.renamedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Ignorados: ${_duplicateRepairExecutionResult!.skippedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Falhas: ${_duplicateRepairExecutionResult!.failedCount}',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Reindexe a biblioteca oficial para conferir o resultado atualizado.',
-                        ),
-                        const SizedBox(height: 8),
-                        if (_duplicateRepairExecutionResult!.items.length >
-                            _executionItemsLimit)
-                          Text(
-                            'Exibindo os primeiros $_executionItemsLimit de ${_duplicateRepairExecutionResult!.items.length} itens do resultado.',
-                          ),
-                        const SizedBox(height: 6),
-                        for (final item
-                            in _duplicateRepairExecutionResult!.items.take(
-                              _executionItemsLimit,
-                            )) ...[
-                          if (item.isRenamed) ...[
-                            const Text('Renomeado:'),
-                            Text('${item.artist} - ${item.title}'),
-                            Text('Origem: ${item.sourcePath ?? '-'}'),
-                            Text('Destino: ${item.destinationPath ?? '-'}'),
-                            if (item.messages.isNotEmpty)
-                              Text('Mensagem: ${item.messages.first}'),
-                          ] else if (item.isSkipped) ...[
-                            const Text('Ignorado:'),
-                            Text('${item.artist} - ${item.title}'),
-                            for (final message in item.messages)
-                              Text('Mensagem: $message'),
-                          ] else ...[
-                            const Text('Falhou:'),
-                            Text('${item.artist} - ${item.title}'),
-                            Text('Origem: ${item.sourcePath ?? '-'}'),
-                            Text('Destino: ${item.destinationPath ?? '-'}'),
-                            const Text('Mensagens:'),
-                            for (final message in item.messages)
-                              Text('- $message'),
-                          ],
-                          const SizedBox(height: 8),
-                        ],
-                      ],
-                      if (officialLibraryResult.hasInvalidFiles) ...[
-                        const SizedBox(height: 16),
-                        FilledButton.tonal(
-                          onPressed: _generateInvalidFileRepairPlan,
-                          child: const Text(
-                            'Gerar plano de reparo de invalidos',
-                          ),
-                        ),
-                      ],
-                      if (_invalidFileRepairMessage != null) ...[
-                        const SizedBox(height: 8),
-                        Text(_invalidFileRepairMessage!),
-                      ],
-                      if (_invalidFileRepairPlan != null) ...[
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: () {
-                            setState(() {
-                              _showInvalidFileRepairPlan =
-                                  !_showInvalidFileRepairPlan;
-                            });
-                          },
-                          child: Text(
-                            _showInvalidFileRepairPlan
-                                ? 'Ocultar plano de invalidos'
-                                : 'Mostrar plano de invalidos',
-                          ),
-                        ),
-                      ],
-                      if (_invalidFileRepairPlan != null &&
-                          _showInvalidFileRepairPlan) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Plano de reparo de arquivos invalidos',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text('Total: ${_invalidFileRepairPlan!.totalCount}'),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Sugestoes prontas: ${_invalidFileRepairPlan!.readyToSuggestCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Revisao necessaria: ${_invalidFileRepairPlan!.needsReviewCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Bloqueados: ${_invalidFileRepairPlan!.blockedCount}',
-                        ),
-                        if (_invalidFileRepairPlan!.warnings.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          const Text('Avisos do plano:'),
-                          const SizedBox(height: 4),
-                          for (final warning
-                              in _invalidFileRepairPlan!.warnings) ...[
-                            Text('- $warning'),
-                            const SizedBox(height: 2),
-                          ],
-                        ],
-                        const SizedBox(height: 8),
-                        if (_invalidFileRepairPlan!.items.length >
-                            _invalidFileRepairItemsLimit)
-                          Text(
-                            'Exibindo os primeiros $_invalidFileRepairItemsLimit de ${_invalidFileRepairPlan!.items.length} itens do plano.',
-                          ),
-                        const SizedBox(height: 6),
-                        for (final item in _invalidFileRepairPlan!.items.take(
-                          _invalidFileRepairItemsLimit,
-                        )) ...[
-                          Text('Status: ${item.status.label}'),
-                          const SizedBox(height: 2),
-                          const Text('Arquivo atual:'),
-                          Text(item.displayPath),
-                          const SizedBox(height: 2),
-                          const Text('Motivo original:'),
-                          Text(item.originalReason),
-                          if (item.analysis.detectedArtist != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Artista detectado: ${item.analysis.detectedArtist}',
-                            ),
-                          ],
-                          if (item.analysis.detectedTitle != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Musica detectada: ${item.analysis.detectedTitle}',
-                            ),
-                          ],
-                          if (item.hasSuggestedFileName) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Novo nome sugerido: ${item.suggestedFileName}',
-                            ),
-                          ],
-                          if (item.hasSuggestedCode) ...[
-                            const SizedBox(height: 2),
-                            Text('Codigo sugerido: ${item.suggestedCode}'),
-                          ],
-                          if (item.warnings.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            const Text('Avisos:'),
-                            for (final warning in item.warnings)
-                              Text('- $warning'),
-                          ],
-                          const SizedBox(height: 10),
-                        ],
-                      ],
-                      if (_invalidFileRepairPlan != null) ...[
-                        const SizedBox(height: 16),
-                        FilledButton.tonal(
-                          onPressed: _generateInvalidFileRepairExecutionDryRun,
-                          child: const Text('Validar execucao dos invalidos'),
-                        ),
-                      ],
-                      if (_invalidFileRepairExecutionMessage != null) ...[
-                        const SizedBox(height: 8),
-                        Text(_invalidFileRepairExecutionMessage!),
-                      ],
-                      if (_invalidFileRepairExecutionPlan != null) ...[
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: () {
-                            setState(() {
-                              _showInvalidFileRepairExecutionPlan =
-                                  !_showInvalidFileRepairExecutionPlan;
-                            });
-                          },
-                          child: Text(
-                            _showInvalidFileRepairExecutionPlan
-                                ? 'Ocultar dry-run de invalidos'
-                                : 'Mostrar dry-run de invalidos',
-                          ),
-                        ),
-                      ],
-                      if (_invalidFileRepairExecutionPlan != null &&
-                          _showInvalidFileRepairExecutionPlan) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Dry-run dos arquivos invalidos',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Prontos para renomear: ${_invalidFileRepairExecutionPlan!.readyToRenameCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Aguardando revisao: ${_invalidFileRepairExecutionPlan!.skippedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Bloqueados: ${_invalidFileRepairExecutionPlan!.blockedCount}',
-                        ),
-                        if (_invalidFileRepairExecutionPlan!
-                            .warnings
-                            .isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          const Text('Avisos do dry-run:'),
-                          const SizedBox(height: 4),
-                          for (final warning
-                              in _invalidFileRepairExecutionPlan!.warnings) ...[
-                            Text('- $warning'),
-                            const SizedBox(height: 2),
-                          ],
-                        ],
-                        const SizedBox(height: 8),
-                        if (_invalidFileRepairExecutionPlan!.items.length >
-                            _invalidFileRepairItemsLimit)
-                          Text(
-                            'Exibindo os primeiros $_invalidFileRepairItemsLimit de ${_invalidFileRepairExecutionPlan!.items.length} itens do dry-run de invalidos.',
-                          ),
-                        const SizedBox(height: 6),
-                        for (final item
-                            in _invalidFileRepairExecutionPlan!.items.take(
-                              _invalidFileRepairItemsLimit,
-                            )) ...[
-                          if (item.isReadyToRename) ...[
-                            const Text('Pronto para renomear:'),
-                            if (item.detectedArtist != null &&
-                                item.detectedTitle != null)
-                              Text(
-                                '${item.detectedArtist} - ${item.detectedTitle}',
-                              ),
-                            const Text('Arquivo atual:'),
-                            Text(item.sourcePathPreview ?? item.displayPath),
-                            const Text('Destino:'),
-                            Text(item.destinationPathPreview ?? '-'),
-                          ] else if (item.isSkipped) ...[
-                            const Text('Aguardando revisao:'),
-                            if (item.detectedArtist != null &&
-                                item.detectedTitle != null)
-                              Text(
-                                '${item.detectedArtist} - ${item.detectedTitle}',
-                              ),
-                            const Text('Arquivo atual:'),
-                            Text(item.sourcePathPreview ?? item.displayPath),
-                            if (item.warnings.isNotEmpty) ...[
-                              const Text('Avisos:'),
-                              for (final warning in item.warnings)
-                                Text('- $warning'),
-                            ],
-                          ] else ...[
-                            const Text('Bloqueado:'),
-                            const Text('Arquivo atual:'),
-                            Text(item.sourcePathPreview ?? item.displayPath),
-                            if (item.warnings.isNotEmpty) ...[
-                              const Text('Avisos:'),
-                              for (final warning in item.warnings)
-                                Text('- $warning'),
-                            ],
-                          ],
-                          const SizedBox(height: 8),
-                        ],
-                      ],
-                      if (_invalidFileRepairExecutionPlan != null &&
-                          _invalidFileRepairExecutionPlan!.hasReadyItems) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          'Confirmacao obrigatoria para renomear arquivos invalidos reais',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Esta acao ira renomear arquivos reais na biblioteca oficial selecionada.',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text('Pasta que sera alterada:'),
-                        Text(_officialLibraryFolderPath ?? '-'),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Arquivos invalidos prontos para renomear: ${_invalidFileRepairExecutionPlan!.readyToRenameCount}',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Esta acao nao possui desfazer automatico nesta fase.',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Recomendado: teste primeiro em uma copia da biblioteca antes de executar na pasta oficial.',
-                        ),
-                        CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text(
-                            'Revisei o dry-run dos invalidos e confirmo que desejo renomear os arquivos prontos.',
-                          ),
-                          value: _confirmInvalidRepairExecution,
-                          onChanged: _executingInvalidRepair
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    _confirmInvalidRepairExecution =
-                                        value ?? false;
-                                  });
-                                },
-                        ),
-                        TextField(
-                          controller: _invalidRepairConfirmationController,
-                          enabled: !_executingInvalidRepair,
-                          decoration: const InputDecoration(
-                            labelText:
-                                'Digite RENOMEAR para liberar a execucao',
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _invalidRepairConfirmationText = value;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed:
-                              _executingInvalidRepair ||
-                                  !_confirmInvalidRepairExecution ||
-                                  _invalidRepairConfirmationText
-                                          .trim()
-                                          .toUpperCase() !=
-                                      'RENOMEAR'
-                              ? null
-                              : _executeInvalidRepair,
-                          child: Text(
-                            _executingInvalidRepair
-                                ? 'Executando...'
-                                : 'Renomear arquivos invalidos reais nesta pasta',
-                          ),
-                        ),
-                      ],
-                      if (_invalidRepairExecutionResultMessage != null) ...[
-                        const SizedBox(height: 8),
-                        Text(_invalidRepairExecutionResultMessage!),
-                      ],
-                      if (_invalidRepairExecutionResult != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'Resultado da execucao dos invalidos',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Renomeados: ${_invalidRepairExecutionResult!.renamedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Ignorados: ${_invalidRepairExecutionResult!.skippedCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Falhas: ${_invalidRepairExecutionResult!.failedCount}',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Reindexe a biblioteca oficial para conferir o resultado atualizado.',
-                        ),
-                        const SizedBox(height: 8),
-                        if (_invalidRepairExecutionResult!.items.length >
-                            _invalidFileRepairItemsLimit)
-                          Text(
-                            'Exibindo os primeiros $_invalidFileRepairItemsLimit de ${_invalidRepairExecutionResult!.items.length} itens do resultado.',
-                          ),
-                        const SizedBox(height: 6),
-                        for (final item
-                            in _invalidRepairExecutionResult!.items.take(
-                              _invalidFileRepairItemsLimit,
-                            )) ...[
-                          if (item.isRenamed) ...[
-                            const Text('Renomeado:'),
-                            if (item.detectedArtist != null &&
-                                item.detectedTitle != null)
-                              Text(
-                                '${item.detectedArtist} - ${item.detectedTitle}',
-                              ),
-                            Text('Origem: ${item.sourcePath ?? '-'}'),
-                            Text('Destino: ${item.destinationPath ?? '-'}'),
-                            if (item.messages.isNotEmpty)
-                              Text('Mensagem: ${item.messages.first}'),
-                          ] else if (item.isSkipped) ...[
-                            const Text('Ignorado:'),
-                            Text('Arquivo original: ${item.originalFileName}'),
-                            for (final message in item.messages)
-                              Text('Mensagem: $message'),
-                          ] else ...[
-                            const Text('Falhou:'),
-                            Text('Arquivo original: ${item.originalFileName}'),
-                            Text('Origem: ${item.sourcePath ?? '-'}'),
-                            Text('Destino: ${item.destinationPath ?? '-'}'),
-                            const Text('Mensagens:'),
-                            for (final message in item.messages)
-                              Text('- $message'),
-                          ],
-                          const SizedBox(height: 8),
-                        ],
-                      ],
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          KeyedSubtree(
             key: _incomingSongsKey,
             child: Card(
               child: Padding(
@@ -3581,6 +2784,843 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 extension on _HomeScreenState {
+  Widget _buildOfficialLibraryDashboardCard(
+    BuildContext context,
+    BaseLibraryIndexResult? officialLibraryResult,
+  ) {
+    final statusLabel = officialLibraryResult != null
+        ? 'Indexada'
+        : (_officialLibraryFolderPath == null ? 'Pendente' : 'Selecionada');
+    final statusColor = officialLibraryResult != null
+        ? HomeDashboardTheme.success
+        : (_officialLibraryFolderPath == null
+              ? HomeDashboardTheme.warning
+              : HomeDashboardTheme.cyan);
+    final metrics = [
+      ('Musicas validas', '${officialLibraryResult?.validCount ?? 0}'),
+      ('Arquivos invalidos', '${officialLibraryResult?.invalidCount ?? 0}'),
+      ('Duplicados', '${officialLibraryResult?.duplicateCodeCount ?? 0}'),
+      (
+        'Maior codigo',
+        officialLibraryResult?.maxCodeNumber?.toString().padLeft(5, '0') ?? '-',
+      ),
+      (
+        'Buracos disponiveis',
+        '${officialLibraryResult?.availableCodeGaps.length ?? 0}',
+      ),
+      (
+        'Artistas conhecidos',
+        '${officialLibraryResult?.knownArtists.length ?? 0}',
+      ),
+    ];
+
+    return KeyedSubtree(
+      key: _libraryKey,
+      child: HomeDashboardCard(
+        title: '1. Biblioteca oficial',
+        subtitle: 'Selecione e indexe a pasta oficial ja padronizada.',
+        icon: Icons.library_music_rounded,
+        statusLabel: statusLabel,
+        statusColor: statusColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: HomeDashboardTheme.surfaceElevated,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: HomeDashboardTheme.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Biblioteca oficial selecionada:',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _officialLibraryFolderPath ?? 'Nenhuma pasta selecionada.',
+                    style: const TextStyle(
+                      color: HomeDashboardTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                HomeDashboardButton.primary(
+                  label: _selectingOfficialFolder
+                      ? 'Selecionando...'
+                      : 'Selecionar biblioteca oficial',
+                  onPressed: _selectingOfficialFolder
+                      ? null
+                      : _selectOfficialLibraryFolder,
+                ),
+                HomeDashboardButton.secondary(
+                  label: _indexingOfficialLibrary
+                      ? 'Indexando...'
+                      : 'Indexar biblioteca oficial',
+                  onPressed:
+                      (_indexingOfficialLibrary ||
+                          _officialLibraryFolderPath == null)
+                      ? null
+                      : _indexOfficialLibrary,
+                ),
+              ],
+            ),
+            if (_folderSelectionMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(_folderSelectionMessage!),
+            ],
+            if (_officialLibraryIndexMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(_officialLibraryIndexMessage!),
+            ],
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final metric in metrics)
+                  Container(
+                    width: 170,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: HomeDashboardTheme.surfaceElevated,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: HomeDashboardTheme.border),
+                    ),
+                    child: HomeDashboardMetric(
+                      label: metric.$1,
+                      value: metric.$2,
+                    ),
+                  ),
+              ],
+            ),
+            if (officialLibraryResult != null) ...[
+              if (officialLibraryResult.hasInvalidFiles ||
+                  officialLibraryResult.hasDuplicates) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: HomeDashboardTheme.warning.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: HomeDashboardTheme.border),
+                  ),
+                  child: const Text(
+                    'Atencao: revise os problemas encontrados na auditoria.',
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              Divider(color: HomeDashboardTheme.border),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Auditoria da biblioteca oficial',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  HomeDashboardBadge(
+                    label:
+                        'Invalidos ${officialLibraryResult.invalidCount} | Duplicados ${officialLibraryResult.duplicateCodeCount}',
+                    color: HomeDashboardTheme.primary,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text('Arquivos invalidos: ${officialLibraryResult.invalidCount}'),
+              const SizedBox(height: 4),
+              Text(
+                'Codigos duplicados: ${officialLibraryResult.duplicateCodeCount}',
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: _toggleInvalidFilesVisibility,
+                    child: Text(
+                      _showInvalidFiles
+                          ? 'Ocultar arquivos invalidos'
+                          : 'Mostrar arquivos invalidos',
+                    ),
+                  ),
+                  OutlinedButton(
+                    onPressed: _toggleDuplicateCodesVisibility,
+                    child: Text(
+                      _showDuplicateCodes
+                          ? 'Ocultar codigos duplicados'
+                          : 'Mostrar codigos duplicados',
+                    ),
+                  ),
+                ],
+              ),
+              if (_showInvalidFiles) ...[
+                const SizedBox(height: 12),
+                if (officialLibraryResult.invalidFiles.isEmpty)
+                  const Text('Nenhum arquivo invalido encontrado.')
+                else ...[
+                  if (officialLibraryResult.invalidFiles.length >
+                      _HomeScreenState._auditListLimit)
+                    Text(
+                      'Exibindo os primeiros ${_HomeScreenState._auditListLimit} de ${officialLibraryResult.invalidFiles.length} arquivos invalidos.',
+                    ),
+                  const SizedBox(height: 8),
+                  for (final invalidFile
+                      in officialLibraryResult.invalidFiles.take(
+                        _HomeScreenState._auditListLimit,
+                      )) ...[
+                    const Text('Arquivo:'),
+                    Text(invalidFile.displayPath),
+                    const SizedBox(height: 2),
+                    const Text('Motivo:'),
+                    Text(invalidFile.reason),
+                    const SizedBox(height: 10),
+                  ],
+                ],
+              ],
+              if (_showDuplicateCodes) ...[
+                const SizedBox(height: 12),
+                if (officialLibraryResult.duplicateCodes.isEmpty)
+                  const Text('Nenhum codigo duplicado encontrado.')
+                else ...[
+                  if (officialLibraryResult.duplicateCodes.length >
+                      _HomeScreenState._auditListLimit)
+                    Text(
+                      'Exibindo os primeiros ${_HomeScreenState._auditListLimit} de ${officialLibraryResult.duplicateCodes.length} codigos duplicados.',
+                    ),
+                  const SizedBox(height: 8),
+                  for (final duplicate
+                      in officialLibraryResult.duplicateCodes.take(
+                        _HomeScreenState._auditListLimit,
+                      )) ...[
+                    Text('Codigo duplicado: ${duplicate.code}'),
+                    const SizedBox(height: 4),
+                    for (final entry in duplicate.entries) ...[
+                      Text('- ${entry.song.artist} - ${entry.song.title}'),
+                      Text('  Arquivo: ${entry.displayPath}'),
+                      const SizedBox(height: 4),
+                    ],
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              ],
+              if (officialLibraryResult.duplicateCodes.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                FilledButton.tonal(
+                  onPressed: _generateDuplicateRepairPlan,
+                  child: const Text('Gerar plano de reparo de duplicados'),
+                ),
+              ],
+              if (_duplicateRepairMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(_duplicateRepairMessage!),
+              ],
+              if (_duplicateCodeRepairPlan != null) ...[
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: _toggleDuplicateRepairPlanVisibility,
+                  child: Text(
+                    _showDuplicateRepairPlan
+                        ? 'Ocultar plano de reparo'
+                        : 'Mostrar plano de reparo',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                FilledButton.tonal(
+                  onPressed: _generateDuplicateRepairExecutionDryRun,
+                  child: const Text('Validar execucao do reparo'),
+                ),
+              ],
+              if (_duplicateRepairExecutionMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(_duplicateRepairExecutionMessage!),
+              ],
+              if (_duplicateCodeRepairPlan != null &&
+                  _showDuplicateRepairPlan) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Plano de reparo de duplicados',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Grupos duplicados: ${_duplicateCodeRepairPlan!.totalGroups}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Itens que manterao codigo original: ${_duplicateCodeRepairPlan!.totalKeepOriginal}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Itens que receberao novo codigo: ${_duplicateCodeRepairPlan!.totalAssignNewCode}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Itens bloqueados: ${_duplicateCodeRepairPlan!.totalBlocked}',
+                ),
+                if (_duplicateCodeRepairPlan!.hasWarnings) ...[
+                  const SizedBox(height: 8),
+                  const Text('Avisos do plano:'),
+                  const SizedBox(height: 4),
+                  for (final warning in _duplicateCodeRepairPlan!.warnings) ...[
+                    Text('- $warning'),
+                    const SizedBox(height: 2),
+                  ],
+                ],
+                const SizedBox(height: 8),
+                if (_duplicateCodeRepairPlan!.groups.length >
+                    _HomeScreenState._repairGroupLimit)
+                  Text(
+                    'Exibindo os primeiros ${_HomeScreenState._repairGroupLimit} de ${_duplicateCodeRepairPlan!.groups.length} grupos de reparo.',
+                  ),
+                const SizedBox(height: 6),
+                for (final group in _duplicateCodeRepairPlan!.groups.take(
+                  _HomeScreenState._repairGroupLimit,
+                )) ...[
+                  Text('Codigo duplicado: ${group.duplicatedCode}'),
+                  const SizedBox(height: 4),
+                  if (group.items.length >
+                      _HomeScreenState._repairItemsPerGroupLimit)
+                    Text(
+                      'Exibindo os primeiros ${_HomeScreenState._repairItemsPerGroupLimit} de ${group.items.length} itens deste grupo.',
+                    ),
+                  const SizedBox(height: 4),
+                  for (final item in group.items.take(
+                    _HomeScreenState._repairItemsPerGroupLimit,
+                  )) ...[
+                    if (item.keepsOriginalCode) ...[
+                      const Text('Manter codigo original:'),
+                      Text('${item.artist} - ${item.title}'),
+                      Text('Arquivo: ${item.displayPath}'),
+                      Text('Codigo mantido: ${item.originalCode}'),
+                    ] else if (item.assignsNewCode) ...[
+                      const Text('Atribuir novo codigo:'),
+                      Text('${item.artist} - ${item.title}'),
+                      Text('Arquivo atual: ${item.displayPath}'),
+                      Text('Novo codigo: ${item.suggestedCode}'),
+                      Text('Novo nome sugerido: ${item.suggestedFileName}'),
+                    ] else ...[
+                      const Text('Bloqueado:'),
+                      Text('${item.artist} - ${item.title}'),
+                      Text('Arquivo: ${item.displayPath}'),
+                      const Text('Avisos:'),
+                      for (final warning in item.warnings) Text('- $warning'),
+                    ],
+                    const SizedBox(height: 8),
+                  ],
+                  const SizedBox(height: 8),
+                ],
+              ],
+              if (_duplicateRepairExecutionPlan != null) ...[
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: _toggleDuplicateRepairExecutionPlanVisibility,
+                  child: Text(
+                    _showDuplicateRepairExecutionPlan
+                        ? 'Ocultar dry-run'
+                        : 'Mostrar dry-run',
+                  ),
+                ),
+              ],
+              if (_duplicateRepairExecutionPlan != null &&
+                  _showDuplicateRepairExecutionPlan) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Dry-run da execucao',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Prontos para renomear: ${_duplicateRepairExecutionPlan!.readyToRenameCount}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ignorados: ${_duplicateRepairExecutionPlan!.skippedCount}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Bloqueados: ${_duplicateRepairExecutionPlan!.blockedCount}',
+                ),
+                if (_duplicateRepairExecutionPlan!.hasWarnings) ...[
+                  const SizedBox(height: 8),
+                  const Text('Avisos do dry-run:'),
+                  const SizedBox(height: 4),
+                  for (final warning
+                      in _duplicateRepairExecutionPlan!.warnings) ...[
+                    Text('- $warning'),
+                    const SizedBox(height: 2),
+                  ],
+                ],
+                const SizedBox(height: 8),
+                if (_duplicateRepairExecutionPlan!.items.length >
+                    _HomeScreenState._executionItemsLimit)
+                  Text(
+                    'Exibindo os primeiros ${_HomeScreenState._executionItemsLimit} de ${_duplicateRepairExecutionPlan!.items.length} itens do dry-run.',
+                  ),
+                const SizedBox(height: 6),
+                for (final item in _duplicateRepairExecutionPlan!.items.take(
+                  _HomeScreenState._executionItemsLimit,
+                )) ...[
+                  if (item.isReadyToRename) ...[
+                    const Text('Pronto para renomear:'),
+                    Text('${item.artist} - ${item.title}'),
+                    Text('Origem: ${item.sourcePathPreview}'),
+                    Text('Destino: ${item.destinationPathPreview}'),
+                  ] else if (item.isSkipped) ...[
+                    const Text('Ignorado: mantem codigo original'),
+                    Text('${item.artist} - ${item.title}'),
+                    Text('Origem: ${item.sourcePathPreview}'),
+                  ] else ...[
+                    const Text('Bloqueado:'),
+                    Text('${item.artist} - ${item.title}'),
+                    Text('Origem: ${item.sourcePathPreview}'),
+                    const Text('Avisos:'),
+                    for (final warning in item.warnings) Text('- $warning'),
+                  ],
+                  const SizedBox(height: 8),
+                ],
+              ],
+              if (_duplicateRepairExecutionPlan != null &&
+                  _duplicateRepairExecutionPlan!.hasReadyItems) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Confirmacao obrigatoria para renomear arquivos reais',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Esta acao ira renomear arquivos reais na biblioteca oficial selecionada.',
+                ),
+                const SizedBox(height: 8),
+                const Text('Pasta que sera alterada:'),
+                Text(_officialLibraryFolderPath ?? '-'),
+                const SizedBox(height: 8),
+                Text(
+                  'Arquivos prontos para renomear: ${_duplicateRepairExecutionPlan!.readyToRenameCount}',
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Esta acao nao possui desfazer automatico nesta fase.',
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Recomendado: teste primeiro em uma copia da biblioteca antes de executar na pasta oficial.',
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text(
+                    'Revisei o dry-run e confirmo que desejo renomear os arquivos prontos.',
+                  ),
+                  value: _confirmDuplicateRepairExecution,
+                  onChanged: _executingDuplicateRepair
+                      ? null
+                      : (value) => _setDuplicateRepairExecutionConfirmation(
+                          value ?? false,
+                        ),
+                ),
+                TextField(
+                  controller: _duplicateRepairConfirmationController,
+                  enabled: !_executingDuplicateRepair,
+                  decoration: const InputDecoration(
+                    labelText: 'Digite RENOMEAR para liberar a execucao',
+                  ),
+                  onChanged: _setDuplicateRepairConfirmationText,
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed:
+                      _executingDuplicateRepair ||
+                          !_confirmDuplicateRepairExecution ||
+                          _duplicateRepairConfirmationText
+                                  .trim()
+                                  .toUpperCase() !=
+                              'RENOMEAR'
+                      ? null
+                      : _executeDuplicateRepair,
+                  child: Text(
+                    _executingDuplicateRepair
+                        ? 'Executando...'
+                        : 'Renomear arquivos reais nesta pasta',
+                  ),
+                ),
+              ],
+              if (_duplicateRepairExecutionResultMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(_duplicateRepairExecutionResultMessage!),
+              ],
+              if (_duplicateRepairExecutionResult != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Resultado da execucao',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Renomeados: ${_duplicateRepairExecutionResult!.renamedCount}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ignorados: ${_duplicateRepairExecutionResult!.skippedCount}',
+                ),
+                const SizedBox(height: 4),
+                Text('Falhas: ${_duplicateRepairExecutionResult!.failedCount}'),
+                const SizedBox(height: 8),
+                const Text(
+                  'Reindexe a biblioteca oficial para conferir o resultado atualizado.',
+                ),
+                const SizedBox(height: 8),
+                if (_duplicateRepairExecutionResult!.items.length >
+                    _HomeScreenState._executionItemsLimit)
+                  Text(
+                    'Exibindo os primeiros ${_HomeScreenState._executionItemsLimit} de ${_duplicateRepairExecutionResult!.items.length} itens do resultado.',
+                  ),
+                const SizedBox(height: 6),
+                for (final item in _duplicateRepairExecutionResult!.items.take(
+                  _HomeScreenState._executionItemsLimit,
+                )) ...[
+                  Text('Status: ${item.status.label}'),
+                  const SizedBox(height: 2),
+                  Text('Arquivo original: ${item.suggestedFileName ?? '-'}'),
+                  Text('Origem: ${item.sourcePath ?? '-'}'),
+                  Text('Destino: ${item.destinationPath ?? '-'}'),
+                  if (item.messages.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    const Text('Mensagens:'),
+                    for (final message in item.messages) Text('- $message'),
+                  ],
+                  const SizedBox(height: 8),
+                ],
+              ],
+              if (officialLibraryResult.hasInvalidFiles) ...[
+                const SizedBox(height: 16),
+                FilledButton.tonal(
+                  onPressed: _generateInvalidFileRepairPlan,
+                  child: const Text('Gerar plano de reparo de invalidos'),
+                ),
+              ],
+              if (_invalidFileRepairMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(_invalidFileRepairMessage!),
+              ],
+              if (_invalidFileRepairPlan != null) ...[
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: _toggleInvalidFileRepairPlanVisibility,
+                  child: Text(
+                    _showInvalidFileRepairPlan
+                        ? 'Ocultar plano de invalidos'
+                        : 'Mostrar plano de invalidos',
+                  ),
+                ),
+              ],
+              if (_invalidFileRepairPlan != null &&
+                  _showInvalidFileRepairPlan) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Plano de reparo de arquivos invalidos',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text('Total: ${_invalidFileRepairPlan!.totalCount}'),
+                const SizedBox(height: 4),
+                Text(
+                  'Sugestoes prontas: ${_invalidFileRepairPlan!.readyToSuggestCount}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Revisao necessaria: ${_invalidFileRepairPlan!.needsReviewCount}',
+                ),
+                const SizedBox(height: 4),
+                Text('Bloqueados: ${_invalidFileRepairPlan!.blockedCount}'),
+                if (_invalidFileRepairPlan!.warnings.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('Avisos do plano:'),
+                  const SizedBox(height: 4),
+                  for (final warning in _invalidFileRepairPlan!.warnings) ...[
+                    Text('- $warning'),
+                    const SizedBox(height: 2),
+                  ],
+                ],
+                const SizedBox(height: 8),
+                if (_invalidFileRepairPlan!.items.length >
+                    _HomeScreenState._invalidFileRepairItemsLimit)
+                  Text(
+                    'Exibindo os primeiros ${_HomeScreenState._invalidFileRepairItemsLimit} de ${_invalidFileRepairPlan!.items.length} itens do plano.',
+                  ),
+                const SizedBox(height: 6),
+                for (final item in _invalidFileRepairPlan!.items.take(
+                  _HomeScreenState._invalidFileRepairItemsLimit,
+                )) ...[
+                  Text('Status: ${item.status.label}'),
+                  const SizedBox(height: 2),
+                  const Text('Arquivo atual:'),
+                  Text(item.displayPath),
+                  const SizedBox(height: 2),
+                  const Text('Motivo original:'),
+                  Text(item.originalReason),
+                  if (item.analysis.detectedArtist != null) ...[
+                    const SizedBox(height: 2),
+                    Text('Artista detectado: ${item.analysis.detectedArtist}'),
+                  ],
+                  if (item.analysis.detectedTitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text('Musica detectada: ${item.analysis.detectedTitle}'),
+                  ],
+                  if (item.hasSuggestedFileName) ...[
+                    const SizedBox(height: 2),
+                    Text('Novo nome sugerido: ${item.suggestedFileName}'),
+                  ],
+                  if (item.hasSuggestedCode) ...[
+                    const SizedBox(height: 2),
+                    Text('Codigo sugerido: ${item.suggestedCode}'),
+                  ],
+                  if (item.warnings.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    const Text('Avisos:'),
+                    for (final warning in item.warnings) Text('- $warning'),
+                  ],
+                  const SizedBox(height: 10),
+                ],
+              ],
+              if (_invalidFileRepairPlan != null) ...[
+                const SizedBox(height: 16),
+                FilledButton.tonal(
+                  onPressed: _generateInvalidFileRepairExecutionDryRun,
+                  child: const Text('Validar execucao dos invalidos'),
+                ),
+              ],
+              if (_invalidFileRepairExecutionMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(_invalidFileRepairExecutionMessage!),
+              ],
+              if (_invalidFileRepairExecutionPlan != null) ...[
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: _toggleInvalidFileRepairExecutionPlanVisibility,
+                  child: Text(
+                    _showInvalidFileRepairExecutionPlan
+                        ? 'Ocultar dry-run de invalidos'
+                        : 'Mostrar dry-run de invalidos',
+                  ),
+                ),
+              ],
+              if (_invalidFileRepairExecutionPlan != null &&
+                  _showInvalidFileRepairExecutionPlan) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Dry-run dos arquivos invalidos',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Prontos para renomear: ${_invalidFileRepairExecutionPlan!.readyToRenameCount}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Aguardando revisao: ${_invalidFileRepairExecutionPlan!.skippedCount}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Bloqueados: ${_invalidFileRepairExecutionPlan!.blockedCount}',
+                ),
+                if (_invalidFileRepairExecutionPlan!.warnings.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('Avisos do dry-run:'),
+                  const SizedBox(height: 4),
+                  for (final warning
+                      in _invalidFileRepairExecutionPlan!.warnings) ...[
+                    Text('- $warning'),
+                    const SizedBox(height: 2),
+                  ],
+                ],
+                const SizedBox(height: 8),
+                if (_invalidFileRepairExecutionPlan!.items.length >
+                    _HomeScreenState._invalidFileRepairItemsLimit)
+                  Text(
+                    'Exibindo os primeiros ${_HomeScreenState._invalidFileRepairItemsLimit} de ${_invalidFileRepairExecutionPlan!.items.length} itens do dry-run de invalidos.',
+                  ),
+                const SizedBox(height: 6),
+                for (final item in _invalidFileRepairExecutionPlan!.items.take(
+                  _HomeScreenState._invalidFileRepairItemsLimit,
+                )) ...[
+                  if (item.isReadyToRename) ...[
+                    const Text('Pronto para renomear:'),
+                    if (item.detectedArtist != null &&
+                        item.detectedTitle != null)
+                      Text('${item.detectedArtist} - ${item.detectedTitle}'),
+                    const Text('Arquivo atual:'),
+                    Text(item.sourcePathPreview ?? item.displayPath),
+                    const Text('Destino:'),
+                    Text(item.destinationPathPreview ?? '-'),
+                  ] else if (item.isSkipped) ...[
+                    const Text('Aguardando revisao:'),
+                    if (item.detectedArtist != null &&
+                        item.detectedTitle != null)
+                      Text('${item.detectedArtist} - ${item.detectedTitle}'),
+                    const Text('Arquivo atual:'),
+                    Text(item.sourcePathPreview ?? item.displayPath),
+                    if (item.warnings.isNotEmpty) ...[
+                      const Text('Avisos:'),
+                      for (final warning in item.warnings) Text('- $warning'),
+                    ],
+                  ] else ...[
+                    const Text('Bloqueado:'),
+                    const Text('Arquivo atual:'),
+                    Text(item.sourcePathPreview ?? item.displayPath),
+                    if (item.warnings.isNotEmpty) ...[
+                      const Text('Avisos:'),
+                      for (final warning in item.warnings) Text('- $warning'),
+                    ],
+                  ],
+                  const SizedBox(height: 8),
+                ],
+              ],
+              if (_invalidFileRepairExecutionPlan != null &&
+                  _invalidFileRepairExecutionPlan!.hasReadyItems) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Confirmacao obrigatoria para renomear arquivos invalidos reais',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Esta acao ira renomear arquivos reais na biblioteca oficial selecionada.',
+                ),
+                const SizedBox(height: 8),
+                const Text('Pasta que sera alterada:'),
+                Text(_officialLibraryFolderPath ?? '-'),
+                const SizedBox(height: 8),
+                Text(
+                  'Arquivos invalidos prontos para renomear: ${_invalidFileRepairExecutionPlan!.readyToRenameCount}',
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Esta acao nao possui desfazer automatico nesta fase.',
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Recomendado: teste primeiro em uma copia da biblioteca antes de executar na pasta oficial.',
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text(
+                    'Revisei o dry-run dos invalidos e confirmo que desejo renomear os arquivos prontos.',
+                  ),
+                  value: _confirmInvalidRepairExecution,
+                  onChanged: _executingInvalidRepair
+                      ? null
+                      : (value) => _setInvalidRepairExecutionConfirmation(
+                          value ?? false,
+                        ),
+                ),
+                TextField(
+                  controller: _invalidRepairConfirmationController,
+                  enabled: !_executingInvalidRepair,
+                  decoration: const InputDecoration(
+                    labelText: 'Digite RENOMEAR para liberar a execucao',
+                  ),
+                  onChanged: _setInvalidRepairConfirmationText,
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed:
+                      _executingInvalidRepair ||
+                          !_confirmInvalidRepairExecution ||
+                          _invalidRepairConfirmationText.trim().toUpperCase() !=
+                              'RENOMEAR'
+                      ? null
+                      : _executeInvalidRepair,
+                  child: Text(
+                    _executingInvalidRepair
+                        ? 'Executando...'
+                        : 'Renomear arquivos invalidos reais nesta pasta',
+                  ),
+                ),
+              ],
+              if (_invalidRepairExecutionResultMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(_invalidRepairExecutionResultMessage!),
+              ],
+              if (_invalidRepairExecutionResult != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Resultado da execucao dos invalidos',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Renomeados: ${_invalidRepairExecutionResult!.renamedCount}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ignorados: ${_invalidRepairExecutionResult!.skippedCount}',
+                ),
+                const SizedBox(height: 4),
+                Text('Falhas: ${_invalidRepairExecutionResult!.failedCount}'),
+                const SizedBox(height: 8),
+                const Text(
+                  'Reindexe a biblioteca oficial para conferir o resultado atualizado.',
+                ),
+                const SizedBox(height: 8),
+                if (_invalidRepairExecutionResult!.items.length >
+                    _HomeScreenState._invalidFileRepairItemsLimit)
+                  Text(
+                    'Exibindo os primeiros ${_HomeScreenState._invalidFileRepairItemsLimit} de ${_invalidRepairExecutionResult!.items.length} itens do resultado.',
+                  ),
+                const SizedBox(height: 6),
+                for (final item in _invalidRepairExecutionResult!.items.take(
+                  _HomeScreenState._invalidFileRepairItemsLimit,
+                )) ...[
+                  if (item.isRenamed) ...[
+                    const Text('Renomeado:'),
+                    if (item.detectedArtist != null &&
+                        item.detectedTitle != null)
+                      Text('${item.detectedArtist} - ${item.detectedTitle}'),
+                    Text('Origem: ${item.sourcePath ?? '-'}'),
+                    Text('Destino: ${item.destinationPath ?? '-'}'),
+                    if (item.messages.isNotEmpty)
+                      Text('Mensagem: ${item.messages.first}'),
+                  ] else if (item.isSkipped) ...[
+                    const Text('Ignorado:'),
+                    Text('Arquivo original: ${item.originalFileName}'),
+                    for (final message in item.messages)
+                      Text('Mensagem: $message'),
+                  ] else ...[
+                    const Text('Falhou:'),
+                    Text('Arquivo original: ${item.originalFileName}'),
+                    Text('Origem: ${item.sourcePath ?? '-'}'),
+                    Text('Destino: ${item.destinationPath ?? '-'}'),
+                    const Text('Mensagens:'),
+                    for (final message in item.messages) Text('- $message'),
+                  ],
+                  const SizedBox(height: 8),
+                ],
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSessionSummaryPanel(BuildContext context) {
     return Card(
       child: Padding(
@@ -3722,10 +3762,10 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D2A - Workspace em duas colunas'),
+            const Text('Round 35D2B - Biblioteca oficial premium'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Blocos principais organizados em coluna principal e paineis auxiliares na lateral.',
+              'Estado: Biblioteca oficial redesenhada como card principal largo, mantendo o workspace em duas colunas.',
             ),
           ],
         ),
