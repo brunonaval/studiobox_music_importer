@@ -234,7 +234,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
-    expect(find.textContaining('Round 35D10D'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Round 35D11A'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Fluxo seguro'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Dashboard'), findsAtLeastNWidgets(1));
     expect(

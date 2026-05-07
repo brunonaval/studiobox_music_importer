@@ -795,52 +795,67 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 DataCell(Text(status)),
                 DataCell(
-                  SizedBox(
-                    width: 220,
-                    child: Text(
-                      candidate.originalFileName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Tooltip(
+                    message: candidate.originalFileName,
+                    child: SizedBox(
+                      width: 240,
+                      child: Text(
+                        candidate.originalFileName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
                 DataCell(
-                  SizedBox(
-                    width: 170,
-                    child: Text(
-                      candidate.analysis.detectedArtist ?? '-',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Tooltip(
+                    message: candidate.analysis.detectedArtist ?? '-',
+                    child: SizedBox(
+                      width: 190,
+                      child: Text(
+                        candidate.analysis.detectedArtist ?? '-',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
                 DataCell(
-                  SizedBox(
-                    width: 170,
-                    child: Text(
-                      candidate.analysis.detectedTitle ?? '-',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Tooltip(
+                    message: candidate.analysis.detectedTitle ?? '-',
+                    child: SizedBox(
+                      width: 190,
+                      child: Text(
+                        candidate.analysis.detectedTitle ?? '-',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
                 DataCell(
-                  SizedBox(
-                    width: 240,
-                    child: Text(
-                      candidate.suggestedOfficialFileName ?? '-',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Tooltip(
+                    message: candidate.suggestedOfficialFileName ?? '-',
+                    child: SizedBox(
+                      width: 360,
+                      child: Text(
+                        candidate.suggestedOfficialFileName ?? '-',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
                 DataCell(
-                  SizedBox(
-                    width: 280,
-                    child: Text(
-                      warnings,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  Tooltip(
+                    message: warnings,
+                    child: SizedBox(
+                      width: 420,
+                      child: Text(
+                        warnings,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
@@ -4147,12 +4162,10 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Round 35D10D - Tabelas com scrollbars sem layout quebrado',
-            ),
+            const Text('Round 35D11A - Revisao mais clara e legivel'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Tabelas de sugestoes e edicao manual com scrollbars horizontais e verticais visiveis, sem layout quebrado e com acabamento visual consistente.',
+              'Estado: Tabela de sugestoes e edicao manual com tooltips, colunas mais legiveis e explicacao clara sobre revisao manual.',
             ),
           ],
         ),
@@ -4191,40 +4204,49 @@ extension on _HomeScreenState {
         DataCell(Text(item.editStatus.label)),
         DataCell(Text(item.selectionItem.isSelected ? 'Sim' : 'Nao')),
         DataCell(
-          SizedBox(
-            width: 220,
-            child: Text(
-              item.selectionItem.candidate.originalFileName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          Tooltip(
+            message: item.selectionItem.candidate.originalFileName,
+            child: SizedBox(
+              width: 240,
+              child: Text(
+                item.selectionItem.candidate.originalFileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ),
         DataCell(
-          SizedBox(
-            width: 180,
-            child: TextFormField(
-              key: ValueKey('import-edit-artist-$index'),
-              initialValue: item.artist,
-              enabled: item.editable,
-              onChanged: (value) {
-                _updateCandidateArtist(id: item.id, value: value);
-              },
-              decoration: const InputDecoration(isDense: true),
+          Tooltip(
+            message: item.artist,
+            child: SizedBox(
+              width: 190,
+              child: TextFormField(
+                key: ValueKey('import-edit-artist-$index'),
+                initialValue: item.artist,
+                enabled: item.editable,
+                onChanged: (value) {
+                  _updateCandidateArtist(id: item.id, value: value);
+                },
+                decoration: const InputDecoration(isDense: true),
+              ),
             ),
           ),
         ),
         DataCell(
-          SizedBox(
-            width: 180,
-            child: TextFormField(
-              key: ValueKey('import-edit-title-$index'),
-              initialValue: item.title,
-              enabled: item.editable,
-              onChanged: (value) {
-                _updateCandidateTitle(id: item.id, value: value);
-              },
-              decoration: const InputDecoration(isDense: true),
+          Tooltip(
+            message: item.title,
+            child: SizedBox(
+              width: 190,
+              child: TextFormField(
+                key: ValueKey('import-edit-title-$index'),
+                initialValue: item.title,
+                enabled: item.editable,
+                onChanged: (value) {
+                  _updateCandidateTitle(id: item.id, value: value);
+                },
+                decoration: const InputDecoration(isDense: true),
+              ),
             ),
           ),
         ),
@@ -4243,19 +4265,31 @@ extension on _HomeScreenState {
           ),
         ),
         DataCell(
-          SizedBox(
-            width: 260,
-            child: Text(
-              item.officialFileName.isEmpty ? '-' : item.officialFileName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          Tooltip(
+            message: item.officialFileName.isEmpty
+                ? '-'
+                : item.officialFileName,
+            child: SizedBox(
+              width: 360,
+              child: Text(
+                item.officialFileName.isEmpty ? '-' : item.officialFileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ),
         DataCell(
-          SizedBox(
-            width: 260,
-            child: Text(warnings, maxLines: 2, overflow: TextOverflow.ellipsis),
+          Tooltip(
+            message: warnings,
+            child: SizedBox(
+              width: 420,
+              child: Text(
+                warnings,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
         ),
       ],
@@ -4365,6 +4399,10 @@ extension on _HomeScreenState {
                 ],
               ),
               const SizedBox(height: 12),
+              const Text(
+                'Use a tabela para selecionar candidatos. Itens Pronto ja foram aprovados automaticamente; itens Revisao precisam de confirmacao manual antes da execucao.',
+              ),
+              const SizedBox(height: 8),
               _buildSuggestionsTableWithVisibleScrollbars(),
             ],
             if (_importCandidateEditPlan != null) ...[
@@ -4379,44 +4417,53 @@ extension on _HomeScreenState {
               ),
               if (_showManualImportCandidateEdit) ...[
                 const SizedBox(height: 12),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Edicao manual dos candidatos',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Total de candidatos: ${_importCandidateEditPlan!.totalCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Editaveis: ${_importCandidateEditPlan!.editableCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Validos: ${_importCandidateEditPlan!.validCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Invalidos: ${_importCandidateEditPlan!.invalidCount}',
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Bloqueados: ${_importCandidateEditPlan!.blockedCount}',
-                        ),
-                        if (_importCandidateEditMessage != null) ...[
-                          const SizedBox(height: 8),
-                          Text(_importCandidateEditMessage!),
-                        ],
-                        const SizedBox(height: 8),
-                        _buildManualEditTableWithVisibleScrollbars(),
-                      ],
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
                     ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Edicao manual dos candidatos',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Total de candidatos: ${_importCandidateEditPlan!.totalCount}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Editaveis: ${_importCandidateEditPlan!.editableCount}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Validos: ${_importCandidateEditPlan!.validCount}'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Invalidos: ${_importCandidateEditPlan!.invalidCount}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Bloqueados: ${_importCandidateEditPlan!.blockedCount}',
+                      ),
+                      if (_importCandidateEditMessage != null) ...[
+                        const SizedBox(height: 8),
+                        Text(_importCandidateEditMessage!),
+                      ],
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Itens em Revisao ou Duplicado podem ser selecionados, mas so poderao executar quando a edicao manual estiver valida. Confira artista, musica e codigo antes de gerar o dry-run final.',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildManualEditTableWithVisibleScrollbars(),
+                    ],
                   ),
                 ),
               ],
@@ -4451,7 +4498,7 @@ extension on _HomeScreenState {
     final colors = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final minWidth = constraints.maxWidth + 260;
+        final minWidth = constraints.maxWidth + 520;
         return SizedBox(
           width: double.infinity,
           height: 480,
