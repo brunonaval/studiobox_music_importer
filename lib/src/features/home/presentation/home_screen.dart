@@ -842,6 +842,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildImportCandidatesTableScrollable() {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxHeight: 480),
+      decoration: BoxDecoration(
+        color: HomeDashboardTheme.surfaceElevated,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: HomeDashboardTheme.border),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: _buildImportCandidatesTable(),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _updateCandidateArtist({required String id, required String value}) {
     setState(() {
       _importCandidateEditPlan = _importCandidateEditPlan?.withManualEdit(
@@ -4135,10 +4157,10 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D9C - Tabela real de sugestoes'),
+            const Text('Round 35D10A - Tabela de sugestoes com scroll'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Sugestoes agora aparecem em tabela real compacta; edicao manual fica recolhida para reduzir poluicao visual.',
+              'Estado: Tabela de sugestoes com rolagem horizontal e vertical para grandes volumes de musicas.',
             ),
           ],
         ),
@@ -4249,7 +4271,7 @@ extension on _HomeScreenState {
                 ],
               ),
               const SizedBox(height: 12),
-              _buildImportCandidatesTable(),
+              _buildImportCandidatesTableScrollable(),
             ],
             if (_importCandidateEditPlan != null) ...[
               const SizedBox(height: 16),
