@@ -4050,10 +4050,10 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D8 - Inversao Musica-Artista'),
+            const Text('Round 35D9 - Sugestoes e selecao em tabela'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Pre-limpeza agora pode inverter arquivos no formato Musica - Artista para Artista - Musica antes das sugestoes.',
+              'Estado: Sugestoes e selecao exibidas em tabela compacta, com selecao individual, selecionar todos, selecionar prontos e limpar selecao.',
             ),
           ],
         ),
