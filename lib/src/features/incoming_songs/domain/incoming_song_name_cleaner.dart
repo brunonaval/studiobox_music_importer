@@ -8,6 +8,7 @@ class IncomingSongNameCleaner {
   IncomingSongCleaningPreviewPlan buildPreview({
     required IncomingSongsScanResult scanResult,
     required List<IncomingSongCleaningRule> rules,
+    bool invertMusicArtist = false,
   }) {
     final items = <IncomingSongCleaningPreviewItem>[];
     final planWarnings = <String>[...scanResult.warnings];

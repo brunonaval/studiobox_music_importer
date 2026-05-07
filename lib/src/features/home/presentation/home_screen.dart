@@ -83,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
   IncomingSongCleaningPreviewPlan? _incomingSongCleaningPreviewPlan;
   bool _showIncomingSongCleaningPreview = false;
   String? _incomingSongCleaningMessage;
+  bool _invertIncomingSongMusicArtist = false;
   ImportSuggestionPlan? _importSuggestionPlan;
   bool _showImportSuggestionPlan = false;
   String? _importSuggestionMessage;
@@ -248,6 +249,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _setInvertIncomingSongMusicArtist(bool value) {
+    setState(() {
+      _invertIncomingSongMusicArtist = value;
+    });
+  }
+
   void _changeImportOutputMode(ImportOutputMode value) {
     setState(() {
       _importOutputMode = value;
@@ -372,10 +379,33 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final plan = IncomingSongNameCleaner().buildPreview(
+    var plan = IncomingSongNameCleaner().buildPreview(
       scanResult: scanResult,
       rules: IncomingSongCleaningRule.defaultRules(),
+      invertMusicArtist: _invertIncomingSongMusicArtist,
     );
+
+    if (_invertIncomingSongMusicArtist) {
+      final transformedItems = <IncomingSongCleaningPreviewItem>[];
+      final extraWarnings = <String>[];
+      for (final item in plan.items) {
+        final inverted = _invertMusicArtistFileName(item.cleanedFileName);
+        transformedItems.add(
+          IncomingSongCleaningPreviewItem(
+            scannedFile: item.scannedFile,
+            originalFileName: item.originalFileName,
+            cleanedFileName: inverted.cleanedFileName,
+            appliedRules: item.appliedRules,
+            warnings: [...item.warnings, ...inverted.warnings],
+          ),
+        );
+        extraWarnings.addAll(inverted.warnings);
+      }
+      plan = IncomingSongCleaningPreviewPlan(
+        items: transformedItems,
+        warnings: [...plan.warnings, ...extraWarnings],
+      );
+    }
 
     setState(() {
       _incomingSongCleaningPreviewPlan = plan;
@@ -386,6 +416,36 @@ class _HomeScreenState extends State<HomeScreen> {
       _importSuggestionMessage = null;
       _resetImportSelection();
     });
+  }
+
+  _InvertedFileNameResult _invertMusicArtistFileName(String fileName) {
+    final dot = fileName.lastIndexOf('.');
+    final base = dot > 0 ? fileName.substring(0, dot) : fileName;
+    final extension = dot > 0 ? fileName.substring(dot) : '';
+    const separator = ' - ';
+    final pivot = base.lastIndexOf(separator);
+    if (pivot <= 0 || pivot >= base.length - separator.length) {
+      return _InvertedFileNameResult(
+        cleanedFileName: fileName,
+        warnings: const [
+          'Nao foi possivel inverter Musica - Artista: separador invalido.',
+        ],
+      );
+    }
+    final music = base.substring(0, pivot).trim();
+    final artist = base.substring(pivot + separator.length).trim();
+    if (music.isEmpty || artist.isEmpty) {
+      return _InvertedFileNameResult(
+        cleanedFileName: fileName,
+        warnings: const [
+          'Nao foi possivel inverter Musica - Artista: partes vazias.',
+        ],
+      );
+    }
+    return _InvertedFileNameResult(
+      cleanedFileName: '$artist - $music$extension',
+      warnings: const [],
+    );
   }
 
   void _toggleIncomingSongCleaningPreview() {
@@ -2874,6 +2934,16 @@ extension on _HomeScreenState {
               ],
               if (_incomingSongsScanResult!.totalCount > 0) ...[
                 const SizedBox(height: 16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Inverter Musica - Artista'),
+                  subtitle: const Text(
+                    'Use quando os arquivos vierem do YouTube como "Nome da musica - Nome do artista".',
+                  ),
+                  value: _invertIncomingSongMusicArtist,
+                  onChanged: _setInvertIncomingSongMusicArtist,
+                ),
+                const SizedBox(height: 8),
                 FilledButton.tonal(
                   onPressed: _generateIncomingSongCleaningPreview,
                   child: const Text('Gerar pre-limpeza dos nomes'),
@@ -2957,7 +3027,7 @@ extension on _HomeScreenState {
                             ),
                             Padding(
                               padding: EdgeInsets.all(8),
-                              child: Text('Nome limpo'),
+                              child: Text('Renomeado'),
                             ),
                             Padding(
                               padding: EdgeInsets.all(8),
@@ -3980,16 +4050,26 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D7 - Preview de renomeacao estilo PowerRename'),
+            const Text('Round 35D8 - Inversao Musica-Artista'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Pre-limpeza exibida em tabela compacta Original/Nome limpo/Status, reduzindo poluicao visual.',
+              'Estado: Pre-limpeza agora pode inverter arquivos no formato Musica - Artista para Artista - Musica antes das sugestoes.',
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class _InvertedFileNameResult {
+  _InvertedFileNameResult({
+    required this.cleanedFileName,
+    required this.warnings,
+  });
+
+  final String cleanedFileName;
+  final List<String> warnings;
 }
 
 class _TopMetricCard extends StatelessWidget {
