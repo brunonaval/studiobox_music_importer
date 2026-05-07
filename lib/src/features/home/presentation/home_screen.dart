@@ -114,6 +114,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _sessionCacheMessage;
   AppSessionSnapshot? _lastSessionSnapshot;
   bool _showManualImportCandidateEdit = false;
+  final ScrollController _suggestionsTableHorizontalController =
+      ScrollController();
+  final ScrollController _suggestionsTableVerticalController =
+      ScrollController();
+  final ScrollController _manualEditTableHorizontalController =
+      ScrollController();
+  final ScrollController _manualEditTableVerticalController =
+      ScrollController();
 
   bool _indexingOfficialLibrary = false;
   BaseLibraryIndexResult? _officialLibraryIndexResult;
@@ -169,6 +177,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _duplicateRepairConfirmationController.dispose();
     _invalidRepairConfirmationController.dispose();
     _importOperationConfirmationController.dispose();
+    _suggestionsTableHorizontalController.dispose();
+    _suggestionsTableVerticalController.dispose();
+    _manualEditTableHorizontalController.dispose();
+    _manualEditTableVerticalController.dispose();
     super.dispose();
   }
 
@@ -743,124 +755,99 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Text('Nenhum candidato para exibir.');
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columnSpacing: 14,
-        columns: const [
-          DataColumn(label: Text('Selecionar')),
-          DataColumn(label: Text('Status')),
-          DataColumn(label: Text('Arquivo')),
-          DataColumn(label: Text('Artista')),
-          DataColumn(label: Text('Musica')),
-          DataColumn(label: Text('Nome oficial')),
-          DataColumn(label: Text('Avisos')),
-        ],
-        rows: plan.items
-            .map((item) {
-              final candidate = item.candidate;
-              final status = candidate.hasDuplicate
-                  ? 'Duplicado'
-                  : candidate.isBlocked
-                  ? 'Bloqueado'
-                  : candidate.needsReview
-                  ? 'Revisao'
-                  : 'Pronto';
-              final warnings = item.warnings.isEmpty
-                  ? '-'
-                  : item.warnings.join(' | ');
+    return DataTable(
+      columnSpacing: 14,
+      columns: const [
+        DataColumn(label: Text('Selecionar')),
+        DataColumn(label: Text('Status')),
+        DataColumn(label: Text('Arquivo')),
+        DataColumn(label: Text('Artista')),
+        DataColumn(label: Text('Musica')),
+        DataColumn(label: Text('Nome oficial')),
+        DataColumn(label: Text('Avisos')),
+      ],
+      rows: plan.items
+          .map((item) {
+            final candidate = item.candidate;
+            final status = candidate.hasDuplicate
+                ? 'Duplicado'
+                : candidate.isBlocked
+                ? 'Bloqueado'
+                : candidate.needsReview
+                ? 'Revisao'
+                : 'Pronto';
+            final warnings = item.warnings.isEmpty
+                ? '-'
+                : item.warnings.join(' | ');
 
-              return DataRow(
-                cells: [
-                  DataCell(
-                    Checkbox(
-                      value: item.isSelected,
-                      onChanged: item.selectable
-                          ? (value) => _updateCandidateSelection(
-                              id: item.id,
-                              selected: value ?? false,
-                            )
-                          : null,
+            return DataRow(
+              cells: [
+                DataCell(
+                  Checkbox(
+                    value: item.isSelected,
+                    onChanged: item.selectable
+                        ? (value) => _updateCandidateSelection(
+                            id: item.id,
+                            selected: value ?? false,
+                          )
+                        : null,
+                  ),
+                ),
+                DataCell(Text(status)),
+                DataCell(
+                  SizedBox(
+                    width: 220,
+                    child: Text(
+                      candidate.originalFileName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  DataCell(Text(status)),
-                  DataCell(
-                    SizedBox(
-                      width: 220,
-                      child: Text(
-                        candidate.originalFileName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                ),
+                DataCell(
+                  SizedBox(
+                    width: 170,
+                    child: Text(
+                      candidate.analysis.detectedArtist ?? '-',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  DataCell(
-                    SizedBox(
-                      width: 170,
-                      child: Text(
-                        candidate.analysis.detectedArtist ?? '-',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                ),
+                DataCell(
+                  SizedBox(
+                    width: 170,
+                    child: Text(
+                      candidate.analysis.detectedTitle ?? '-',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  DataCell(
-                    SizedBox(
-                      width: 170,
-                      child: Text(
-                        candidate.analysis.detectedTitle ?? '-',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                ),
+                DataCell(
+                  SizedBox(
+                    width: 240,
+                    child: Text(
+                      candidate.suggestedOfficialFileName ?? '-',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  DataCell(
-                    SizedBox(
-                      width: 240,
-                      child: Text(
-                        candidate.suggestedOfficialFileName ?? '-',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                ),
+                DataCell(
+                  SizedBox(
+                    width: 280,
+                    child: Text(
+                      warnings,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  DataCell(
-                    SizedBox(
-                      width: 280,
-                      child: Text(
-                        warnings,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            })
-            .toList(growable: false),
-      ),
-    );
-  }
-
-  Widget _buildImportCandidatesTableScrollable() {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxHeight: 480),
-      decoration: BoxDecoration(
-        color: HomeDashboardTheme.surfaceElevated,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: HomeDashboardTheme.border),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: _buildImportCandidatesTable(),
-          ),
-        ),
-      ),
+                ),
+              ],
+            );
+          })
+          .toList(growable: false),
     );
   }
 
@@ -4160,10 +4147,12 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D10B - Edicao manual em tabela editavel'),
+            const Text(
+              'Round 35D10D - Tabelas com scrollbars sem layout quebrado',
+            ),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Edicao manual agora usa tabela editavel com scroll, mantendo artista, musica e codigo editaveis inline.',
+              'Estado: Tabelas de sugestoes e edicao manual com scrollbars horizontais e verticais visiveis, sem layout quebrado e com acabamento visual consistente.',
             ),
           ],
         ),
@@ -4176,40 +4165,22 @@ extension on _HomeScreenState {
     if (plan == null) {
       return const SizedBox.shrink();
     }
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxHeight: 480),
-      decoration: BoxDecoration(
-        color: HomeDashboardTheme.surfaceElevated,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: HomeDashboardTheme.border),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columnSpacing: 12,
-              columns: const [
-                DataColumn(label: Text('Status')),
-                DataColumn(label: Text('Selecionado')),
-                DataColumn(label: Text('Arquivo original')),
-                DataColumn(label: Text('Artista')),
-                DataColumn(label: Text('Musica')),
-                DataColumn(label: Text('Codigo')),
-                DataColumn(label: Text('Nome oficial')),
-                DataColumn(label: Text('Avisos')),
-              ],
-              rows: [
-                for (var i = 0; i < _editItemsForDisplay().length; i++)
-                  _buildManualEditRow(_editItemsForDisplay()[i], i),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return DataTable(
+      columnSpacing: 12,
+      columns: const [
+        DataColumn(label: Text('Status')),
+        DataColumn(label: Text('Selecionado')),
+        DataColumn(label: Text('Arquivo original')),
+        DataColumn(label: Text('Artista')),
+        DataColumn(label: Text('Musica')),
+        DataColumn(label: Text('Codigo')),
+        DataColumn(label: Text('Nome oficial')),
+        DataColumn(label: Text('Avisos')),
+      ],
+      rows: [
+        for (var i = 0; i < _editItemsForDisplay().length; i++)
+          _buildManualEditRow(_editItemsForDisplay()[i], i),
+      ],
     );
   }
 
@@ -4394,7 +4365,7 @@ extension on _HomeScreenState {
                 ],
               ),
               const SizedBox(height: 12),
-              _buildImportCandidatesTableScrollable(),
+              _buildSuggestionsTableWithVisibleScrollbars(),
             ],
             if (_importCandidateEditPlan != null) ...[
               const SizedBox(height: 16),
@@ -4443,7 +4414,7 @@ extension on _HomeScreenState {
                           Text(_importCandidateEditMessage!),
                         ],
                         const SizedBox(height: 8),
-                        _buildManualEditTable(),
+                        _buildManualEditTableWithVisibleScrollbars(),
                       ],
                     ),
                   ),
@@ -4453,6 +4424,70 @@ extension on _HomeScreenState {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSuggestionsTableWithVisibleScrollbars() {
+    return _buildScrollableTableFrame(
+      horizontalController: _suggestionsTableHorizontalController,
+      verticalController: _suggestionsTableVerticalController,
+      child: _buildImportCandidatesTable(),
+    );
+  }
+
+  Widget _buildManualEditTableWithVisibleScrollbars() {
+    return _buildScrollableTableFrame(
+      horizontalController: _manualEditTableHorizontalController,
+      verticalController: _manualEditTableVerticalController,
+      child: _buildManualEditTable(),
+    );
+  }
+
+  Widget _buildScrollableTableFrame({
+    required ScrollController horizontalController,
+    required ScrollController verticalController,
+    required Widget child,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minWidth = constraints.maxWidth + 260;
+        return SizedBox(
+          width: double.infinity,
+          height: 480,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHighest.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colors.outlineVariant),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Scrollbar(
+                controller: horizontalController,
+                thumbVisibility: true,
+                notificationPredicate: (notification) =>
+                    notification.metrics.axis == Axis.horizontal,
+                child: SingleChildScrollView(
+                  controller: horizontalController,
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: minWidth),
+                    child: Scrollbar(
+                      controller: verticalController,
+                      thumbVisibility: true,
+                      child: SingleChildScrollView(
+                        controller: verticalController,
+                        child: child,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
