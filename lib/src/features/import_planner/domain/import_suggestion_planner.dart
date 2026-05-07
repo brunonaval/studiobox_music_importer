@@ -6,6 +6,7 @@ import '../../incoming_songs/domain/incoming_song_name_analysis.dart';
 import '../../incoming_songs/domain/incoming_song_name_parser.dart';
 import '../../incoming_songs/domain/incoming_song_parse_confidence.dart';
 import 'import_candidate_status.dart';
+import 'import_canonical_text_normalizer.dart';
 import 'import_duplicate_match.dart';
 import 'import_suggestion_candidate.dart';
 import 'import_suggestion_plan.dart';
@@ -76,7 +77,13 @@ class ImportSuggestionPlanner {
             existingArtist: duplicate.artist,
             existingTitle: duplicate.title,
           );
-          warnings.add('Possivel duplicidade encontrada na biblioteca base.');
+          warnings.add(
+            'Possivel duplicado na biblioteca: ${duplicate.song.fileName}',
+          );
+          warnings.add('Codigo existente: ${duplicate.code}');
+          if (suggestedCode != null) {
+            warnings.add('Codigo sugerido: $suggestedCode');
+          }
         }
 
         if (suggestedCode != null) {
@@ -141,7 +148,11 @@ class ImportSuggestionPlanner {
   }
 
   String _duplicateKey(String artist, String title) {
-    return '${artist.trim().toLowerCase()}|${title.trim().toLowerCase()}';
+    final canonicalArtist = ImportCanonicalTextNormalizer.canonicalArtist(
+      artist,
+    );
+    final canonicalTitle = ImportCanonicalTextNormalizer.canonicalTitle(title);
+    return '$canonicalArtist|$canonicalTitle';
   }
 
   ImportCandidateStatus _resolveStatus({

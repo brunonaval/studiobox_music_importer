@@ -4529,12 +4529,10 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Round 35D11E - Plano efetivo de aprovacao manual no dry-run',
-            ),
+            const Text('Round 35D12 - Duplicidade canonica artista musica'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Candidatos selecionados e aprovados manualmente chegam ao dry-run como validos quando artista, musica e codigo estao corretos.',
+              'Estado: Duplicidade forte detectada por artista e musica canonicos, mantendo aprovacao manual e dry-run liberado.',
             ),
           ],
         ),

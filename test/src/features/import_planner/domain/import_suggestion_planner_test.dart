@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:studiobox_music_importer/src/features/base_library/domain/base_library_index_entry.dart';
 import 'package:studiobox_music_importer/src/features/base_library/domain/base_library_index_result.dart';
 import 'package:studiobox_music_importer/src/features/base_library/domain/base_library_indexer.dart';
@@ -103,10 +103,42 @@ void main() {
     expect(candidate.hasDuplicate, isTrue);
     expect(
       candidate.warnings,
-      contains('Possivel duplicidade encontrada na biblioteca base.'),
+      contains(
+        'Possivel duplicado na biblioteca: Legiao Urbana - Tempo Perdido - 00001.mp4',
+      ),
     );
+    expect(candidate.warnings, contains('Codigo existente: 00001'));
+    expect(candidate.warnings, contains('Codigo sugerido: 00006'));
     expect(candidate.status, ImportCandidateStatus.needsReview);
   });
+
+  test(
+    'detecta duplicidade canonica por artista e musica mesmo com & e caixa',
+    () {
+      final baseIndex = BaseLibraryIndexer().indexFileNames([
+        'Guilherme E Benuto E Simone Mendes - Manda Um Oi - 05180.mp4',
+        'Outro Artista - Outra Musica - 13330.mp4',
+      ]);
+
+      final plan = planner.buildPlan(
+        incomingFileNames: [
+          'Guilherme & Benuto e Simone Mendes - Manda um Oi.mp4',
+        ],
+        baseIndex: baseIndex,
+        codeStrategy: SongCodeAllocationStrategy.afterHighestExisting,
+      );
+
+      final candidate = plan.candidates.first;
+      expect(candidate.hasDuplicate, isTrue);
+      expect(candidate.status, ImportCandidateStatus.needsReview);
+      expect(
+        candidate.warnings.any((w) => w.contains('Possivel duplicado')),
+        isTrue,
+      );
+      expect(candidate.warnings.any((w) => w.contains('05180')), isTrue);
+      expect(candidate.warnings.any((w) => w.contains('13331')), isTrue);
+    },
+  );
 
   test('plano conta autoApproved, needsReview e blocked corretamente', () {
     final baseIndex = buildBaseIndex();

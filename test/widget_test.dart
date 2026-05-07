@@ -234,7 +234,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
-    expect(find.textContaining('Round 35D11E'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Round 35D12'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Fluxo seguro'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Dashboard'), findsAtLeastNWidgets(1));
     expect(
@@ -1554,6 +1554,67 @@ void main() {
       findsAtLeastNWidgets(1),
     );
     expect(find.textContaining('invertida'), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('revisao exibe possivel duplicado canonico com codigo existente', (
+    WidgetTester tester,
+  ) async {
+    final fakePicker = _FakeFolderPickerService(
+      [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+      incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+    );
+    final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+      BaseLibraryScannedFile(
+        fileName:
+            'Guilherme E Benuto E Simone Mendes - Manda Um Oi - 05180.mp4',
+        fullPath:
+            r'C:\Biblioteca\Guilherme E Benuto E Simone Mendes - Manda Um Oi - 05180.mp4',
+        relativePath:
+            'Guilherme E Benuto E Simone Mendes - Manda Um Oi - 05180.mp4',
+      ),
+      BaseLibraryScannedFile(
+        fileName: 'Outro Artista - Outra Musica - 13330.mp4',
+        fullPath: r'C:\Biblioteca\Outro Artista - Outra Musica - 13330.mp4',
+        relativePath: 'Outro Artista - Outra Musica - 13330.mp4',
+      ),
+    ]);
+    final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+      fakeIndexResult,
+    );
+    final fakeIncomingScanService = _FakeIncomingSongsScanService(
+      IncomingSongsScanResult(
+        files: [
+          IncomingSongScannedFile(
+            fileName: 'Guilherme & Benuto e Simone Mendes - Manda um Oi.mp4',
+            fullPath:
+                r'C:\Novas\Guilherme & Benuto e Simone Mendes - Manda um Oi.mp4',
+            relativePath:
+                'Guilherme & Benuto e Simone Mendes - Manda um Oi.mp4',
+          ),
+        ],
+        warnings: const [],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          folderPickerService: fakePicker,
+          officialLibraryScanService: fakeOfficialScanService,
+          incomingSongsScanService: fakeIncomingScanService,
+        ),
+      ),
+    );
+
+    await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
+    await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
+    await tapFirstTextContaining(tester, 'Escanear musicas novas');
+    await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
+    await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
+
+    expect(find.textContaining('Possivel duplicado'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('05180'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('edicao manual dos candidatos em memoria', (

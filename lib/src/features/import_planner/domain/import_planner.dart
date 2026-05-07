@@ -7,6 +7,7 @@ export 'import_candidate_selection_plan.dart';
 export 'import_candidate_selection_planner.dart';
 export 'import_candidate_selection_status.dart';
 export 'import_candidate_status.dart';
+export 'import_canonical_text_normalizer.dart';
 export 'import_duplicate_match.dart';
 export 'import_suggestion_candidate.dart';
 export 'import_suggestion_plan.dart';
