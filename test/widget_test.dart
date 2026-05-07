@@ -234,7 +234,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('StudioBox Music Importer'), findsWidgets);
-    expect(find.textContaining('Round 35D11A'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Round 35D11E'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Fluxo seguro'), findsAtLeastNWidgets(1));
     expect(find.textContaining('Dashboard'), findsAtLeastNWidgets(1));
     expect(
@@ -1956,6 +1956,82 @@ void main() {
       findsAtLeastNWidgets(1),
     );
   });
+
+  testWidgets(
+    'aprovacao manual de selecionado em revisao com artista nao reconhecido libera dry-run',
+    (WidgetTester tester) async {
+      final fakePicker = _FakeFolderPickerService(
+        [SelectedFolder(path: 'C:/Biblioteca Oficial')],
+        incomingResponses: [SelectedFolder(path: 'C:/Novas Musicas')],
+      );
+      final fakeIndexResult = BaseLibraryIndexer().indexScannedFiles([
+        BaseLibraryScannedFile(
+          fileName: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+          fullPath: r'C:\Biblioteca\Legiao Urbana - Tempo Perdido - 00001.mp4',
+          relativePath: 'Legiao Urbana - Tempo Perdido - 00001.mp4',
+        ),
+      ]);
+      final fakeOfficialScanService = _FakeOfficialLibraryScanService(
+        fakeIndexResult,
+      );
+      final fakeIncomingScanService = _FakeIncomingSongsScanService(
+        IncomingSongsScanResult(
+          files: [
+            IncomingSongScannedFile(
+              fileName: 'Banda Desconhecida - Tempo Perdido.mp4',
+              fullPath: r'C:\Novas\Banda Desconhecida - Tempo Perdido.mp4',
+              relativePath: 'Banda Desconhecida - Tempo Perdido.mp4',
+            ),
+          ],
+          warnings: const [],
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HomeScreen(
+            folderPickerService: fakePicker,
+            officialLibraryScanService: fakeOfficialScanService,
+            incomingSongsScanService: fakeIncomingScanService,
+          ),
+        ),
+      );
+
+      await tapFirstTextContaining(tester, 'Selecionar biblioteca oficial');
+      await tapFirstTextContaining(tester, 'Indexar biblioteca oficial');
+      await tapFirstTextContaining(tester, 'Selecionar pasta de musicas novas');
+      await tapFirstTextContaining(tester, 'Escanear musicas novas');
+      await tapFirstTextContaining(tester, 'Gerar pre-limpeza dos nomes');
+      await tapFirstTextContaining(tester, 'Gerar sugestoes de importacao');
+
+      await tapFirstTextContaining(tester, 'Mostrar Edicao manual');
+      expect(
+        find.text(
+          'Selecione candidatos na tabela de sugestoes para revisar ou aprovar manualmente.',
+        ),
+        findsAtLeastNWidgets(1),
+      );
+      expect(
+        find.textContaining('Artista não reconhecido; revise manualmente.'),
+        findsAtLeastNWidgets(1),
+      );
+
+      await tapFirstTextContaining(tester, 'Selecionar todos');
+      expect(find.textContaining('Selecionados: 1'), findsAtLeastNWidgets(1));
+      await tapFirstTextContaining(tester, 'Aprovar selecionados em revisao');
+      await tapFirstTextContaining(tester, 'Validar configuracao de saida');
+      await tapFirstTextContaining(tester, 'Gerar dry-run da importacao');
+
+      expect(
+        find.textContaining('Dry-run da importacao gerado.'),
+        findsWidgets,
+      );
+      expect(find.textContaining('Prontas: 1'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('Bloqueadas: 0'), findsAtLeastNWidgets(1));
+      expect(find.text('Status: Bloqueado'), findsNothing);
+      expect(find.text('Edicao do candidato invalida.'), findsNothing);
+    },
+  );
 
   testWidgets('sem IMPORTAR botao de execucao fica desabilitado', (
     WidgetTester tester,

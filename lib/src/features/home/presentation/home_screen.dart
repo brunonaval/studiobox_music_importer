@@ -114,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _sessionCacheMessage;
   AppSessionSnapshot? _lastSessionSnapshot;
   bool _showManualImportCandidateEdit = false;
+  final Set<String> _manuallyApprovedCandidateIds = <String>{};
   final ScrollController _suggestionsTableHorizontalController =
       ScrollController();
   final ScrollController _suggestionsTableVerticalController =
@@ -496,8 +497,21 @@ class _HomeScreenState extends State<HomeScreen> {
           .where((c) => c.hasDuplicate)
           .toList();
 
-  List<ImportCandidateEditItem> _editItemsForDisplay() =>
-      (_importCandidateEditPlan?.items ?? []).take(50).toList();
+  List<ImportCandidateEditItem> _editItemsForDisplay() {
+    final editPlan = _importCandidateEditPlan;
+    final selectionPlan = _importCandidateSelectionPlan;
+    if (editPlan == null || selectionPlan == null) {
+      return const <ImportCandidateEditItem>[];
+    }
+    final selectedIds = selectionPlan.items
+        .where((item) => item.isSelected)
+        .map((item) => item.id)
+        .toSet();
+    return editPlan.items
+        .where((item) => selectedIds.contains(item.id))
+        .take(50)
+        .toList();
+  }
 
   List<ImportOperationDryRunItem> _dryRunItemsForDisplay() =>
       (_importOperationDryRunPlan?.items ?? []).take(100).toList();
@@ -635,6 +649,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _importOutputMessage = null;
     _resetImportOperationDryRun();
     _resetImportManifestState(clearFolder: true);
+    _manuallyApprovedCandidateIds.clear();
   }
 
   ImportOutputConfiguration _buildImportOutputConfiguration() {
@@ -653,16 +668,30 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final result = ImportOutputConfigurationValidator().validate(
-      configuration: _buildImportOutputConfiguration(),
+    final effectiveEditPlan = _buildEffectiveEditPlanForOutput(
       selectionPlan: selectionPlan,
       editPlan: editPlan,
+    );
+    final effectiveSelectionPlan = _buildEffectiveSelectionPlanForOutput(
+      selectionPlan: selectionPlan,
+      editPlan: effectiveEditPlan,
+    );
+    final result = ImportOutputConfigurationValidator().validate(
+      configuration: _buildImportOutputConfiguration(),
+      selectionPlan: effectiveSelectionPlan,
+      editPlan: effectiveEditPlan,
     );
 
     setState(() {
       _importOutputValidationResult = result;
-      if (setSuccessMessage) {
+      final hasBlockingCandidates = _hasBlockingSelectedCandidates();
+      if (hasBlockingCandidates) {
+        _importOutputMessage =
+            'Execucao bloqueada: existem candidatos selecionados que ainda precisam de aprovacao manual ou correcao.';
+      } else if (setSuccessMessage && result.isValid) {
         _importOutputMessage = 'Configuracao de saida validada.';
+      } else if (setSuccessMessage && !result.isValid) {
+        _importOutputMessage = 'Configuracao de saida invalida.';
       }
       _resetImportOperationDryRun();
     });
@@ -769,10 +798,15 @@ class _HomeScreenState extends State<HomeScreen> {
       rows: plan.items
           .map((item) {
             final candidate = item.candidate;
-            final status = candidate.hasDuplicate
-                ? 'Duplicado'
-                : candidate.isBlocked
+            final editItem = _findEditItemById(item.id);
+            final status = candidate.isBlocked
                 ? 'Bloqueado'
+                : (editItem != null &&
+                      _isManualApprovalCandidate(editItem) &&
+                      _isManuallyApproved(editItem))
+                ? 'Aprovado manualmente'
+                : candidate.hasDuplicate
+                ? 'Duplicado'
                 : candidate.needsReview
                 ? 'Revisao'
                 : 'Pronto';
@@ -872,6 +906,7 @@ class _HomeScreenState extends State<HomeScreen> {
         id: id,
         artist: value,
       );
+      _manuallyApprovedCandidateIds.remove(id);
       _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
@@ -883,6 +918,7 @@ class _HomeScreenState extends State<HomeScreen> {
         id: id,
         title: value,
       );
+      _manuallyApprovedCandidateIds.remove(id);
       _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
@@ -894,6 +930,321 @@ class _HomeScreenState extends State<HomeScreen> {
         id: id,
         code: value,
       );
+      _manuallyApprovedCandidateIds.remove(id);
+      _resetImportOperationDryRun();
+    });
+    _validateImportOutputConfiguration();
+  }
+
+  bool _hasStructuralEditError(ImportCandidateEditItem item) {
+    final artist = item.artist.trim();
+    final title = item.title.trim();
+    final code = item.code.trim();
+    if (artist.isEmpty || title.isEmpty || code.isEmpty) {
+      return true;
+    }
+    final isNumeric5 = RegExp(r'^\d{5}$').hasMatch(code);
+    if (!isNumeric5 || code == '00000') {
+      return true;
+    }
+    return false;
+  }
+
+  bool _isManualApprovalCandidate(ImportCandidateEditItem item) {
+    if (!item.editable) {
+      return false;
+    }
+    return item.editStatus != ImportCandidateEditStatus.valid &&
+        !_hasStructuralEditError(item);
+  }
+
+  bool _isManuallyApproved(ImportCandidateEditItem item) =>
+      _manuallyApprovedCandidateIds.contains(item.id);
+
+  ImportCandidateEditItem? _findEditItemById(String id) {
+    final plan = _importCandidateEditPlan;
+    if (plan == null) {
+      return null;
+    }
+    for (final item in plan.items) {
+      if (item.id == id) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  bool _hasBlockingSelectedCandidates() {
+    final selectionPlan = _importCandidateSelectionPlan;
+    final editPlan = _importCandidateEditPlan;
+    if (selectionPlan == null || editPlan == null) {
+      return false;
+    }
+    final byId = <String, ImportCandidateEditItem>{
+      for (final item in editPlan.items) item.id: item,
+    };
+    for (final selected in selectionPlan.items.where((s) => s.isSelected)) {
+      final editItem = byId[selected.id];
+      if (editItem == null) {
+        return true;
+      }
+      if (!_isEffectivelyValidForExecution(editItem)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  ImportCandidateSelectionPlan _buildEffectiveSelectionPlanForOutput({
+    required ImportCandidateSelectionPlan selectionPlan,
+    required ImportCandidateEditPlan editPlan,
+  }) {
+    final editById = <String, ImportCandidateEditItem>{
+      for (final item in editPlan.items) item.id: item,
+    };
+    final sanitizedItems = selectionPlan.items
+        .map((selectionItem) {
+          final editItem = editById[selectionItem.id];
+          if (editItem == null) {
+            return selectionItem;
+          }
+          final isSelected = selectionItem.isSelected;
+          final isApprovedManually = _isManuallyApproved(editItem);
+          if (!isSelected ||
+              !_isEffectivelyValidForExecution(editItem) ||
+              !isApprovedManually) {
+            return selectionItem;
+          }
+          final filteredWarnings = selectionItem.warnings
+              .where(
+                (warning) => !_isManualApprovalInformationalWarning(warning),
+              )
+              .toList(growable: false);
+          return selectionItem.copyWith(
+            warnings: List.unmodifiable(filteredWarnings),
+          );
+        })
+        .toList(growable: false);
+
+    final hasBlocked = sanitizedItems.any((item) => item.isBlocked);
+    final hasNeedsReview = sanitizedItems.any(
+      (item) =>
+          item.candidate.status == ImportCandidateStatus.needsReview &&
+          item.warnings.any(_isManualApprovalInformationalWarning),
+    );
+    final hasDuplicate = sanitizedItems.any(
+      (item) =>
+          item.candidate.duplicateMatch != null &&
+          item.warnings.any(_isManualApprovalInformationalWarning),
+    );
+
+    final warnings = <String>[];
+    if (hasBlocked) {
+      warnings.add('Existem candidatos bloqueados.');
+    }
+    if (hasNeedsReview) {
+      warnings.add('Existem candidatos aguardando revisao.');
+    }
+    if (hasDuplicate) {
+      warnings.add('Existem possiveis duplicados.');
+    }
+
+    return ImportCandidateSelectionPlan(
+      items: List.unmodifiable(sanitizedItems),
+      warnings: List.unmodifiable(warnings),
+    );
+  }
+
+  ImportCandidateEditPlan _buildEffectiveEditPlanForOutput({
+    required ImportCandidateSelectionPlan selectionPlan,
+    required ImportCandidateEditPlan editPlan,
+  }) {
+    final selectedIds = selectionPlan.items
+        .where((item) => item.isSelected)
+        .map((item) => item.id)
+        .toSet();
+    final effectiveItems = editPlan.items
+        .map((item) {
+          if (!selectedIds.contains(item.id)) {
+            return item;
+          }
+          if (!_isEffectivelyValidForExecution(item)) {
+            return item;
+          }
+          if (item.editStatus == ImportCandidateEditStatus.valid) {
+            return item;
+          }
+          final keptWarnings = item.warnings
+              .where(
+                (warning) => !_isManualApprovalInformationalWarning(warning),
+              )
+              .toList(growable: false);
+          return ImportCandidateEditItem(
+            id: item.id,
+            selectionItem: item.selectionItem,
+            artist: item.artist,
+            title: item.title,
+            code: item.code,
+            officialFileName: item.officialFileName,
+            editStatus: ImportCandidateEditStatus.valid,
+            editable: item.editable,
+            warnings: List.unmodifiable(keptWarnings),
+          );
+        })
+        .toList(growable: false);
+
+    final planWarnings = <String>[];
+    if (effectiveItems.any((item) => item.isInvalid)) {
+      planWarnings.add('Existem candidatos com edicao invalida.');
+    }
+    if (effectiveItems.any((item) => item.isBlocked)) {
+      planWarnings.add('Existem candidatos bloqueados para edicao.');
+    }
+
+    return ImportCandidateEditPlan(
+      items: List.unmodifiable(effectiveItems),
+      warnings: List.unmodifiable(planWarnings),
+      usedCodes: editPlan.usedCodes,
+    );
+  }
+
+  bool _isManualApprovalInformationalWarning(String warning) {
+    final text = _normalizeForWarningComparison(warning);
+    return text.contains('artista nao reconhecido') ||
+        text.contains('revise manualmente') ||
+        text.contains('revisao necessaria') ||
+        text.contains('possivel duplicidade') ||
+        text.contains('possivel duplicado') ||
+        text.contains('duplicidade') ||
+        text.contains('duplicado') ||
+        text.contains('ordem musica') ||
+        text.contains('autor detectada e invertida') ||
+        text.contains('edicao do candidato invalida');
+  }
+
+  String _normalizeForWarningComparison(String input) {
+    const replacements = <String, String>{
+      'á': 'a',
+      'à': 'a',
+      'â': 'a',
+      'ã': 'a',
+      'ä': 'a',
+      'é': 'e',
+      'è': 'e',
+      'ê': 'e',
+      'ë': 'e',
+      'í': 'i',
+      'ì': 'i',
+      'î': 'i',
+      'ï': 'i',
+      'ó': 'o',
+      'ò': 'o',
+      'ô': 'o',
+      'õ': 'o',
+      'ö': 'o',
+      'ú': 'u',
+      'ù': 'u',
+      'û': 'u',
+      'ü': 'u',
+      'ç': 'c',
+      'ñ': 'n',
+    };
+    final lower = input.toLowerCase();
+    final buffer = StringBuffer();
+    for (final rune in lower.runes) {
+      final char = String.fromCharCode(rune);
+      buffer.write(replacements[char] ?? char);
+    }
+    return buffer.toString();
+  }
+
+  bool _isEffectivelyValidForExecution(ImportCandidateEditItem item) {
+    final artist = item.artist.trim();
+    final title = item.title.trim();
+    final code = item.code.trim();
+    final isCodeValid = RegExp(r'^\d{5}$').hasMatch(code) && code != '00000';
+
+    final hasStructuralError =
+        artist.isEmpty || title.isEmpty || code.isEmpty || !isCodeValid;
+    if (hasStructuralError) {
+      return false;
+    }
+
+    if (!item.editable) {
+      return item.editStatus == ImportCandidateEditStatus.valid;
+    }
+
+    if (item.editStatus == ImportCandidateEditStatus.valid) {
+      return true;
+    }
+
+    final isManualApprovalCandidate =
+        item.editStatus != ImportCandidateEditStatus.blocked &&
+        item.editStatus != ImportCandidateEditStatus.valid;
+    final isManuallyApproved = _manuallyApprovedCandidateIds.contains(item.id);
+    if (isManualApprovalCandidate && isManuallyApproved) {
+      return true;
+    }
+
+    return false;
+  }
+
+  void _setManualApprovalForCandidate({
+    required String id,
+    required bool approved,
+  }) {
+    setState(() {
+      if (approved) {
+        _manuallyApprovedCandidateIds.add(id);
+      } else {
+        _manuallyApprovedCandidateIds.remove(id);
+      }
+      _resetImportOperationDryRun();
+    });
+    _validateImportOutputConfiguration();
+  }
+
+  void _approveSelectedReviewCandidates() {
+    final selectionPlan = _importCandidateSelectionPlan;
+    final editPlan = _importCandidateEditPlan;
+    if (selectionPlan == null || editPlan == null) {
+      return;
+    }
+    final byId = <String, ImportCandidateEditItem>{
+      for (final item in editPlan.items) item.id: item,
+    };
+    setState(() {
+      for (final selected in selectionPlan.items.where((s) => s.isSelected)) {
+        final editItem = byId[selected.id];
+        if (editItem == null) {
+          continue;
+        }
+        if (_isManualApprovalCandidate(editItem) &&
+            !_hasStructuralEditError(editItem)) {
+          _manuallyApprovedCandidateIds.add(editItem.id);
+        }
+      }
+      _resetImportOperationDryRun();
+    });
+    _validateImportOutputConfiguration();
+  }
+
+  void _approveAllVisibleManualEditCandidates() {
+    setState(() {
+      for (final item in _editItemsForDisplay()) {
+        if (_isManualApprovalCandidate(item) &&
+            !_hasStructuralEditError(item)) {
+          _manuallyApprovedCandidateIds.add(item.id);
+        }
+      }
+      _resetImportOperationDryRun();
+    });
+    _validateImportOutputConfiguration();
+  }
+
+  void _clearManualApprovals() {
+    setState(() {
+      _manuallyApprovedCandidateIds.clear();
       _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
@@ -982,15 +1333,31 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final outputValidation = ImportOutputConfigurationValidator().validate(
-      configuration: _buildImportOutputConfiguration(),
+    if (_hasBlockingSelectedCandidates()) {
+      setState(() {
+        _importOperationDryRunMessage =
+            'Execucao bloqueada: existem candidatos selecionados que ainda precisam de aprovacao manual ou correcao.';
+      });
+      return;
+    }
+
+    final effectiveEditPlan = _buildEffectiveEditPlanForOutput(
       selectionPlan: selectionPlan,
       editPlan: editPlan,
     );
+    final effectiveSelectionPlan = _buildEffectiveSelectionPlanForOutput(
+      selectionPlan: selectionPlan,
+      editPlan: effectiveEditPlan,
+    );
+    final outputValidation = ImportOutputConfigurationValidator().validate(
+      configuration: _buildImportOutputConfiguration(),
+      selectionPlan: effectiveSelectionPlan,
+      editPlan: effectiveEditPlan,
+    );
     final dryRunPlan = ImportOperationDryRunPlanner().buildDryRun(
       outputValidationResult: outputValidation,
-      selectionPlan: selectionPlan,
-      editPlan: editPlan,
+      selectionPlan: effectiveSelectionPlan,
+      editPlan: effectiveEditPlan,
       cleaningPlan: cleaningPlan,
     );
 
@@ -4162,10 +4529,12 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D11A - Revisao mais clara e legivel'),
+            const Text(
+              'Round 35D11E - Plano efetivo de aprovacao manual no dry-run',
+            ),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Tabela de sugestoes e edicao manual com tooltips, colunas mais legiveis e explicacao clara sobre revisao manual.',
+              'Estado: Candidatos selecionados e aprovados manualmente chegam ao dry-run como validos quando artista, musica e codigo estao corretos.',
             ),
           ],
         ),
@@ -4174,15 +4543,15 @@ extension on _HomeScreenState {
   }
 
   Widget _buildManualEditTable() {
-    final plan = _importCandidateEditPlan;
-    if (plan == null) {
+    final items = _editItemsForDisplay();
+    if (items.isEmpty) {
       return const SizedBox.shrink();
     }
     return DataTable(
       columnSpacing: 12,
       columns: const [
         DataColumn(label: Text('Status')),
-        DataColumn(label: Text('Selecionado')),
+        DataColumn(label: Text('Aprovado manualmente')),
         DataColumn(label: Text('Arquivo original')),
         DataColumn(label: Text('Artista')),
         DataColumn(label: Text('Musica')),
@@ -4191,18 +4560,33 @@ extension on _HomeScreenState {
         DataColumn(label: Text('Avisos')),
       ],
       rows: [
-        for (var i = 0; i < _editItemsForDisplay().length; i++)
-          _buildManualEditRow(_editItemsForDisplay()[i], i),
+        for (var i = 0; i < items.length; i++) _buildManualEditRow(items[i], i),
       ],
     );
   }
 
   DataRow _buildManualEditRow(ImportCandidateEditItem item, int index) {
     final warnings = item.warnings.isEmpty ? '-' : item.warnings.join(' | ');
+    final canManualApprove =
+        _isManualApprovalCandidate(item) && !_hasStructuralEditError(item);
+    final manuallyApproved = _isManuallyApproved(item);
+    final effectiveStatus = canManualApprove && manuallyApproved
+        ? 'Aprovado manualmente'
+        : item.editStatus.label;
     return DataRow(
       cells: [
-        DataCell(Text(item.editStatus.label)),
-        DataCell(Text(item.selectionItem.isSelected ? 'Sim' : 'Nao')),
+        DataCell(Text(effectiveStatus)),
+        DataCell(
+          Checkbox(
+            value: manuallyApproved,
+            onChanged: canManualApprove
+                ? (value) => _setManualApprovalForCandidate(
+                    id: item.id,
+                    approved: value ?? false,
+                  )
+                : null,
+          ),
+        ),
         DataCell(
           Tooltip(
             message: item.selectionItem.candidate.originalFileName,
@@ -4462,7 +4846,33 @@ extension on _HomeScreenState {
                         'Itens em Revisao ou Duplicado podem ser selecionados, mas so poderao executar quando a edicao manual estiver valida. Confira artista, musica e codigo antes de gerar o dry-run final.',
                       ),
                       const SizedBox(height: 8),
-                      _buildManualEditTableWithVisibleScrollbars(),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton(
+                            onPressed: _approveSelectedReviewCandidates,
+                            child: const Text(
+                              'Aprovar selecionados em revisao',
+                            ),
+                          ),
+                          OutlinedButton(
+                            onPressed: _approveAllVisibleManualEditCandidates,
+                            child: const Text('Aprovar todos visiveis'),
+                          ),
+                          OutlinedButton(
+                            onPressed: _clearManualApprovals,
+                            child: const Text('Limpar aprovacao manual'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (_editItemsForDisplay().isEmpty)
+                        const Text(
+                          'Selecione candidatos na tabela de sugestoes para revisar ou aprovar manualmente.',
+                        )
+                      else
+                        _buildManualEditTableWithVisibleScrollbars(),
                     ],
                   ),
                 ),
