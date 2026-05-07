@@ -756,6 +756,133 @@ class _HomeScreenState extends State<HomeScreen> {
     _validateImportOutputConfiguration();
   }
 
+  void _selectAllSelectableCandidates() {
+    final plan = _importCandidateSelectionPlan;
+    if (plan == null) {
+      return;
+    }
+
+    var next = plan;
+    for (final item in plan.items) {
+      if (item.selectable) {
+        next = next.withCandidateSelection(item.id, true);
+      }
+    }
+
+    setState(() {
+      _importCandidateSelectionPlan = next;
+      _importCandidateSelectionMessage =
+          'Selecionados todos os candidatos selecionaveis.';
+      _resetImportOperationDryRun();
+    });
+    _validateImportOutputConfiguration();
+  }
+
+  Widget _buildImportCandidatesTable() {
+    final plan = _importCandidateSelectionPlan;
+    if (plan == null || plan.items.isEmpty) {
+      return const Text('Nenhum candidato para exibir.');
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columnSpacing: 14,
+        columns: const [
+          DataColumn(label: Text('Selecionar')),
+          DataColumn(label: Text('Status')),
+          DataColumn(label: Text('Arquivo')),
+          DataColumn(label: Text('Artista')),
+          DataColumn(label: Text('Musica')),
+          DataColumn(label: Text('Nome oficial')),
+          DataColumn(label: Text('Avisos')),
+        ],
+        rows: plan.items
+            .map((item) {
+              final candidate = item.candidate;
+              final status = candidate.hasDuplicate
+                  ? 'Duplicado'
+                  : candidate.isBlocked
+                  ? 'Bloqueado'
+                  : candidate.needsReview
+                  ? 'Revisao'
+                  : 'Pronto';
+              final warnings = item.warnings.isEmpty
+                  ? '-'
+                  : item.warnings.join(' | ');
+
+              return DataRow(
+                cells: [
+                  DataCell(
+                    Checkbox(
+                      value: item.isSelected,
+                      onChanged: item.selectable
+                          ? (value) => _updateCandidateSelection(
+                              id: item.id,
+                              selected: value ?? false,
+                            )
+                          : null,
+                    ),
+                  ),
+                  DataCell(Text(status)),
+                  DataCell(
+                    SizedBox(
+                      width: 220,
+                      child: Text(
+                        candidate.originalFileName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: 170,
+                      child: Text(
+                        candidate.analysis.detectedArtist ?? '-',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: 170,
+                      child: Text(
+                        candidate.analysis.detectedTitle ?? '-',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: 240,
+                      child: Text(
+                        candidate.suggestedOfficialFileName ?? '-',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: 280,
+                      child: Text(
+                        warnings,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            })
+            .toList(growable: false),
+      ),
+    );
+  }
+
   void _updateCandidateArtist({required String id, required String value}) {
     setState(() {
       _importCandidateEditPlan = _importCandidateEditPlan?.withManualEdit(
@@ -4050,14 +4177,173 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D9 - Sugestoes e selecao em tabela'),
+            const Text('Round 35D9B - Sugestoes em tabela compacta'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Sugestoes e selecao exibidas em tabela compacta, com selecao individual, selecionar todos, selecionar prontos e limpar selecao.',
+              'Estado: Sugestoes e selecao agora aparecem em tabela compacta, reduzindo texto repetitivo.',
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // ignore: unused_element
+  Widget _buildSuggestionsReviewDashboardCardCompact(BuildContext context) {
+    final statusLabel = _importCandidateSelectionPlan != null
+        ? 'Em revisao'
+        : _importSuggestionPlan != null
+        ? 'Gerada'
+        : _incomingSongsScanResult != null
+        ? 'Pronta para sugestoes'
+        : 'Pendente';
+    final statusColor = _importCandidateSelectionPlan != null
+        ? HomeDashboardTheme.cyan
+        : _importSuggestionPlan != null
+        ? HomeDashboardTheme.success
+        : _incomingSongsScanResult != null
+        ? HomeDashboardTheme.warning
+        : HomeDashboardTheme.textSecondary;
+
+    return KeyedSubtree(
+      key: _reviewKey,
+      child: HomeDashboardCard(
+        title: '3. Sugestoes e revisao',
+        subtitle:
+            'Gere sugestoes de importacao, revise candidatos e prepare a selecao.',
+        icon: Icons.fact_check_outlined,
+        statusLabel: statusLabel,
+        statusColor: statusColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_incomingSongsScanResult != null &&
+                _incomingSongsScanResult!.totalCount > 0) ...[
+              FilledButton.tonal(
+                onPressed: _generateImportSuggestions,
+                child: const Text('Gerar sugestoes de importacao'),
+              ),
+            ],
+            if (_importSuggestionMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(_importSuggestionMessage!),
+            ],
+            if (_importSuggestionPlan != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _toggleImportSuggestionPlanVisibility,
+                child: Text(
+                  _showImportSuggestionPlan
+                      ? 'Ocultar sugestoes de importacao'
+                      : 'Mostrar sugestoes de importacao',
+                ),
+              ),
+            ],
+            if (_importSuggestionPlan != null && _showImportSuggestionPlan) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  _buildCompactMetric(
+                    'Total',
+                    '${_importSuggestionPlan!.totalCount}',
+                  ),
+                  _buildCompactMetric(
+                    'Prontos',
+                    '${_readyImportCandidates().length}',
+                  ),
+                  _buildCompactMetric(
+                    'Revisao necessaria',
+                    '${_importSuggestionPlan!.needsReviewCount}',
+                  ),
+                  _buildCompactMetric(
+                    'Bloqueados',
+                    '${_importSuggestionPlan!.blockedCount}',
+                  ),
+                  _buildCompactMetric(
+                    'Possiveis duplicados',
+                    '${_duplicateImportCandidates().length}',
+                  ),
+                  _buildCompactMetric(
+                    'Selecionados',
+                    '${_importCandidateSelectionPlan?.selectedCount ?? 0}',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: _selectAllSelectableCandidates,
+                    child: const Text('Selecionar todos'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _selectAllReadyCandidates,
+                    child: const Text('Selecionar todos os prontos'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _clearSelectedCandidates,
+                    child: const Text('Limpar selecao'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildImportCandidatesTable(),
+            ],
+            if (_importCandidateEditPlan != null) ...[
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Edicao manual dos candidatos',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Total de candidatos: ${_importCandidateEditPlan!.totalCount}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Editaveis: ${_importCandidateEditPlan!.editableCount}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Validos: ${_importCandidateEditPlan!.validCount}'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Invalidos: ${_importCandidateEditPlan!.invalidCount}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Bloqueados: ${_importCandidateEditPlan!.blockedCount}',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactMetric(String label, String value) {
+    return Container(
+      width: 170,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: HomeDashboardTheme.surfaceElevated,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: HomeDashboardTheme.border),
+      ),
+      child: HomeDashboardMetric(label: label, value: value),
     );
   }
 }
