@@ -88,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showImportSuggestionPlan = false;
   String? _importSuggestionMessage;
   ImportCandidateSelectionPlan? _importCandidateSelectionPlan;
-  String? _importCandidateSelectionMessage;
   ImportCandidateEditPlan? _importCandidateEditPlan;
   String? _importCandidateEditMessage;
   ImportOutputMode _importOutputMode = ImportOutputMode.renameInIncomingFolder;
@@ -114,10 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _savingSessionCache = false;
   String? _sessionCacheMessage;
   AppSessionSnapshot? _lastSessionSnapshot;
-  bool _showReadyImportCandidates = true;
-  bool _showReviewImportCandidates = true;
-  bool _showBlockedImportCandidates = true;
-  bool _showDuplicateImportCandidates = false;
+  bool _showManualImportCandidateEdit = false;
 
   bool _indexingOfficialLibrary = false;
   BaseLibraryIndexResult? _officialLibraryIndexResult;
@@ -460,27 +456,9 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _toggleReadyImportCandidatesVisibility() {
+  void _toggleManualImportCandidateEditVisibility() {
     setState(() {
-      _showReadyImportCandidates = !_showReadyImportCandidates;
-    });
-  }
-
-  void _toggleReviewImportCandidatesVisibility() {
-    setState(() {
-      _showReviewImportCandidates = !_showReviewImportCandidates;
-    });
-  }
-
-  void _toggleBlockedImportCandidatesVisibility() {
-    setState(() {
-      _showBlockedImportCandidates = !_showBlockedImportCandidates;
-    });
-  }
-
-  void _toggleDuplicateImportCandidatesVisibility() {
-    setState(() {
-      _showDuplicateImportCandidates = !_showDuplicateImportCandidates;
+      _showManualImportCandidateEdit = !_showManualImportCandidateEdit;
     });
   }
 
@@ -501,23 +479,10 @@ class _HomeScreenState extends State<HomeScreen> {
           )
           .toList();
 
-  List<ImportSuggestionCandidate> _reviewImportCandidates() =>
-      (_importSuggestionPlan?.candidates ?? [])
-          .where((c) => c.needsReview)
-          .toList();
-
-  List<ImportSuggestionCandidate> _blockedImportCandidates() =>
-      (_importSuggestionPlan?.candidates ?? [])
-          .where((c) => c.isBlocked)
-          .toList();
-
   List<ImportSuggestionCandidate> _duplicateImportCandidates() =>
       (_importSuggestionPlan?.candidates ?? [])
           .where((c) => c.hasDuplicate)
           .toList();
-
-  List<ImportCandidateSelectionItem> _selectionItemsForDisplay() =>
-      (_importCandidateSelectionPlan?.items ?? []).take(100).toList();
 
   List<ImportCandidateEditItem> _editItemsForDisplay() =>
       (_importCandidateEditPlan?.items ?? []).take(50).toList();
@@ -649,7 +614,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _resetImportSelection() {
     _importCandidateSelectionPlan = null;
-    _importCandidateSelectionMessage = null;
     _importCandidateEditPlan = null;
     _importCandidateEditMessage = null;
     _importOutputMode = ImportOutputMode.renameInIncomingFolder;
@@ -735,8 +699,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       _importCandidateSelectionPlan = plan.selectAllReady();
-      _importCandidateSelectionMessage =
-          'Selecionados todos os candidatos prontos.';
       _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
@@ -750,7 +712,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       _importCandidateSelectionPlan = plan.clearSelection();
-      _importCandidateSelectionMessage = 'Selecao de candidatos limpa.';
       _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
@@ -771,8 +732,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       _importCandidateSelectionPlan = next;
-      _importCandidateSelectionMessage =
-          'Selecionados todos os candidatos selecionaveis.';
       _resetImportOperationDryRun();
     });
     _validateImportOutputConfiguration();
@@ -978,17 +937,12 @@ class _HomeScreenState extends State<HomeScreen> {
       _resetImportSelection();
       _importSuggestionPlan = plan;
       _importCandidateSelectionPlan = selectionPlan;
-      _importCandidateSelectionMessage =
-          'Selecao inicial dos candidatos preparada.';
       _importCandidateEditPlan = editPlan;
       _importCandidateEditMessage = 'Edicao manual dos candidatos preparada.';
       _importOutputValidationResult = initialOutputValidation;
       _showImportSuggestionPlan = true;
       _importSuggestionMessage = 'sugestoes de importacao geradas.';
-      _showReadyImportCandidates = true;
-      _showReviewImportCandidates = true;
-      _showBlockedImportCandidates = true;
-      _showDuplicateImportCandidates = false;
+      _showManualImportCandidateEdit = false;
     });
   }
 
@@ -2367,6 +2321,9 @@ extension on _HomeScreenState {
   }
 
   Widget _buildSuggestionsReviewDashboardCard(BuildContext context) {
+    return _buildSuggestionsReviewDashboardCardCompact(context);
+
+    /*
     final statusLabel = _importCandidateSelectionPlan != null
         ? 'Em revisao'
         : _importSuggestionPlan != null
@@ -2903,6 +2860,7 @@ extension on _HomeScreenState {
         ),
       ),
     );
+    */
   }
 
   Widget _buildIncomingSongsDashboardCard(BuildContext context) {
@@ -4177,10 +4135,10 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D9B - Sugestoes em tabela compacta'),
+            const Text('Round 35D9C - Tabela real de sugestoes'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Sugestoes e selecao agora aparecem em tabela compacta, reduzindo texto repetitivo.',
+              'Estado: Sugestoes agora aparecem em tabela real compacta; edicao manual fica recolhida para reduzir poluicao visual.',
             ),
           ],
         ),
@@ -4295,38 +4253,153 @@ extension on _HomeScreenState {
             ],
             if (_importCandidateEditPlan != null) ...[
               const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Edicao manual dos candidatos',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Total de candidatos: ${_importCandidateEditPlan!.totalCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Editaveis: ${_importCandidateEditPlan!.editableCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Validos: ${_importCandidateEditPlan!.validCount}'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Invalidos: ${_importCandidateEditPlan!.invalidCount}',
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Bloqueados: ${_importCandidateEditPlan!.blockedCount}',
-                      ),
-                    ],
-                  ),
+              OutlinedButton(
+                onPressed: _toggleManualImportCandidateEditVisibility,
+                child: Text(
+                  _showManualImportCandidateEdit
+                      ? 'Ocultar edicao manual'
+                      : 'Mostrar Edicao manual',
                 ),
               ),
+              if (_showManualImportCandidateEdit) ...[
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Edicao manual dos candidatos',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Total de candidatos: ${_importCandidateEditPlan!.totalCount}',
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Editaveis: ${_importCandidateEditPlan!.editableCount}',
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Validos: ${_importCandidateEditPlan!.validCount}',
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Invalidos: ${_importCandidateEditPlan!.invalidCount}',
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Bloqueados: ${_importCandidateEditPlan!.blockedCount}',
+                        ),
+                        if (_importCandidateEditMessage != null) ...[
+                          const SizedBox(height: 8),
+                          Text(_importCandidateEditMessage!),
+                        ],
+                        const SizedBox(height: 8),
+                        if (_importCandidateEditPlan!.totalCount > 50)
+                          Text(
+                            'Exibindo os primeiros 50 de ${_importCandidateEditPlan!.totalCount} candidatos para edicao.',
+                          ),
+                        const SizedBox(height: 8),
+                        for (
+                          var i = 0;
+                          i < _editItemsForDisplay().length;
+                          i++
+                        ) ...[
+                          Builder(
+                            builder: (context) {
+                              final item = _editItemsForDisplay()[i];
+                              return Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Status da edicao: ${item.editStatus.label}',
+                                      ),
+                                      Text(
+                                        'Status da selecao: ${item.selectionItem.selectionStatus.label}',
+                                      ),
+                                      Text(
+                                        'Arquivo/original: ${item.selectionItem.candidate.originalFileName}',
+                                      ),
+                                      Text(
+                                        'Nome oficial atual: ${item.officialFileName.isEmpty ? '-' : item.officialFileName}',
+                                      ),
+                                      if (item.editable) ...[
+                                        const SizedBox(height: 8),
+                                        TextFormField(
+                                          key: ValueKey(
+                                            'import-edit-artist-$i',
+                                          ),
+                                          initialValue: item.artist,
+                                          onChanged: (value) {
+                                            _updateCandidateArtist(
+                                              id: item.id,
+                                              value: value,
+                                            );
+                                          },
+                                          decoration: const InputDecoration(
+                                            labelText: 'Artista',
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        TextFormField(
+                                          key: ValueKey('import-edit-title-$i'),
+                                          initialValue: item.title,
+                                          onChanged: (value) {
+                                            _updateCandidateTitle(
+                                              id: item.id,
+                                              value: value,
+                                            );
+                                          },
+                                          decoration: const InputDecoration(
+                                            labelText: 'Musica',
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        TextFormField(
+                                          key: ValueKey('import-edit-code-$i'),
+                                          initialValue: item.code,
+                                          onChanged: (value) {
+                                            _updateCandidateCode(
+                                              id: item.id,
+                                              value: value,
+                                            );
+                                          },
+                                          decoration: const InputDecoration(
+                                            labelText: 'Codigo',
+                                          ),
+                                        ),
+                                      ] else ...[
+                                        const SizedBox(height: 8),
+                                        const Text(
+                                          'Candidato bloqueado nao pode ser editado nesta etapa.',
+                                        ),
+                                      ],
+                                      if (item.hasWarnings) ...[
+                                        const SizedBox(height: 8),
+                                        const Text('Avisos:'),
+                                        for (final warning in item.warnings)
+                                          Text('- $warning'),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ],
         ),
