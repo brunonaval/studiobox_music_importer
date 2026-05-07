@@ -2759,10 +2759,13 @@ extension on _HomeScreenState {
             ],
             if (_importCandidateEditPlan != null) ...[
               const SizedBox(height: 16),
-              Text(
-                'Edicao manual dos candidatos',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+                      Text(
+                        'Edicao manual dos candidatos',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildManualEditTable(),
+                      const SizedBox(height: 12),
               const SizedBox(height: 8),
               Text(
                 'Total de candidatos: ${_importCandidateEditPlan!.totalCount}',
@@ -4157,14 +4160,134 @@ extension on _HomeScreenState {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Round 35D10A - Tabela de sugestoes com scroll'),
+            const Text('Round 35D10B - Edicao manual em tabela editavel'),
             const SizedBox(height: 4),
             const Text(
-              'Estado: Tabela de sugestoes com rolagem horizontal e vertical para grandes volumes de musicas.',
+              'Estado: Edicao manual agora usa tabela editavel com scroll, mantendo artista, musica e codigo editaveis inline.',
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildManualEditTable() {
+    final plan = _importCandidateEditPlan;
+    if (plan == null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxHeight: 480),
+      decoration: BoxDecoration(
+        color: HomeDashboardTheme.surfaceElevated,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: HomeDashboardTheme.border),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 12,
+              columns: const [
+                DataColumn(label: Text('Status')),
+                DataColumn(label: Text('Selecionado')),
+                DataColumn(label: Text('Arquivo original')),
+                DataColumn(label: Text('Artista')),
+                DataColumn(label: Text('Musica')),
+                DataColumn(label: Text('Codigo')),
+                DataColumn(label: Text('Nome oficial')),
+                DataColumn(label: Text('Avisos')),
+              ],
+              rows: [
+                for (var i = 0; i < _editItemsForDisplay().length; i++)
+                  _buildManualEditRow(_editItemsForDisplay()[i], i),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  DataRow _buildManualEditRow(ImportCandidateEditItem item, int index) {
+    final warnings = item.warnings.isEmpty ? '-' : item.warnings.join(' | ');
+    return DataRow(
+      cells: [
+        DataCell(Text(item.editStatus.label)),
+        DataCell(Text(item.selectionItem.isSelected ? 'Sim' : 'Nao')),
+        DataCell(
+          SizedBox(
+            width: 220,
+            child: Text(
+              item.selectionItem.candidate.originalFileName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+        DataCell(
+          SizedBox(
+            width: 180,
+            child: TextFormField(
+              key: ValueKey('import-edit-artist-$index'),
+              initialValue: item.artist,
+              enabled: item.editable,
+              onChanged: (value) {
+                _updateCandidateArtist(id: item.id, value: value);
+              },
+              decoration: const InputDecoration(isDense: true),
+            ),
+          ),
+        ),
+        DataCell(
+          SizedBox(
+            width: 180,
+            child: TextFormField(
+              key: ValueKey('import-edit-title-$index'),
+              initialValue: item.title,
+              enabled: item.editable,
+              onChanged: (value) {
+                _updateCandidateTitle(id: item.id, value: value);
+              },
+              decoration: const InputDecoration(isDense: true),
+            ),
+          ),
+        ),
+        DataCell(
+          SizedBox(
+            width: 120,
+            child: TextFormField(
+              key: ValueKey('import-edit-code-$index'),
+              initialValue: item.code,
+              enabled: item.editable,
+              onChanged: (value) {
+                _updateCandidateCode(id: item.id, value: value);
+              },
+              decoration: const InputDecoration(isDense: true),
+            ),
+          ),
+        ),
+        DataCell(
+          SizedBox(
+            width: 260,
+            child: Text(
+              item.officialFileName.isEmpty ? '-' : item.officialFileName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+        DataCell(
+          SizedBox(
+            width: 260,
+            child: Text(warnings, maxLines: 2, overflow: TextOverflow.ellipsis),
+          ),
+        ),
+      ],
     );
   }
 
@@ -4279,7 +4402,7 @@ extension on _HomeScreenState {
                 onPressed: _toggleManualImportCandidateEditVisibility,
                 child: Text(
                   _showManualImportCandidateEdit
-                      ? 'Ocultar edicao manual'
+                      ? 'Ocultar Edicao manual'
                       : 'Mostrar Edicao manual',
                 ),
               ),
@@ -4320,103 +4443,7 @@ extension on _HomeScreenState {
                           Text(_importCandidateEditMessage!),
                         ],
                         const SizedBox(height: 8),
-                        if (_importCandidateEditPlan!.totalCount > 50)
-                          Text(
-                            'Exibindo os primeiros 50 de ${_importCandidateEditPlan!.totalCount} candidatos para edicao.',
-                          ),
-                        const SizedBox(height: 8),
-                        for (
-                          var i = 0;
-                          i < _editItemsForDisplay().length;
-                          i++
-                        ) ...[
-                          Builder(
-                            builder: (context) {
-                              final item = _editItemsForDisplay()[i];
-                              return Card(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Status da edicao: ${item.editStatus.label}',
-                                      ),
-                                      Text(
-                                        'Status da selecao: ${item.selectionItem.selectionStatus.label}',
-                                      ),
-                                      Text(
-                                        'Arquivo/original: ${item.selectionItem.candidate.originalFileName}',
-                                      ),
-                                      Text(
-                                        'Nome oficial atual: ${item.officialFileName.isEmpty ? '-' : item.officialFileName}',
-                                      ),
-                                      if (item.editable) ...[
-                                        const SizedBox(height: 8),
-                                        TextFormField(
-                                          key: ValueKey(
-                                            'import-edit-artist-$i',
-                                          ),
-                                          initialValue: item.artist,
-                                          onChanged: (value) {
-                                            _updateCandidateArtist(
-                                              id: item.id,
-                                              value: value,
-                                            );
-                                          },
-                                          decoration: const InputDecoration(
-                                            labelText: 'Artista',
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        TextFormField(
-                                          key: ValueKey('import-edit-title-$i'),
-                                          initialValue: item.title,
-                                          onChanged: (value) {
-                                            _updateCandidateTitle(
-                                              id: item.id,
-                                              value: value,
-                                            );
-                                          },
-                                          decoration: const InputDecoration(
-                                            labelText: 'Musica',
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        TextFormField(
-                                          key: ValueKey('import-edit-code-$i'),
-                                          initialValue: item.code,
-                                          onChanged: (value) {
-                                            _updateCandidateCode(
-                                              id: item.id,
-                                              value: value,
-                                            );
-                                          },
-                                          decoration: const InputDecoration(
-                                            labelText: 'Codigo',
-                                          ),
-                                        ),
-                                      ] else ...[
-                                        const SizedBox(height: 8),
-                                        const Text(
-                                          'Candidato bloqueado nao pode ser editado nesta etapa.',
-                                        ),
-                                      ],
-                                      if (item.hasWarnings) ...[
-                                        const SizedBox(height: 8),
-                                        const Text('Avisos:'),
-                                        for (final warning in item.warnings)
-                                          Text('- $warning'),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                        ],
+                        _buildManualEditTable(),
                       ],
                     ),
                   ),
